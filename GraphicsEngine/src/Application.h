@@ -7,6 +7,7 @@ public:
 	Application(const int& width, const int& height, const char* title);
 	~Application();
 
+	void Run();
 	void OnAttach();
 	void OnUpdate();
 	void OnRender();
@@ -18,5 +19,4 @@ private:
 
 	glm::vec4 m_ClearColor;
 	
-
 };

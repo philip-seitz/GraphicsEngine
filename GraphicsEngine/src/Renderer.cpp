@@ -31,7 +31,9 @@ struct RendererData
 	unsigned int vb = 0;
 	unsigned int ib = 0;
 
-	Shader* shader;
+	unsigned int IndexCount = 0;
+
+	Shader* shader = nullptr;
 	Triangle* TriBuffer = nullptr;
 	TriangleIndices* TriIndices = nullptr;
 };

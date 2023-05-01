@@ -19,23 +19,7 @@ const char* shader_path = "res/shader/vert_frag.shader";
 int main(void)
 {
     Application app(win_width, win_height, win_title);
-    if (!app.m_window.Init())
-        return -1;
-    Renderer::Init();
-
-    while (!glfwWindowShouldClose(app.m_window.GetWindow()))
-    {
-        // glClear(GL_COLOR_BUFFER_BIT);
-        Renderer::Clear();
-
-        Renderer::DrawTriangle();
-        
-        app.OnUpdate();
-
-
-        glfwSwapBuffers(app.m_window.GetWindow());
-        glfwPollEvents();
-    }
+    app.Run();
 
     return 0;
 }
