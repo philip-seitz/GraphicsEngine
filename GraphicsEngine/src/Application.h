@@ -1,0 +1,22 @@
+#include "Shader.h"
+#include "Window.h"
+
+class Application
+{
+public:
+	Application(const int& width, const int& height, const char* title);
+	~Application();
+
+	void OnAttach();
+	void OnUpdate();
+	void OnRender();
+
+
+public:
+	Window m_window;
+private:
+
+	glm::vec4 m_ClearColor;
+	
+
+};
