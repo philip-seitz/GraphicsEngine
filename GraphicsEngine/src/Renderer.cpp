@@ -1,29 +1,11 @@
 #include "Renderer.h"
 #include <GL/glew.h>
-#include <glm/glm.hpp>
 #include "Shader.h"
 
 
 const unsigned int max_vertices = 1000;
 const unsigned int max_indices = max_vertices;
 const unsigned int max_texture_slots = 32;				// checken
-
-struct Vertex
-{
-	glm::vec3 position;
-};
-
-struct Triangle
-{
-	Vertex p0, p1, p2;
-	
-};
-
-struct TriangleIndices
-{
-	glm::highp_uvec3 indices;
-};
-
 
 struct RendererData
 {
@@ -32,6 +14,7 @@ struct RendererData
 	unsigned int ib = 0;
 
 	unsigned int IndexCount = 0;
+	unsigned int TriCount = 0;
 
 	Shader* shader = nullptr;
 	Triangle* TriBuffer = nullptr;
@@ -40,11 +23,21 @@ struct RendererData
 
 static RendererData sData;
 
-void Renderer::Init()
+void Renderer::Init(const std::vector<Triangle>& tris)
 {
 	sData.shader = new Shader("res/shader/vert_frag.shader");
 	glUseProgram(sData.shader->GetRendererID());
 	sData.shader->SetUniform4f("u_Color", 1.0f, 0.2f, 0.1f, 1.0f);
+
+	sData.TriBuffer = new Triangle[333];
+	sData.TriIndices = new TriangleIndices[333];
+
+	for (unsigned int i = 0; i < tris.size(); i++) 
+		{
+			sData.TriBuffer[i] = tris[i];
+			sData.TriIndices[i] = { {0 +3*i, 1 + 3*i, 2 + 3*i} };
+			sData.TriCount++;
+		}
 
 	glCreateVertexArrays(1, &sData.va);
 	glBindVertexArray(sData.va);
@@ -72,7 +65,9 @@ void Renderer::Shutdown()
 	glDeleteBuffers(1, &sData.ib);
 
 	glDeleteVertexArrays(1, &sData.vb);
-	delete[] sData.shader;
+
+	glDeleteProgram(sData.shader->GetRendererID());
+	// shader wird von destruktor deleted
 
 }
 
@@ -91,25 +86,17 @@ void Renderer::Flush()
 void Renderer::DrawTriangle()										// mit Parametern
 {
 	// Dreiecke befüllen
-	sData.TriBuffer = new Triangle[333];
-	sData.TriIndices = new TriangleIndices[333];
 	
-	sData.TriBuffer[0].p0 = { {-0.5f, 0.0f, 0.0f} };
-	sData.TriBuffer[0].p1 = { {0.5f, 0.0f, 0.0f} };
-	sData.TriBuffer[0].p2 = { {0.0f, 0.5f, 0.0f} };
-
-	sData.TriIndices[0] = { {0, 1, 2} };
-
-
+	
 	glBindBuffer(GL_ARRAY_BUFFER, sData.vb);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Triangle), sData.TriBuffer);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sData.TriCount * sizeof(Triangle), sData.TriBuffer);
 	
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.ib);
-	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, 6 * sizeof(TriangleIndices), sData.TriIndices);
+	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sData.TriCount * sizeof(TriangleIndices), sData.TriIndices);
 
 	glBindVertexArray(sData.va);
-	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
+	glDrawElements(GL_TRIANGLES, 3 * sData.TriCount, GL_UNSIGNED_INT, nullptr);
 
 }
 

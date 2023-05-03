@@ -9,8 +9,8 @@
 #include "Renderer.h"
 #include "Application.h"
 
-int win_width = 640;
-int win_height = 480;
+int win_width = 1080;
+int win_height = 720;
 const char* win_title = "Hello";
 
 const char* shader_path = "res/shader/vert_frag.shader";

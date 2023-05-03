@@ -28,16 +28,23 @@ void Application::Run()
         glfwSwapBuffers(m_window.GetWindow());
         glfwPollEvents();
     }
+    Renderer::Shutdown();
 
 }
 
 void Application::OnAttach()
 {
     // init and setting data
+    std::vector<Triangle> mesh;
+
+
+    mesh.push_back({ {{  0.0f, 0.0f, 0.0f}}, {{0.5f, 0.0f, 0.0f}}, {{0.5f, 0.5f, 0.0f}} });
+    mesh.push_back({ {{  0.5f, 0.5f, 0.0f}}, {{0.0f, 0.5f, 0.0f}}, {{0.0f, 0.0f, 0.0f}} });
+
 	if (!m_window.Init())
 		std::exit(0);
 
-	Renderer::Init();
+	Renderer::Init(mesh);
 
 }
 
