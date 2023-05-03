@@ -53,6 +53,9 @@ void Application::OnUpdate()
     // caclulations etc
 	glClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, m_ClearColor.a);
 
+    // get all the data 
+
+
 }
 
 void Application::OnRender()

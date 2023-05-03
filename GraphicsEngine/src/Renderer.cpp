@@ -19,6 +19,8 @@ struct RendererData
 	Shader* shader = nullptr;
 	Triangle* TriBuffer = nullptr;
 	TriangleIndices* TriIndices = nullptr;
+
+	Vertex* VertexPosBuffer = nullptr;
 };
 
 static RendererData sData;
@@ -35,7 +37,7 @@ void Renderer::Init(const std::vector<Triangle>& tris)
 	for (unsigned int i = 0; i < tris.size(); i++) 
 		{
 			sData.TriBuffer[i] = tris[i];
-			sData.TriIndices[i] = { {0 +3*i, 1 + 3*i, 2 + 3*i} };
+			sData.TriIndices[i] = { {0 + 3*i, 1 + 3*i, 2 + 3*i} };
 			sData.TriCount++;
 		}
 
@@ -87,7 +89,6 @@ void Renderer::DrawTriangle()										// mit Parametern
 {
 	// Dreiecke befüllen
 	
-	
 	glBindBuffer(GL_ARRAY_BUFFER, sData.vb);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sData.TriCount * sizeof(Triangle), sData.TriBuffer);
 	
@@ -99,6 +100,7 @@ void Renderer::DrawTriangle()										// mit Parametern
 	glDrawElements(GL_TRIANGLES, 3 * sData.TriCount, GL_UNSIGNED_INT, nullptr);
 
 }
+
 
 void Renderer::Clear()
 {

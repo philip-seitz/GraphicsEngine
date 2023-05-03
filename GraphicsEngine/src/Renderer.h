@@ -8,6 +8,7 @@ struct Vertex
 
 struct Triangle
 {
+
 	Vertex p0, p1, p2;
 
 };
