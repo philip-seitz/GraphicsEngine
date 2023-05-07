@@ -24,7 +24,7 @@ class Renderer
 public:
 	// static class (keine Instanz)
 
-	static void Init(const std::vector<Triangle>& tris);
+	static void Init();
 	static void Shutdown();
 
 
@@ -32,8 +32,13 @@ public:
 	static void EndBatch();
 	static void Flush();
 
+	static void AddTriangle(const float& x, const float& y, const float& size);						// point bottom left (in 2D)
+	static void AddQuad(const float& x, const float& y, const float& size);							// point bootom left (in 2D)
+	static void AddCube(const float& x, const float& y, const float& z, const float& size);			// point front, bottom left (in 3D)
+	static void DrawTriangles();
 
-	static void DrawTriangle();
+	static void Calculate(const float& dt);
+
 	static void Clear();
 
 private:

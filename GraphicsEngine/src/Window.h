@@ -13,6 +13,7 @@ public:
 			m_AllRunning = false;
 		else
 			m_InstWindow = glfwCreateWindow(width, height, title, NULL, NULL);
+			glViewport(0, 0, width, height);
 	}
 	~Window()
 	{

@@ -9,7 +9,7 @@ public:
 
 	void Run();
 	void OnAttach();
-	void OnUpdate();
+	void OnUpdate(const float& dt);
 	void OnRender();
 
 

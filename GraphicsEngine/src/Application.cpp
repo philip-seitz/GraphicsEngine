@@ -16,14 +16,24 @@ Application::~Application()
 void Application::Run()
 {
     OnAttach();
+    // Renderer::AddQuad(0.4f, 0.0f, 0.2f);
+    // Renderer::AddQuad(-0.2f, 0.0f, 0.2f);
+    // Renderer::AddQuad(0.05f, -0.25f, 0.3f);
+    // Renderer::AddTriangle(0.05f, 0.25f, 0.3f);
+
+    float lastTime = glfwGetTime();
+    Renderer::AddCube(0.05f, -0.25f, 0.3f, 0.0f);             // parameters dont matter yet!
+
     while (!glfwWindowShouldClose(m_window.GetWindow()))
     {
+        float currentTime = glfwGetTime();
+        float dt = currentTime - lastTime;
+        lastTime = currentTime;
         Renderer::Clear();
 
-        Renderer::DrawTriangle();
+        OnUpdate(dt);
 
-        OnUpdate();
-
+        Renderer::DrawTriangles();
 
         glfwSwapBuffers(m_window.GetWindow());
         glfwPollEvents();
@@ -34,27 +44,18 @@ void Application::Run()
 
 void Application::OnAttach()
 {
-    // init and setting data
-    std::vector<Triangle> mesh;
-
-
-    mesh.push_back({ {{  0.0f, 0.0f, 0.0f}}, {{0.5f, 0.0f, 0.0f}}, {{0.5f, 0.5f, 0.0f}} });
-    mesh.push_back({ {{  0.5f, 0.5f, 0.0f}}, {{0.0f, 0.5f, 0.0f}}, {{0.0f, 0.0f, 0.0f}} });
-
 	if (!m_window.Init())
 		std::exit(0);
 
-	Renderer::Init(mesh);
+	Renderer::Init();
 
 }
 
-void Application::OnUpdate()
+void Application::OnUpdate(const float& dt)
 {
     // caclulations etc
 	glClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, m_ClearColor.a);
-
-    // get all the data 
-
+    Renderer::Calculate(dt);
 
 }
 

@@ -2,9 +2,14 @@
 #version 330 core
 layout(location = 0) in vec4 a_Position;
 
+
+uniform mat4 u_MVP;
 void main()
 {
 	gl_Position = a_Position;
+
+	// Disable perspective division (homogeneous cords to position)
+	gl_Position /= gl_Position.w;
 }
 
 #shader fragment
