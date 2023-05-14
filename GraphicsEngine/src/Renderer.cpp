@@ -8,7 +8,7 @@ const unsigned int max_indices = max_vertices;
 const unsigned int max_texture_slots = 32;				// checken
 
 // constants for the camera maybe	(add to camera class or smth)
-const float yFOV = 40.0f;
+const float yFOV = 30.0f;
 const float aspectRatio = 1080.0f / 720.0f;
 const float zNear = 1.5f;
 const float zFar = -2.5f;
@@ -21,6 +21,10 @@ float angleScalerY = 0.4f;
 float angleScalerZ = 0.6f;
 
 float translationZ = 0.0f;
+
+glm::vec3 lightDirection = { 0.0f, 0.0f, 1.0f };
+glm::vec4 brightColor = { 0.8f, 0.1f, 0.4f, 1.0f };
+glm::vec4 darkColor = { 0.8f, 0.1f, 0.4f, 0.4f };
 
 struct RendererData
 {
@@ -81,6 +85,10 @@ void Renderer::Init()
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, position));
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, color));
+
 
 }
 
@@ -203,6 +211,12 @@ void Renderer::DrawTriangles()
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 
+	// Blending 
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	// Enable point smoothing and set the point size
 	// glEnable(GL_POINT_SMOOTH);
 	// glPointSize(10.0f);
@@ -217,7 +231,7 @@ void Renderer::DrawTriangles()
 
 void Renderer::Calculate(const float& dt)
 {
-	// Reset bc Calculate is called while the app is running
+	// Reset bc Calculate is contineously called while the app is running
 	sData.TriToRenderCount = 0;
 	sData.TriToRenderBufferPointer = sData.TriToRenderBuffer;
 	sData.TriToRenderIndicesPointer = sData.TriToRenderIndices;
@@ -255,6 +269,11 @@ void Renderer::Calculate(const float& dt)
 		glm::vec3 p1 = sData.TriBuffer[i].p1.position;
 		glm::vec3 p2 = sData.TriBuffer[i].p2.position;
 
+
+		glm::vec4 c0 = sData.TriBuffer[i].p0.color;
+		glm::vec4 c1 = sData.TriBuffer[i].p1.color;
+		glm::vec4 c2 = sData.TriBuffer[i].p2.color;
+
 		// Rotation
 		glm::vec4 p0_h = combinedRotation * glm::vec4(p0, 1.0f);
 		glm::vec4 p1_h = combinedRotation * glm::vec4(p1, 1.0f);
@@ -264,7 +283,6 @@ void Renderer::Calculate(const float& dt)
 		p0_h = translation * p0_h;
 		p1_h = translation * p1_h;
 		p2_h = translation * p2_h;
-
 
 		glm::vec3 p0_t(p0_h);
 		glm::vec3 p1_t(p1_h);
@@ -287,8 +305,17 @@ void Renderer::Calculate(const float& dt)
 			glm::vec3 p1_proj = { p1_h.x / p1_h.w, p1_h.y / p1_h.w, p1_h.z / p1_h.w };
 			glm::vec3 p2_proj = { p2_h.x / p2_h.w, p2_h.y / p2_h.w, p2_h.z / p2_h.w };
 
-			*(sData.TriToRenderBufferPointer) = Triangle{ p0_proj, p1_proj, p2_proj };
+			*(sData.TriToRenderBufferPointer) = Triangle{ {p0_proj, c0 }, {p1_proj, c1}, {p2_proj, c2} };
 			*(sData.TriToRenderIndicesPointer) = TriangleIndices{ {0 + 3 * (sData.TriToRenderCount), 1 + 3 * (sData.TriToRenderCount), 2 + 3 * (sData.TriToRenderCount)} };
+			
+			// Shading -> maybe with reduction of alpha instead
+			if (glm::dot(lightDirection, normal) > 0.6f)
+				sData.TriToRenderBufferPointer->SetColor(B_BLUE);
+			else if (glm::dot(lightDirection, normal) > 0.3f)
+				sData.TriToRenderBufferPointer->SetColor(B_BLUE_SHADE);
+			else
+				sData.TriToRenderBufferPointer->SetColor(B_BLUE_DARK);
+
 			sData.TriToRenderIndicesPointer++;
 			sData.TriToRenderBufferPointer++;
 			sData.TriToRenderCount++;
