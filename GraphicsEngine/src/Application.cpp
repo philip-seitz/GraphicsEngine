@@ -22,7 +22,8 @@ void Application::Run()
     // Renderer::AddTriangle(0.05f, 0.25f, 0.3f);
 
     float lastTime = glfwGetTime();
-    Renderer::AddCube(0.05f, -0.25f, 0.3f, 0.0f);             // parameters dont matter yet!
+    // Renderer::AddCube(0.05f, -0.25f, 0.3f, 0.0f);             // parameters dont matter yet!
+    Renderer::LoadMesh();
 
     while (!glfwWindowShouldClose(m_window.GetWindow()))
     {

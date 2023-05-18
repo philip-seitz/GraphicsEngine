@@ -1,7 +1,7 @@
 #include "Renderer.h"
 #include <GL/glew.h>
 #include "Shader.h"
-
+#include "Util.h"
 
 const unsigned int max_vertices = 1000;
 const unsigned int max_indices = max_vertices;
@@ -26,6 +26,7 @@ glm::vec3 lightDirection = { 0.0f, 0.0f, 1.0f };
 glm::vec4 brightColor = { 0.8f, 0.1f, 0.4f, 1.0f };
 glm::vec4 darkColor = { 0.8f, 0.1f, 0.4f, 0.4f };
 
+
 struct RendererData
 {
 	unsigned int va = 0;
@@ -47,9 +48,10 @@ struct RendererData
 	TriangleIndices* TriIndicesPointer = nullptr;
 	TriangleIndices* TriToRenderIndicesPointer = nullptr;
 
-	glm::mat4x4 projectionMatrix = glm::perspective(yFOV*3.14f/180.0f, aspectRatio, zNear, zFar);
+	glm::mat4x4 projectionMatrix = glm::perspective(yFOV * 3.14f / 180.0f, aspectRatio, zNear, zFar);
 
 };
+
 
 static RendererData sData;
 
@@ -197,6 +199,50 @@ void Renderer::AddCube(const float& x, const float& y, const float& z, const flo
 
 }
 
+void Renderer::LoadMesh()
+{
+	std::vector <float>vert;
+	std::vector<unsigned int> ind;
+	glm::vec4 darkCol = { 0.0f, 0.0f, 0.0f, 0.0f };
+	std::vector<glm::vec3> mesh;
+	std::vector< glm::highp_uvec3> indices;
+	ReadVertexData("res/objects/pickup.obj", vert, ind);
+	// put the data into the triangle structures...
+	int vertexNumber = vert.size() / 3;
+	int triNumber = ind.size() / 3;
+
+
+	for (int i = 0; i < vertexNumber; i++)
+	{
+		glm::vec3 pos;
+		pos = { vert[0 + i * 3], vert[1 + i * 3], vert[2 + i * 3], };
+		mesh.push_back(pos);
+	}
+
+	for (int i = 0; i < triNumber; i++)
+	{
+
+		glm::highp_uvec3 idx;
+		idx = { ind[0 + i * 3], ind[1 + i * 3], ind[2 + i * 3], };
+		indices.push_back(idx);
+
+	}
+
+	for (int i = 0; i < triNumber; i++)
+	{
+		*(sData.TriBufferPointer) = Triangle{ {mesh[indices[i][0] -1], darkCol}, {mesh[indices[i][1] - 1], darkCol}, {mesh[indices[i][2] - 1], darkCol} };
+		*(sData.TriIndicesPointer) = { {indices[i][0], indices[i][1], indices[i][2]}};
+		sData.TriBufferPointer++;
+		sData.TriIndicesPointer++;
+		sData.TriCount++;
+
+
+	}
+
+	std::cout << "hi";
+
+}
+
 void Renderer::DrawTriangles()										
 {
 	
@@ -208,7 +254,7 @@ void Renderer::DrawTriangles()
 
 	glBindVertexArray(sData.va);
 	// Enable wireframe drawing
-	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 
 	// Blending 
@@ -256,10 +302,10 @@ void Renderer::Calculate(const float& dt)
 	
 	glm::mat4x4 combinedRotation(0);
 	glm::mat4x4 projPipeline(0);
-	combinedRotation = glm::rotate(glm::mat4(1.0f), angleX,
+	combinedRotation = glm::rotate(glm::mat4(1.0f), 0.0f,
 		glm::vec3(1.0, 0.0, 0.0)) * glm::rotate(glm::mat4(1.0f), angleY, glm::vec3(0.0, 1.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
 			0.0f, glm::vec3(0.0, 0.0, 1.0));
-	glm::mat4x4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.5f));
+	glm::mat4x4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -20.5f));
 
 	// apply the projection matrix to all vertices
 	for (int i = 0; i < sData.TriCount; i++)
