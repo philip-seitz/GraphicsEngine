@@ -7,8 +7,9 @@
 #define PURPLE 0.6f, 0.0f, 0.8f, 1.0f
 #define ORANGE 0.9f, 0.3f, 0.3f, 1.0f
 #define B_BLUE 0.0f, 0.5f, 0.9f, 1.0f
-#define B_BLUE_SHADE 0.0f, 0.5f, 0.9f, 0.8f
-#define B_BLUE_DARK 0.0f, 0.5f, 0.9f, 0.4f
+#define B_BLUE_SHADE 0.0f, 0.3f, 0.7f, 1.0f
+#define B_BLUE_DARK 0.0f, 0.1f, 0.5f, 1.0f
+#define WHITE 1.0f, 1.0f, 1.0f, 1.0f
 
 struct Vertex
 {
@@ -25,6 +26,14 @@ struct Triangle
 		p0.color = {r, g, b, a};
 		p1.color = { r, g, b, a };
 		p2.color = { r, g, b, a };
+
+	}
+
+	void SetColor(glm::vec4 color)
+	{
+		p0.color = color;
+		p1.color = color;
+		p2.color = color;
 
 	}
 

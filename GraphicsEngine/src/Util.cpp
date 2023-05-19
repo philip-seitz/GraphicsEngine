@@ -6,6 +6,7 @@
 void StringToFloat(const std::vector<std::vector <char>>& stream, std::vector <float>& vert)
 {
 	std::vector<float> res_vec;
+	unsigned int vert_count = 0;
 	for (int i = 0; i < stream.size(); i++)
 	{
 		int len = stream[i].size();
@@ -25,7 +26,7 @@ void StringToFloat(const std::vector<std::vector <char>>& stream, std::vector <f
 
 		for (int j = 0 + negative; j < p_idx; j++)
 		{
-			int digit = stream[i][j] - 48;
+			int digit = stream[i][j] - 48;				// char to digit
 			result += digit* pow(10, p_idx - (1 + j));
 		}
 
@@ -40,6 +41,7 @@ void StringToFloat(const std::vector<std::vector <char>>& stream, std::vector <f
 			result *= -1.0f;
 
 		res_vec.push_back(result);
+		vert_count++;
 	}
 	vert = res_vec;
 }
@@ -47,6 +49,7 @@ void StringToFloat(const std::vector<std::vector <char>>& stream, std::vector <f
 void StringToInt(const std::vector<std::vector <char>>& stream, std::vector <unsigned int>& ind)
 {
 	std::vector<unsigned int> res_vec;
+	unsigned int idx_count = 0;
 	for (int i = 0; i < stream.size(); i++)
 	{
 		int len = stream[i].size();
@@ -59,6 +62,7 @@ void StringToInt(const std::vector<std::vector <char>>& stream, std::vector <uns
 		}
 
 		res_vec.push_back(result);
+		idx_count++;
 	}
 
 	ind = res_vec;
@@ -119,9 +123,39 @@ void ReadVertexData(const std::string& filepath, std::vector <float>&vert, std::
 		}
 		
 	}
-	// TODO: Convert char array to float 
+	// converts strings/char arrays to numbers
 	StringToFloat(vertex_vectors, vert);
 	StringToInt(index_vectors, ind);
+}
+
+glm::vec4 GetColorShade(float dot, glm::vec4 baseColor)
+{
+	// 6 different darkness types 
+	// dot product can have values between -1.0f and 1.0f (both vecs normalized)
+	// light dir in positive z dir (out of screen) -> dot>0 if visible
+
+	glm::vec4 outputColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float r_increment, g_increment, b_increment;
+	int numberShades = 100;
+	float dot_increment = 1.0f / numberShades;
+
+	r_increment = baseColor.r / numberShades;
+	g_increment = baseColor.g / numberShades;
+	b_increment = baseColor.b / numberShades;
+
+	for (int i = 1; i <=numberShades; i++)
+	{
+		if (dot >= (numberShades-i) * dot_increment)
+		{
+			outputColor.r = baseColor.r - r_increment * i;
+			outputColor.g = baseColor.g - g_increment * i;
+			outputColor.b = baseColor.b - b_increment * i;
+			break;
+		}
+	}
+
+	return outputColor;
+
 }
 
 

@@ -3,7 +3,7 @@
 #include "Shader.h"
 #include "Util.h"
 
-const unsigned int max_vertices = 1000;
+const unsigned int max_vertices = 20000;
 const unsigned int max_indices = max_vertices;
 const unsigned int max_texture_slots = 32;				// checken
 
@@ -62,15 +62,15 @@ void Renderer::Init()
 	sData.shader->SetUniform4f("u_Color", 1.0f, 0.2f, 0.1f, 1.0f);
 
 	// Structures for all triangles
-	sData.TriBuffer = new Triangle[333];
-	sData.TriIndices = new TriangleIndices[333];
+	sData.TriBuffer = new Triangle[max_vertices/3];
+	sData.TriIndices = new TriangleIndices[max_vertices];
 	sData.TriBufferPointer = sData.TriBuffer;
 	sData.TriIndicesPointer = sData.TriIndices;
 
 
 	// Structures for the triangles that are to be drawn
-	sData.TriToRenderBuffer = new Triangle[333];
-	sData.TriToRenderIndices = new TriangleIndices[333];
+	sData.TriToRenderBuffer = new Triangle[max_vertices/3];
+	sData.TriToRenderIndices = new TriangleIndices[max_vertices];
 	sData.TriToRenderBufferPointer = sData.TriToRenderBuffer;
 	sData.TriToRenderIndicesPointer = sData.TriToRenderIndices;
 
@@ -206,7 +206,7 @@ void Renderer::LoadMesh()
 	glm::vec4 darkCol = { 0.0f, 0.0f, 0.0f, 0.0f };
 	std::vector<glm::vec3> mesh;
 	std::vector< glm::highp_uvec3> indices;
-	ReadVertexData("res/objects/pickup.obj", vert, ind);
+	ReadVertexData("res/objects/utah_teapot.obj", vert, ind);
 	// put the data into the triangle structures...
 	int vertexNumber = vert.size() / 3;
 	int triNumber = ind.size() / 3;
@@ -254,7 +254,7 @@ void Renderer::DrawTriangles()
 
 	glBindVertexArray(sData.va);
 	// Enable wireframe drawing
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 
 	// Blending 
@@ -302,7 +302,7 @@ void Renderer::Calculate(const float& dt)
 	
 	glm::mat4x4 combinedRotation(0);
 	glm::mat4x4 projPipeline(0);
-	combinedRotation = glm::rotate(glm::mat4(1.0f), 0.0f,
+	combinedRotation = glm::rotate(glm::mat4(1.0f), angleX,
 		glm::vec3(1.0, 0.0, 0.0)) * glm::rotate(glm::mat4(1.0f), angleY, glm::vec3(0.0, 1.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
 			0.0f, glm::vec3(0.0, 0.0, 1.0));
 	glm::mat4x4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -20.5f));
@@ -355,12 +355,14 @@ void Renderer::Calculate(const float& dt)
 			*(sData.TriToRenderIndicesPointer) = TriangleIndices{ {0 + 3 * (sData.TriToRenderCount), 1 + 3 * (sData.TriToRenderCount), 2 + 3 * (sData.TriToRenderCount)} };
 			
 			// Shading -> maybe with reduction of alpha instead
-			if (glm::dot(lightDirection, normal) > 0.6f)
+			sData.TriToRenderBufferPointer->SetColor(GetColorShade(glm::dot(lightDirection, normal), glm::vec4{WHITE}));
+
+			/*if (glm::dot(lightDirection, normal) > 0.6f)
 				sData.TriToRenderBufferPointer->SetColor(B_BLUE);
 			else if (glm::dot(lightDirection, normal) > 0.3f)
 				sData.TriToRenderBufferPointer->SetColor(B_BLUE_SHADE);
 			else
-				sData.TriToRenderBufferPointer->SetColor(B_BLUE_DARK);
+				sData.TriToRenderBufferPointer->SetColor(B_BLUE_DARK);*/
 
 			sData.TriToRenderIndicesPointer++;
 			sData.TriToRenderBufferPointer++;
