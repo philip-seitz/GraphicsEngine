@@ -1317,9 +1317,4 @@
     </None>
     <None Include="res\shader\vert_frag.shader" />
   </ItemGroup>
-  <ItemGroup>
-    <Object Include="res\objects\cube.obj" />
-    <Object Include="res\objects\pickup.obj" />
-    <Object Include="res\objects\utah_teapot.obj" />
-  </ItemGroup>
 </Project>

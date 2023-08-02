@@ -10,3 +10,4 @@
 
 void ReadVertexData(const std::string& filepath, std::vector <float>& vert, std::vector<unsigned int>& ind);
 glm::vec4 GetColorShade(float dot, glm::vec4 baseColor);
+int CalculateNumberOfLines(float size, float distance);

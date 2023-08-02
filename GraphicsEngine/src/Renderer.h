@@ -44,6 +44,35 @@ struct TriangleIndices
 	glm::highp_uvec3 indices;
 };
 
+struct Line
+{
+	Vertex p0, p1;
+	void SetColor(const float& r, const float& g, const float& b, const float& a)
+	{
+		p0.color = { r, g, b, a };
+		p1.color = { r, g, b, a };
+
+	}
+
+	void SetColor(glm::vec4 color)
+	{
+		p0.color = color;
+		p1.color = color;
+	}
+
+	void SetColor(glm::vec4 color1, glm::vec4 color2)
+	{
+		p0.color = color1;
+		p1.color = color2;
+	}
+
+};
+
+struct LineIndices
+{
+	glm::highp_uvec2 indices;
+
+};
 
 class Renderer
 {
@@ -59,10 +88,12 @@ public:
 	static void Flush();
 
 	static void AddTriangle(const float& x, const float& y, const float& size);						// point bottom left (in 2D)
-	static void AddQuad(const float& x, const float& y, const float& size);							// point bootom left (in 2D)
+	static void AddQuad(const float& x, const float& y, const float& size);							// point bottom left (in 2D)
 	static void AddCube(const float& x, const float& y, const float& z, const float& size);			// point front, bottom left (in 3D)
 	static void LoadMesh();																			// load gemoetry from obj. file
 	static void DrawTriangles();
+	static void AddGrid();
+	static void DrawGrid();
 
 	static void Calculate(const float& dt);
 

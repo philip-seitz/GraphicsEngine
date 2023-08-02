@@ -130,7 +130,6 @@ void ReadVertexData(const std::string& filepath, std::vector <float>&vert, std::
 
 glm::vec4 GetColorShade(float dot, glm::vec4 baseColor)
 {
-	// 6 different darkness types 
 	// dot product can have values between -1.0f and 1.0f (both vecs normalized)
 	// light dir in positive z dir (out of screen) -> dot>0 if visible
 
@@ -143,7 +142,7 @@ glm::vec4 GetColorShade(float dot, glm::vec4 baseColor)
 	g_increment = baseColor.g / numberShades;
 	b_increment = baseColor.b / numberShades;
 
-	for (int i = 1; i <=numberShades; i++)
+	for (int i = 1; i <= numberShades; i++)
 	{
 		if (dot >= (numberShades-i) * dot_increment)
 		{
@@ -156,6 +155,35 @@ glm::vec4 GetColorShade(float dot, glm::vec4 baseColor)
 
 	return outputColor;
 
+}
+
+int CalculateNumberOfLines(float size, float distance)
+{
+
+	float t = (size / 2.0) / distance;	// number of lines per half 
+	if (std::fmod(t, 2.0) != 0.0)	// odd
+	{
+		if (t < 2.0)
+		{
+			t = t + (2 - t);	// fill to be even
+		}
+		else if (std::fmod(t, 2.0) < 1.0)
+		{
+			t = t + (2.0 - std::fmod(t, 2.0)); // t = t - std::fmod(t, 2.0);
+			return  2 + 4 * t - 4;
+		}
+		else
+		{
+			t = t + (2.0 - std::fmod(t, 2.0));
+			return  2 + 4 * t;
+		}
+
+		
+	}
+	else
+	{
+		return 2 + 4 * t + 4;
+	}
 }
 
 

@@ -592,11 +592,6 @@
     <None Include="src\vendor\glm\gtx\vector_query.inl" />
     <None Include="src\vendor\glm\gtx\wrap.inl" />
   </ItemGroup>
-  <ItemGroup>
-    <Object Include="res\objects\cube.obj" />
-    <Object Include="res\objects\pickup.obj" />
-    <Object Include="res\objects\utah_teapot.obj" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

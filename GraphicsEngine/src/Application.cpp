@@ -24,6 +24,7 @@ void Application::Run()
     float lastTime = glfwGetTime();
     // Renderer::AddCube(0.05f, -0.25f, 0.3f, 0.0f);             // parameters dont matter yet!
     Renderer::LoadMesh();
+    Renderer::AddGrid();
 
     while (!glfwWindowShouldClose(m_window.GetWindow()))
     {
@@ -35,6 +36,7 @@ void Application::Run()
         OnUpdate(dt);
 
         Renderer::DrawTriangles();
+        Renderer::DrawGrid();
 
         glfwSwapBuffers(m_window.GetWindow());
         glfwPollEvents();
