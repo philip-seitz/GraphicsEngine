@@ -36,7 +36,7 @@ void Application::Run()
         OnUpdate(dt);
 
         Renderer::DrawTriangles();
-        Renderer::DrawGrid();
+        //Renderer::DrawGrid();
 
         glfwSwapBuffers(m_window.GetWindow());
         glfwPollEvents();
@@ -58,11 +58,10 @@ void Application::OnUpdate(const float& dt)
 {
     // caclulations etc
 	glClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, m_ClearColor.a);
-    Renderer::Calculate(dt);
+    Renderer::Calculate(dt, m_window);
 
 }
 
 void Application::OnRender()
 {
-
 }

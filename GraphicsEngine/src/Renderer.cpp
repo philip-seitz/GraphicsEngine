@@ -1,8 +1,10 @@
 #include "Renderer.h"
 #include <GL/glew.h>
 #include "Shader.h"
+#include "Camera.h"
 #include <iostream>
 #include "Util.h"
+
 
 // constants for vertices and textures
 const unsigned int max_vertices = 20000;
@@ -18,7 +20,7 @@ const unsigned int max_grid_lines = CalculateNumberOfLines(float(grid_size), flo
 const float yFOV = 30.0f;
 const float aspectRatio = 1080.0f / 720.0f;
 const float zNear = 1.5f;
-const float zFar = -2.5f;
+const float zFar = -100.0f;
 
 // Model Rotation and Translation 
 float angleX = 0.0f;
@@ -34,8 +36,7 @@ glm::vec3 lightDirection = { 0.0f, 0.0f, 1.0f };
 glm::vec4 brightColor = { 0.8f, 0.1f, 0.4f, 1.0f };
 glm::vec4 darkColor = { 0.8f, 0.1f, 0.4f, 0.4f };
 
-// should be in camera class later on
-glm::vec3 camera_position = { 0.0f, 0.0f, 0.0f };
+Camera camera;
 
 struct RendererData
 {
@@ -382,7 +383,7 @@ void Renderer::DrawGrid()
 	glDrawElements(GL_LINES, 2*sData.LineToRenderCount, GL_UNSIGNED_INT, nullptr);
 }
 
-void Renderer::Calculate(const float& dt)
+void Renderer::Calculate(const float& dt, Window& window)
 {
 	// Reset bc Calculate is contineously called while the app is running
 	sData.TriToRenderCount = 0;
@@ -408,14 +409,16 @@ void Renderer::Calculate(const float& dt)
 	else
 		angleZ = angleZ + angleScalerZ * dt;
 
-	translationZ = translationZ + 0.8 * dt;
+	translationZ = translationZ + 0.01 * dt;
+
+	camera.UpdatePosition(window, dt, zFar);
 
 	glm::mat4x4 combinedRotation(0);
 	glm::mat4x4 projPipeline(0);
-	combinedRotation = glm::rotate(glm::mat4(1.0f), angleX,
+	combinedRotation = glm::rotate(glm::mat4(1.0f), 0.3f,
 		glm::vec3(1.0, 0.0, 0.0)) * glm::rotate(glm::mat4(1.0f), 0.4f, glm::vec3(0.0, 1.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
 			0.0f, glm::vec3(0.0, 0.0, 1.0));
-	glm::mat4x4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -30.0f));
+	glm::mat4x4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
 	// apply the projection matrix to all vertices
 	for (int i = 0; i < sData.TriCount; i++)
@@ -442,9 +445,15 @@ void Renderer::Calculate(const float& dt)
 		glm::vec3 p1_t(p1_h);
 		glm::vec3 p2_t(p2_h);
 
+		// Camera View Transform (world to view space)
+		p0_h = camera.LookAtMatrix() * p0_h;
+		p1_h = camera.LookAtMatrix() * p1_h;
+		p2_h = camera.LookAtMatrix() * p2_h;
+		// no z-scaling (homogeneous) necessary
+		
 		glm::vec3 normal = glm::cross((p1_t - p0_t), (p2_t - p0_t));
 		normal = glm::normalize(normal);
-		float tmp = glm::dot(normal, (p0_t - camera_position)); 
+		float tmp = glm::dot(normal, glm::normalize(p0_t - camera.Position())); 
 
 		// Triangles are drawn if its normal is pointing towards the 'camera' (back face culling) 
 		// texas teapot does not have extra inside surface/inside normals -> not showing with backface culling
@@ -482,6 +491,9 @@ void Renderer::Calculate(const float& dt)
 
 		grid_a = translation * grid_a;
 		grid_b = translation * grid_b;
+
+		grid_a = camera.LookAtMatrix() * grid_a;
+		grid_b = camera.LookAtMatrix() * grid_b;
 
 		grid_a = sData.projectionMatrix * grid_a;
 		grid_b = sData.projectionMatrix * grid_b;

@@ -1,4 +1,5 @@
 #include <vector>
+#include "Window.h"
 #include <glm/glm.hpp>
 
 #define RED 1.0f, 0.0f, 0.0f, 1.0f
@@ -95,7 +96,7 @@ public:
 	static void AddGrid();
 	static void DrawGrid();
 
-	static void Calculate(const float& dt);
+	static void Calculate(const float& dt, Window& window);
 
 	static void Clear();
 
