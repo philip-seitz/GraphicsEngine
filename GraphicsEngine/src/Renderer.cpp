@@ -7,7 +7,7 @@
 
 
 // constants for vertices and textures
-const unsigned int max_vertices = 20000;
+const unsigned int max_vertices = 2000000;
 const unsigned int max_indices = max_vertices;
 const unsigned int max_texture_slots = 32;				// checken
 
@@ -15,12 +15,6 @@ const unsigned int max_texture_slots = 32;				// checken
 const unsigned int grid_size = 10.0f;
 const float grid_line_distance = 1.0f;
 const unsigned int max_grid_lines = CalculateNumberOfLines(float(grid_size), float(grid_line_distance)); 
-
-// constants for the camera maybe	(add to camera class or smth)
-const float yFOV = 30.0f;
-const float aspectRatio = 1080.0f / 720.0f;
-const float zNear = 1.5f;
-const float zFar = -100.0f;
 
 // Model Rotation and Translation 
 float angleX = 0.0f;
@@ -76,7 +70,6 @@ struct RendererData
 	LineIndices* GridLineIndicesPointer = nullptr;
 	LineIndices* GridLineToRenderIndicesPointer = nullptr;
 	
-	glm::mat4x4 projectionMatrix = glm::perspective(yFOV * 3.14f / 180.0f, aspectRatio, zNear, zFar);
 };
 
 
@@ -337,8 +330,6 @@ void Renderer::LoadMesh()
 		sData.TriIndicesPointer++;
 		sData.TriCount++;
 	}
-
-	std::cout << "hi";
 }
 
 void Renderer::DrawTriangles()										
@@ -411,7 +402,7 @@ void Renderer::Calculate(const float& dt, Window& window)
 
 	translationZ = translationZ + 0.01 * dt;
 
-	camera.UpdatePosition(window, dt, zFar);
+	camera.ManageInputs(window, dt);
 
 	glm::mat4x4 combinedRotation(0);
 	glm::mat4x4 projPipeline(0);
@@ -460,9 +451,9 @@ void Renderer::Calculate(const float& dt, Window& window)
 		if (tmp < 0.0f)
 		{
 			// Perspective Projection (World -> View Space)
-			p0_h = sData.projectionMatrix * p0_h;
-			p1_h = sData.projectionMatrix * p1_h;
-			p2_h = sData.projectionMatrix * p2_h;
+			p0_h = camera.ProjectionMatrix() * p0_h;
+			p1_h = camera.ProjectionMatrix() * p1_h;
+			p2_h = camera.ProjectionMatrix() * p2_h;
 
 			glm::vec3 p0_proj = { p0_h.x / p0_h.w, p0_h.y / p0_h.w, p0_h.z / p0_h.w };
 			glm::vec3 p1_proj = { p1_h.x / p1_h.w, p1_h.y / p1_h.w, p1_h.z / p1_h.w };
@@ -495,8 +486,8 @@ void Renderer::Calculate(const float& dt, Window& window)
 		grid_a = camera.LookAtMatrix() * grid_a;
 		grid_b = camera.LookAtMatrix() * grid_b;
 
-		grid_a = sData.projectionMatrix * grid_a;
-		grid_b = sData.projectionMatrix * grid_b;
+		grid_a = camera.ProjectionMatrix() * grid_a;
+		grid_b = camera.ProjectionMatrix() * grid_b;
 
 		glm::vec3 ga_proj = glm::vec3({ grid_a.x / grid_a.w, grid_a.y / grid_a.w, grid_a.z / grid_a.w });
 		glm::vec3 gb_proj = glm::vec3({ grid_b.x / grid_b.w, grid_b.y / grid_b.w, grid_b.z / grid_b.w });
