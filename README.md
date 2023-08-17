@@ -3,6 +3,11 @@ Graphics Engine using OpenGL and C++
 
 ### Current State Of The Project
 
+example:
+
+
+<img src="https://github.com/philip-seitz/GraphicsEngine/assets/93658810/10c45a73-42b7-4f07-a6ae-02af7363c2e9" width="540" height="360">
+
 currently implemented features like:
 - perspective (3D)
 - back face culling
@@ -11,5 +16,4 @@ currently implemented features like:
 - rendering certain types of .obj files
 - drawing grids of variable sizes 
 
-example:
-![grafik](https://github.com/philip-seitz/GraphicsEngine/assets/93658810/10c45a73-42b7-4f07-a6ae-02af7363c2e9)
+
