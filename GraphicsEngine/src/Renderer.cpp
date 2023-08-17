@@ -5,14 +5,13 @@
 #include <iostream>
 #include "Util.h"
 
-
 // constants for vertices and textures
-const unsigned int max_vertices = 2000000;
+const unsigned int max_vertices = 4000000;
 const unsigned int max_indices = max_vertices;
 const unsigned int max_texture_slots = 32;				// checken
 
 // constants for grid
-const unsigned int grid_size = 10.0f;
+const unsigned int grid_size = 100.0f;
 const float grid_line_distance = 1.0f;
 const unsigned int max_grid_lines = CalculateNumberOfLines(float(grid_size), float(grid_line_distance)); 
 
@@ -45,6 +44,9 @@ struct RendererData
 	unsigned int TriCount = 0;
 	unsigned int TriToRenderCount = 0;
 
+	// DEBUG
+	unsigned int TriClipCount = 0;
+
 	unsigned int LineCount = 0;
 	unsigned int LineToRenderCount = 0;
 
@@ -59,7 +61,6 @@ struct RendererData
 	TriangleIndices* TriToRenderIndices = nullptr;
 	TriangleIndices* TriIndicesPointer = nullptr;
 	TriangleIndices* TriToRenderIndicesPointer = nullptr;
-
 	Line* LineBuffer = nullptr;
 	Line* LineToRenderBuffer = nullptr;
 	Line* LineBufferPointer = nullptr;
@@ -69,7 +70,6 @@ struct RendererData
 	LineIndices* GridLineToRenderIndices = nullptr;
 	LineIndices* GridLineIndicesPointer = nullptr;
 	LineIndices* GridLineToRenderIndicesPointer = nullptr;
-	
 };
 
 
@@ -302,23 +302,22 @@ void Renderer::LoadMesh()
 	glm::vec4 darkCol = { 0.0f, 0.0f, 0.0f, 0.0f };
 	std::vector<glm::vec3> mesh;
 	std::vector< glm::highp_uvec3> indices;
-	ReadVertexData("res/objects/utah_teapot.obj", vert, ind);
+	ReadVertexData("res/objects/McLaren_Senna.obj", vert, ind);
 	// put the data into the triangle structures...
 	int vertexNumber = vert.size() / 3;
 	int triNumber = ind.size() / 3;
 
-
 	for (int i = 0; i < vertexNumber; i++)
 	{
 		glm::vec3 pos;
-		pos = { vert[0 + i * 3], vert[1 + i * 3], vert[2 + i * 3], };
+		pos = { vert[0 + i * 3], vert[1 + i * 3], vert[2 + i * 3] };
 		mesh.push_back(pos);
 	}
 
 	for (int i = 0; i < triNumber; i++)
 	{
 		glm::highp_uvec3 idx;
-		idx = { ind[0 + i * 3], ind[1 + i * 3], ind[2 + i * 3], };
+		idx = { ind[0 + i * 3], ind[1 + i * 3], ind[2 + i * 3] };
 		indices.push_back(idx);
 	}
 
@@ -328,6 +327,7 @@ void Renderer::LoadMesh()
 		*(sData.TriIndicesPointer) = { {indices[i][0], indices[i][1], indices[i][2]}};
 		sData.TriBufferPointer++;
 		sData.TriIndicesPointer++;
+		// std::cout << i << std::endl;
 		sData.TriCount++;
 	}
 }
@@ -341,7 +341,6 @@ void Renderer::DrawTriangles()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.ib);
 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sData.TriToRenderCount * sizeof(TriangleIndices), sData.TriToRenderIndices);
 
-	
 	// Enable wireframe drawing
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -385,6 +384,10 @@ void Renderer::Calculate(const float& dt, Window& window)
 	sData.LineToRenderBufferPointer = sData.LineToRenderBuffer;
 	sData.GridLineToRenderIndicesPointer = sData.GridLineToRenderIndices;
 
+	glm::mat4x4 model(0);
+	glm::mat4x4 view(0);
+	glm::mat4x4 perspective(0);
+
 	if ((angleX + angleScalerX * dt) >= 2.0f * 3.14f)
 		angleX = 0.0f;
 	else
@@ -405,9 +408,8 @@ void Renderer::Calculate(const float& dt, Window& window)
 	camera.ManageInputs(window, dt);
 
 	glm::mat4x4 combinedRotation(0);
-	glm::mat4x4 projPipeline(0);
-	combinedRotation = glm::rotate(glm::mat4(1.0f), 0.3f,
-		glm::vec3(1.0, 0.0, 0.0)) * glm::rotate(glm::mat4(1.0f), 0.4f, glm::vec3(0.0, 1.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
+	combinedRotation = glm::rotate(glm::mat4(1.0f), 0.0f,
+		glm::vec3(1.0, 0.0, 0.0)) * glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0.0, 1.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
 			0.0f, glm::vec3(0.0, 0.0, 1.0));
 	glm::mat4x4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 
@@ -436,12 +438,6 @@ void Renderer::Calculate(const float& dt, Window& window)
 		glm::vec3 p1_t(p1_h);
 		glm::vec3 p2_t(p2_h);
 
-		// Camera View Transform (world to view space)
-		p0_h = camera.LookAtMatrix() * p0_h;
-		p1_h = camera.LookAtMatrix() * p1_h;
-		p2_h = camera.LookAtMatrix() * p2_h;
-		// no z-scaling (homogeneous) necessary
-		
 		glm::vec3 normal = glm::cross((p1_t - p0_t), (p2_t - p0_t));
 		normal = glm::normalize(normal);
 		float tmp = glm::dot(normal, glm::normalize(p0_t - camera.Position())); 
@@ -450,18 +446,9 @@ void Renderer::Calculate(const float& dt, Window& window)
 		// texas teapot does not have extra inside surface/inside normals -> not showing with backface culling
 		if (tmp < 0.0f)
 		{
-			// Perspective Projection (World -> View Space)
-			p0_h = camera.ProjectionMatrix() * p0_h;
-			p1_h = camera.ProjectionMatrix() * p1_h;
-			p2_h = camera.ProjectionMatrix() * p2_h;
-
-			glm::vec3 p0_proj = { p0_h.x / p0_h.w, p0_h.y / p0_h.w, p0_h.z / p0_h.w };
-			glm::vec3 p1_proj = { p1_h.x / p1_h.w, p1_h.y / p1_h.w, p1_h.z / p1_h.w };
-			glm::vec3 p2_proj = { p2_h.x / p2_h.w, p2_h.y / p2_h.w, p2_h.z / p2_h.w };
-
-			*(sData.TriToRenderBufferPointer) = Triangle{ {p0_proj, c0 }, {p1_proj, c1}, {p2_proj, c2} };
+			*(sData.TriToRenderBufferPointer) = Triangle{ {p0_t, c0 }, {p1_t, c1}, {p2_t, c2} };
 			*(sData.TriToRenderIndicesPointer) = TriangleIndices{ {0 + 3 * (sData.TriToRenderCount), 1 + 3 * (sData.TriToRenderCount), 2 + 3 * (sData.TriToRenderCount)} };
-			
+
 			// Shading relative to light direction 
 			sData.TriToRenderBufferPointer->SetColor(GetColorShade(glm::dot(lightDirection, normal), glm::vec4{WHITE}));
 
@@ -483,26 +470,19 @@ void Renderer::Calculate(const float& dt, Window& window)
 		grid_a = translation * grid_a;
 		grid_b = translation * grid_b;
 
-		grid_a = camera.LookAtMatrix() * grid_a;
-		grid_b = camera.LookAtMatrix() * grid_b;
-
-		grid_a = camera.ProjectionMatrix() * grid_a;
-		grid_b = camera.ProjectionMatrix() * grid_b;
-
-		glm::vec3 ga_proj = glm::vec3({ grid_a.x / grid_a.w, grid_a.y / grid_a.w, grid_a.z / grid_a.w });
-		glm::vec3 gb_proj = glm::vec3({ grid_b.x / grid_b.w, grid_b.y / grid_b.w, grid_b.z / grid_b.w });
-
-		sData.LineToRenderBufferPointer->p0.position = ga_proj;
-		sData.LineToRenderBufferPointer->p1.position = gb_proj;
-		sData.LineToRenderBufferPointer->p0.color = { WHITE };
-		sData.LineToRenderBufferPointer->p1.color = { RED };
+		sData.LineToRenderBufferPointer->p0.position = grid_a;
+		sData.LineToRenderBufferPointer->p1.position = grid_b;
+		sData.LineToRenderBufferPointer->p0.color = { 0.3f, 0.3f, 0.3f, 1.0f };
+		sData.LineToRenderBufferPointer->p1.color = { 0.3f, 0.3f, 0.3f, 1.0f };
 		sData.GridLineToRenderIndicesPointer->indices = glm::highp_uvec2(2*i, 2*i + 1 );
 
 		sData.LineToRenderBufferPointer++;
 		sData.GridLineToRenderIndicesPointer++;
 		sData.LineToRenderCount++;
-	}
 
+		sData.shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
+		sData.shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
+	}
 }
 
 void Renderer::Clear()

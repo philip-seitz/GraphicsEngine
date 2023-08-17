@@ -12,7 +12,6 @@ Application::~Application()
 	
 }
 
-
 void Application::Run()
 {
     OnAttach();
@@ -36,13 +35,12 @@ void Application::Run()
         OnUpdate(dt);
 
         Renderer::DrawTriangles();
-        //Renderer::DrawGrid();
+        Renderer::DrawGrid();
 
         glfwSwapBuffers(m_window.GetWindow());
         glfwPollEvents();
     }
     Renderer::Shutdown();
-
 }
 
 void Application::OnAttach()
@@ -51,7 +49,6 @@ void Application::OnAttach()
 		std::exit(0);
 
 	Renderer::Init();
-
 }
 
 void Application::OnUpdate(const float& dt)
@@ -59,7 +56,6 @@ void Application::OnUpdate(const float& dt)
     // caclulations etc
 	glClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, m_ClearColor.a);
     Renderer::Calculate(dt, m_window);
-
 }
 
 void Application::OnRender()

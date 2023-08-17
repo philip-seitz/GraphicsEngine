@@ -3,11 +3,13 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/matrix_clip_space.hpp>
 
+float pi = 3.14159f;
+
 Camera::Camera():
-	m_position(0.0f, 0.0f, 19.0f),
+	m_position(-2.0f, 2.0f, 9.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
-	m_look_at(glm::lookAt(m_position, m_target, m_up)),
+	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
 	m_look_direction(0.0f, 0.0f, -1.0f),
 	m_camera_angle_yaw(0.0f),
 	m_camera_angle_pitch(0.0f),
@@ -15,12 +17,12 @@ Camera::Camera():
 	// settings
 	m_proj_3D(true),
 	// values for the perspective transform
-	m_yFOV(30.0f),
+	m_yFOV(45.0f),
 	m_zoom(1.0f),
 	m_aspectRatio(1080.0f/720.0f),
 	m_zNear(1.5f),
 	m_zFar(-100.0f),
-	m_perspective_proj(glm::perspective(m_yFOV * 3.14f / 180.0f, m_aspectRatio, m_zNear, m_zFar))
+	m_perspective_proj(glm::perspectiveRH(m_yFOV * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar))
 {
 }
 
@@ -28,7 +30,7 @@ Camera::Camera(bool& isPerspective):
 	m_position(0.0f, 0.0f, 19.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
-	m_look_at(glm::lookAt(m_position, m_target, m_up)),
+	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
 	m_look_direction(0.0f, 0.0f, -1.0f),
 	m_camera_angle_yaw(0.0f),
 	m_camera_angle_pitch(0.0f),
@@ -40,8 +42,8 @@ Camera::Camera(bool& isPerspective):
 	m_zoom(1.0f),
 	m_aspectRatio(1080.0f / 720.0f),
 	m_zNear(1.5f),
-	m_zFar(-100.0f),
-	m_perspective_proj(glm::perspective(m_yFOV * 3.14f / 180.0f, m_aspectRatio, m_zNear, m_zFar))
+	m_zFar(-10000.0f),
+	m_perspective_proj(glm::perspectiveRH(m_yFOV * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar))
 {
 }
 
@@ -61,7 +63,6 @@ glm::mat4x4 Camera::ProjectionMatrix()
 	if (m_proj_3D)
 	{
 		return m_perspective_proj;
-
 	}
 	else
 	{
@@ -73,7 +74,6 @@ const void Camera::ManageInputs(Window& window, const float& dt)
 {
 	UpdatePosition(window, dt);
 	Zoom(window, dt);
-
 }
 
 // update position
@@ -93,6 +93,7 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 
 		if (glfwGetKey(window.GetWindow(), GLFW_KEY_D) == GLFW_PRESS)
 			m_position += glm::normalize(glm::cross(m_look_direction, glm::vec3(0.0f, 1.0f, 0.0f))) * dt * m_movement_speed;
+
 		if (glfwGetKey(window.GetWindow(), GLFW_KEY_A) == GLFW_PRESS)
 			m_position -= glm::normalize(glm::cross(m_look_direction, glm::vec3(0.0f, 1.0f, 0.0f))) * dt * m_movement_speed;
 
@@ -122,16 +123,12 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 			m_camera_angle_pitch = fmod(m_camera_angle_pitch, 360.0f);
 		}
 
-		// first yaw rotation, then pitch of the direction vector
-			m_look_direction.x = glm::sin(m_camera_angle_yaw * 3.14f / 180.0f);;
-			m_look_direction.y = glm::sin(m_camera_angle_pitch * 3.14f / 180.0f);
-			m_look_direction.z = -glm::cos(m_camera_angle_yaw * 3.14f / 180.0f);
+		// first yaw rotation, then pitch of the direction vector (relevant for z-component)
+			m_look_direction.x = glm::sin(m_camera_angle_yaw * pi / 180.0f);
+			m_look_direction.y = glm::sin(m_camera_angle_pitch * pi / 180.0f);
+			m_look_direction.z = -glm::cos(m_camera_angle_yaw * pi / 180.0f) * glm::cos(m_camera_angle_pitch * pi / 180.0f);
 
-		// ***
-		// NOTE: for also implementing roll this would have to be more complicated. (FPS games mostly no roll)
-		// ***
-
-		// without this the updating target the camera will be locked on to the initial target 
+		// without this updating target the camera will be locked on to the initial target 
 		m_target = m_position + m_look_direction;
 	}
 
@@ -143,7 +140,7 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 	}
 
 	// update matrix
-	m_look_at = glm::lookAt(m_position, m_target, m_up);
+	m_look_at = glm::lookAtRH(m_position, m_target, m_up);
 
 	// additional outpuots for debugging 
 	if (time >= 2.0f)
@@ -157,7 +154,6 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 
 const void Camera::Zoom(Window& window, const float& dt)
 {
-
 	static float time_z = 0.0f;
 	if (glfwGetKey(window.GetWindow(), GLFW_KEY_P) == GLFW_PRESS)
 	{
@@ -181,7 +177,7 @@ const void Camera::Zoom(Window& window, const float& dt)
 
 	// update the corresponding projection matrix
 	if (m_proj_3D)
-		m_perspective_proj = glm::perspective((m_yFOV / m_zoom) * 3.14f / 180.0f, m_aspectRatio, m_zNear, m_zFar);
+		m_perspective_proj = glm::perspectiveRH((m_yFOV / m_zoom) * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar);
 	else
 	{
 		// orthographic (TODO)
@@ -191,6 +187,7 @@ const void Camera::Zoom(Window& window, const float& dt)
 	if (time_z >= 2.0f)
 	{
 		std::cout << "zoom: " << m_zoom << ", yFOV: " << (m_yFOV / m_zoom) << std::endl;
+		std::cout << "FPS: " << 1 / dt << std::endl;
 		time_z = 0.0f;
 	}
 	else

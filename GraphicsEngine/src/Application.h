@@ -12,11 +12,9 @@ public:
 	void OnUpdate(const float& dt);
 	void OnRender();
 
-
 public:
 	Window m_window;
 private:
 
 	glm::vec4 m_ClearColor;
-	
 };

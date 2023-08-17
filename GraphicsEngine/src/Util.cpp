@@ -121,7 +121,6 @@ void ReadVertexData(const std::string& filepath, std::vector <float>&vert, std::
 		else
 		{
 		}
-		
 	}
 	// converts strings/char arrays to numbers
 	StringToFloat(vertex_vectors, vert);
@@ -154,7 +153,6 @@ glm::vec4 GetColorShade(float dot, glm::vec4 baseColor)
 	}
 
 	return outputColor;
-
 }
 
 int CalculateNumberOfLines(float size, float distance)
@@ -178,7 +176,6 @@ int CalculateNumberOfLines(float size, float distance)
 			return  2 + 4 * t;
 		}
 
-		
 	}
 	else
 	{

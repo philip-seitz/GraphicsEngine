@@ -35,9 +35,7 @@ struct Triangle
 		p0.color = color;
 		p1.color = color;
 		p2.color = color;
-
 	}
-
 };
 
 struct TriangleIndices
@@ -52,7 +50,6 @@ struct Line
 	{
 		p0.color = { r, g, b, a };
 		p1.color = { r, g, b, a };
-
 	}
 
 	void SetColor(glm::vec4 color)
@@ -72,7 +69,6 @@ struct Line
 struct LineIndices
 {
 	glm::highp_uvec2 indices;
-
 };
 
 class Renderer
@@ -82,7 +78,6 @@ public:
 
 	static void Init();
 	static void Shutdown();
-
 
 	static void BeginBatch();
 	static void EndBatch();
@@ -102,5 +97,4 @@ public:
 
 private:
 	// stats o.ä. zum Debuggen
-
 };

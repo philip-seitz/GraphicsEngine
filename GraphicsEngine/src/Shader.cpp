@@ -66,7 +66,6 @@ unsigned Shader::CompileShader(unsigned int type, const std::string& source)
         return 0;
     }
     return id;
-
 }
 
 ShaderProgramSource Shader::ParseShader(const std::string& filepath)

@@ -4,14 +4,15 @@ layout(location = 0) in vec4 a_Position;
 layout(location = 1) in vec4 a_Color;
 out vec4 v_Color;
 
-uniform mat4 u_MVP;
+uniform mat4 u_Projection;
+uniform mat4 u_View;
 void main()
 {
-	gl_Position = a_Position;
+	gl_Position = u_Projection*u_View*a_Position;
 	v_Color = a_Color;
 
 	// Disable perspective division (homogeneous cords to position)
-	gl_Position /= gl_Position.w;
+	// gl_Position /= gl_Position.w;
 }
 
 #shader fragment
