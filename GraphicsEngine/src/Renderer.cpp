@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include <GL/glew.h>
 #include "Shader.h"
+#include "Texture.h"
 #include "Camera.h"
 #include <iostream>
 #include "Util.h"
@@ -41,6 +42,10 @@ struct RendererData
 	unsigned int g_vb = 0;
 	unsigned int g_ib = 0;
 
+	Shader* shader = nullptr;
+	Texture* texture = nullptr;
+
+
 	unsigned int TriCount = 0;
 	unsigned int TriToRenderCount = 0;
 
@@ -49,8 +54,6 @@ struct RendererData
 
 	unsigned int LineCount = 0;
 	unsigned int LineToRenderCount = 0;
-
-	Shader* shader = nullptr;
 
 	Triangle* TriBuffer = nullptr;
 	Triangle* TriToRenderBuffer = nullptr;
@@ -72,15 +75,16 @@ struct RendererData
 	LineIndices* GridLineToRenderIndicesPointer = nullptr;
 };
 
-
 static RendererData sData;
 
 void Renderer::Init()
 {
-	sData.shader = new Shader("res/shader/vert_frag.shader");
+	sData.shader = new Shader("res/shader/vert_frag.glsl");
 	glUseProgram(sData.shader->GetRendererID());
-	sData.shader->SetUniform4f("u_Color", 1.0f, 0.2f, 0.1f, 1.0f);
-	std::cout << max_grid_lines << std::endl;
+	
+	sData.texture = new Texture("res/textures/mc_stone.png");
+	sData.texture->Bind();
+
 	// Structures for all triangles
 	sData.TriBuffer = new Triangle[max_vertices / 3];
 	sData.TriIndices = new TriangleIndices[max_vertices];
@@ -123,6 +127,9 @@ void Renderer::Init()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, color));
 
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, texture_cords));
+
 	// setup for grid lines
 	glCreateVertexArrays(1, &sData.g_va);
 	glBindVertexArray(sData.g_va);
@@ -149,14 +156,20 @@ void Renderer::Shutdown()
 	delete[] sData.TriBuffer;
 	delete[] sData.TriIndices;
 	delete[] sData.TriToRenderBuffer;
-	delete[] sData.LineBuffer;
+	delete[] sData.TriToRenderIndices;
+
+
+	delete[] sData.LineBuffer; 
 	delete[] sData.GridLineIndices;
 	delete[] sData.LineToRenderBuffer;
+	delete[] sData.GridLineToRenderIndices;
 
 	glDeleteVertexArrays(1, &sData.vb);
 
 	glDeleteProgram(sData.shader->GetRendererID());
 	delete sData.shader;
+
+	delete sData.texture;
 }
 
 void Renderer::BeginBatch()
@@ -261,7 +274,7 @@ void Renderer::AddCube(const float& x, const float& y, const float& z, const flo
 	std::vector<Triangle> mesh;
 
 	//// NORTH (good)
-	mesh.push_back({ {{0.25f, -0.25f, -0.25f}}, {{-0.25f, -0.25f, -0.25f}}, {{-0.25f, 0.25f, -0.25f}} });
+	mesh.push_back({ {{0.25f, -0.25f, -0.25f}}, { {-0.25f, -0.25f, -0.25f}}, {{-0.25f, 0.25f, -0.25f}} });
 	mesh.push_back({ {{0.25f, -0.25f, -0.25f}}, {{  -0.25f, 0.25f, -0.25f}}, {{0.25f, 0.25f, -0.25f}} });
 
 	// SOUTH (good)
@@ -295,6 +308,46 @@ void Renderer::AddCube(const float& x, const float& y, const float& z, const flo
 	}
 }
 
+void Renderer::AddCubeTexture()
+{
+	std::vector<Triangle> mesh;
+
+	//// NORTH (good)
+	mesh.push_back({ {{0.25f, -0.25f, -0.25f}, {WHITE}, {1.0f, 0.0f}}, { {-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{-0.25f, 0.25f, -0.25f}, {WHITE}, {0.0f, 1.0f}} });
+	mesh.push_back({ {{0.25f, -0.25f, -0.25f}, {WHITE}, {1.0f, 0.0f}}, {{  -0.25f, 0.25f, -0.25f}, {WHITE}, {0.0f, 1.0f}}, {{0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}} });
+
+	// SOUTH (good)
+	mesh.push_back({ {{-0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, -0.25f, 0.25f}, {WHITE}, {1.0f, 0.0f}}, {{0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}} });
+	mesh.push_back({ {{-0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}}, {{-0.25f, 0.25f, 0.25f}, {WHITE}, {0.0f, 1.0f}} });
+
+	// EAST (good)
+	mesh.push_back({ {{0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, -0.25f, -0.25f}, {WHITE}, {1.0f, 0.0f}}, {{0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}} });
+	mesh.push_back({ {{0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}}, {{0.25f, 0.25f, 0.25f}, {WHITE}, {0.0f, 1.0f}} });
+
+	// WEST (good)
+	mesh.push_back({ {{-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  -0.25f, -0.25f, 0.25f}, {WHITE}, {1.0f, 0.0f}}, {{-0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}} });
+	mesh.push_back({ {{-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  -0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}}, {{-0.25f, 0.25f, -0.25f}, {WHITE}, {0.0f, 1.0f}} });
+
+	// BOTTOM 
+	mesh.push_back({ {{-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, -0.25f, -0.25f}, {WHITE}, {1.0f, 0.0f}}, {{0.25f, -0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}} });
+	mesh.push_back({ {{-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, -0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}}, {{-0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 1.0f}} });
+
+	// TOP 
+	mesh.push_back({ {{-0.25f, 0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 0.0f}}, {{0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}} });
+	mesh.push_back({ {{-0.25f, 0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}}, {{-0.25f, 0.25f, -0.25f}, {WHITE}, {0.0f, 1.0f}} });
+
+
+	for (unsigned int i = 0; i < mesh.size(); i++)
+	{
+		*(sData.TriBufferPointer) = mesh[i];
+		*(sData.TriIndicesPointer) = { {0 + 3 * (sData.TriCount), 1 + 3 * (sData.TriCount), 2 + 3 * (sData.TriCount)} };
+		sData.TriBufferPointer++;
+		sData.TriIndicesPointer++;
+		sData.TriCount++;
+	}
+}
+
+
 void Renderer::LoadMesh()
 {
 	std::vector <float>vert;
@@ -302,7 +355,7 @@ void Renderer::LoadMesh()
 	glm::vec4 darkCol = { 0.0f, 0.0f, 0.0f, 0.0f };
 	std::vector<glm::vec3> mesh;
 	std::vector< glm::highp_uvec3> indices;
-	ReadVertexData("res/objects/McLaren_Senna.obj", vert, ind);
+	ReadVertexData("res/objects/mclaren_senna_minmesh.obj", vert, ind);
 	// put the data into the triangle structures...
 	int vertexNumber = vert.size() / 3;
 	int triNumber = ind.size() / 3;
@@ -332,7 +385,7 @@ void Renderer::LoadMesh()
 	}
 }
 
-void Renderer::DrawTriangles()										
+void Renderer::DrawTriangles()								
 {
 	glBindVertexArray(sData.va);
 	glBindBuffer(GL_ARRAY_BUFFER, sData.vb);
@@ -408,7 +461,7 @@ void Renderer::Calculate(const float& dt, Window& window)
 	camera.ManageInputs(window, dt);
 
 	glm::mat4x4 combinedRotation(0);
-	combinedRotation = glm::rotate(glm::mat4(1.0f), 0.0f,
+	combinedRotation = glm::rotate(glm::mat4(1.0f), 0.0f, // 180.0f*3.14f*180.0f, (d2 map rotation)
 		glm::vec3(1.0, 0.0, 0.0)) * glm::rotate(glm::mat4(1.0f), 0.0f, glm::vec3(0.0, 1.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
 			0.0f, glm::vec3(0.0, 0.0, 1.0));
 	glm::mat4x4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -423,6 +476,10 @@ void Renderer::Calculate(const float& dt, Window& window)
 		glm::vec4 c0 = sData.TriBuffer[i].p0.color;
 		glm::vec4 c1 = sData.TriBuffer[i].p1.color;
 		glm::vec4 c2 = sData.TriBuffer[i].p2.color;
+
+		glm::vec2 t0 = sData.TriBuffer[i].p0.texture_cords;
+		glm::vec2 t1 = sData.TriBuffer[i].p1.texture_cords;
+		glm::vec2 t2 = sData.TriBuffer[i].p2.texture_cords;
 
 		// Rotation
 		glm::vec4 p0_h = combinedRotation * glm::vec4(p0, 1.0f);
@@ -446,7 +503,7 @@ void Renderer::Calculate(const float& dt, Window& window)
 		// texas teapot does not have extra inside surface/inside normals -> not showing with backface culling
 		if (tmp < 0.0f)
 		{
-			*(sData.TriToRenderBufferPointer) = Triangle{ {p0_t, c0 }, {p1_t, c1}, {p2_t, c2} };
+			*(sData.TriToRenderBufferPointer) = Triangle{ {p0_t, c0, t0 }, {p1_t, c1, t1}, {p2_t, c2, t2} };
 			*(sData.TriToRenderIndicesPointer) = TriangleIndices{ {0 + 3 * (sData.TriToRenderCount), 1 + 3 * (sData.TriToRenderCount), 2 + 3 * (sData.TriToRenderCount)} };
 
 			// Shading relative to light direction 
@@ -482,6 +539,8 @@ void Renderer::Calculate(const float& dt, Window& window)
 
 		sData.shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 		sData.shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
+
+		sData.shader->SetUniform1i("u_Tex_Index", 0);
 	}
 }
 

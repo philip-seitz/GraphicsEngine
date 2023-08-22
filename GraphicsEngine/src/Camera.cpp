@@ -6,7 +6,7 @@
 float pi = 3.14159f;
 
 Camera::Camera():
-	m_position(-2.0f, 2.0f, 9.0f),
+	m_position(0.0f, 0.0f, 15.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
 	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
@@ -21,7 +21,7 @@ Camera::Camera():
 	m_zoom(1.0f),
 	m_aspectRatio(1080.0f/720.0f),
 	m_zNear(1.5f),
-	m_zFar(-100.0f),
+	m_zFar(-10000.0f),
 	m_perspective_proj(glm::perspectiveRH(m_yFOV * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar))
 {
 }

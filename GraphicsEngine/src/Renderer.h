@@ -16,6 +16,7 @@ struct Vertex
 {
 	glm::vec3 position;
 	glm::vec4 color;
+	glm::vec2 texture_cords;
 };
 
 struct Triangle
@@ -86,6 +87,7 @@ public:
 	static void AddTriangle(const float& x, const float& y, const float& size);						// point bottom left (in 2D)
 	static void AddQuad(const float& x, const float& y, const float& size);							// point bottom left (in 2D)
 	static void AddCube(const float& x, const float& y, const float& z, const float& size);			// point front, bottom left (in 3D)
+	static void AddCubeTexture();
 	static void LoadMesh();																			// load gemoetry from obj. file
 	static void DrawTriangles();
 	static void AddGrid();
