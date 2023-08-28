@@ -2,7 +2,7 @@
 #include "Renderer.h"
 
 Application::Application(const int& width, const int& height, const char* title)
-	:m_window(width, height, title), m_ClearColor(0.1f, 0.1f, 0.1f, 1.0f)
+	:m_window(width, height, title), m_ClearColor(0.1f, 0.1f, 0.1f, 0.5f)
 {
 	
 }
@@ -21,9 +21,9 @@ void Application::Run()
     // Renderer::AddTriangle(0.05f, 0.25f, 0.3f);
 
     float lastTime = glfwGetTime();
-    Renderer::AddCubeTexture();
+    // Renderer::AddCubeTexture();
     // Renderer::AddCube(0.05f, -0.25f, 0.3f, 0.0f);             // parameters dont matter yet!
-    // Renderer::LoadMesh();
+    Renderer::LoadMesh();
     Renderer::AddGrid();
 
     while (!glfwWindowShouldClose(m_window.GetWindow()))
@@ -35,10 +35,9 @@ void Application::Run()
 
         OnUpdate(dt);
 
-
+        Renderer::DrawGrid();
         Renderer::DrawTriangles();
-        // Renderer::DrawGrid();
-
+        
         glfwSwapBuffers(m_window.GetWindow());
         glfwPollEvents();
     }

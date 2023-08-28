@@ -12,7 +12,7 @@ const unsigned int max_indices = max_vertices;
 const unsigned int max_texture_slots = 32;				// checken
 
 // constants for grid
-const unsigned int grid_size = 100.0f;
+const unsigned int grid_size = 1000.0f;
 const float grid_line_distance = 1.0f;
 const unsigned int max_grid_lines = CalculateNumberOfLines(float(grid_size), float(grid_line_distance)); 
 
@@ -82,7 +82,7 @@ void Renderer::Init()
 	sData.shader = new Shader("res/shader/vert_frag.glsl");
 	glUseProgram(sData.shader->GetRendererID());
 	
-	sData.texture = new Texture("res/textures/mc_stone.png");
+	sData.texture = new Texture("res/textures/cp2077.png");
 	sData.texture->Bind();
 
 	// Structures for all triangles
@@ -198,8 +198,17 @@ void Renderer::AddGrid()
 	int limit = max_grid_lines - 2;		// minus inner x and z line plus outer lines
 	for (int i = 0; i < limit; i++)
 	{
+		sData.LineBufferPointer->p0.color = { GREY };
+		sData.LineBufferPointer->p1.color = { GREY };
+
+
 		if (i < limit * 1/4)
 		{
+			if (i == 0)
+			{
+				sData.LineBufferPointer->p0.color = { BLUE };
+				sData.LineBufferPointer->p1.color = { BLUE };
+			}
 			sData.LineBufferPointer->p0.position = z_line.p0.position + interval_x * float(i);
 			sData.LineBufferPointer->p1.position = z_line.p1.position + interval_x * float(i);
 		}
@@ -213,6 +222,11 @@ void Renderer::AddGrid()
 
 		else if (i < limit * 3/4)
 		{
+			if (k == 0)
+			{
+				sData.LineBufferPointer->p0.color = { RED };
+				sData.LineBufferPointer->p1.color = { RED };
+			}
 			sData.LineBufferPointer->p0.position = x_line.p0.position + interval_z * float(k);
 			sData.LineBufferPointer->p1.position = x_line.p1.position + interval_z * float(k);
 			k++;
@@ -347,7 +361,6 @@ void Renderer::AddCubeTexture()
 	}
 }
 
-
 void Renderer::LoadMesh()
 {
 	std::vector <float>vert;
@@ -355,7 +368,7 @@ void Renderer::LoadMesh()
 	glm::vec4 darkCol = { 0.0f, 0.0f, 0.0f, 0.0f };
 	std::vector<glm::vec3> mesh;
 	std::vector< glm::highp_uvec3> indices;
-	ReadVertexData("res/objects/mclaren_senna_minmesh.obj", vert, ind);
+	ReadVertexData("res/objects/utah_teapot.obj", vert, ind);
 	// put the data into the triangle structures...
 	int vertexNumber = vert.size() / 3;
 	int triNumber = ind.size() / 3;
@@ -407,6 +420,9 @@ void Renderer::DrawTriangles()
 	// glEnable(GL_POINT_SMOOTH);
 	// glPointSize(10.0f);
 
+	// enable textures [0 -> no; 1 -> yes]
+	sData.shader->SetUniform1i("u_Use_Texture", 0);
+
 	// Draw the triangles' outlines
 	glDrawElements(GL_TRIANGLES, 3 * sData.TriToRenderCount, GL_UNSIGNED_INT, nullptr);
 
@@ -422,6 +438,17 @@ void Renderer::DrawGrid()
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.g_ib);
 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sData.LineToRenderCount * sizeof(LineIndices), sData.GridLineToRenderIndices);
+
+
+	// Anti-Aliasing
+	glEnable(GL_LINE_SMOOTH);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_DEPTH_TEST);
+	glLineWidth(1.0f);
+
+	// enable textures [0 -> no; 1 -> yes]
+	sData.shader->SetUniform1i("u_Use_Texture", 0);
 
 	glDrawElements(GL_LINES, 2*sData.LineToRenderCount, GL_UNSIGNED_INT, nullptr);
 }
@@ -529,19 +556,21 @@ void Renderer::Calculate(const float& dt, Window& window)
 
 		sData.LineToRenderBufferPointer->p0.position = grid_a;
 		sData.LineToRenderBufferPointer->p1.position = grid_b;
-		sData.LineToRenderBufferPointer->p0.color = { 0.3f, 0.3f, 0.3f, 1.0f };
-		sData.LineToRenderBufferPointer->p1.color = { 0.3f, 0.3f, 0.3f, 1.0f };
+
+		sData.LineToRenderBufferPointer->p0.color = sData.LineBuffer[i].p0.color;
+		sData.LineToRenderBufferPointer->p1.color = sData.LineBuffer[i].p1.color;
+		// sData.LineToRenderBufferPointer->p0.color = { 0.3f, 0.3f, 0.3f, 1.0f };
+		// sData.LineToRenderBufferPointer->p1.color = { 0.3f, 0.3f, 0.3f, 1.0f };
 		sData.GridLineToRenderIndicesPointer->indices = glm::highp_uvec2(2*i, 2*i + 1 );
 
 		sData.LineToRenderBufferPointer++;
 		sData.GridLineToRenderIndicesPointer++;
 		sData.LineToRenderCount++;
-
-		sData.shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
-		sData.shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
-
-		sData.shader->SetUniform1i("u_Tex_Index", 0);
 	}
+
+	sData.shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
+	sData.shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
+	sData.shader->SetUniform1i("u_Tex_Index", 0);
 }
 
 void Renderer::Clear()

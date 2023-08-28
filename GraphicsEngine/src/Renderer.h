@@ -2,15 +2,16 @@
 #include "Window.h"
 #include <glm/glm.hpp>
 
-#define RED 1.0f, 0.0f, 0.0f, 1.0f
+#define RED 0.8f, 0.3f, 0.3f, 1.0f
 #define GREEN 0.0f, 1.0f, 0.0f, 1.0f
-#define BLUE 0.0f, 0.0f, 1.0f, 1.0f
+#define BLUE 0.3f, 0.3f, 0.7f, 1.0f
 #define PURPLE 0.6f, 0.0f, 0.8f, 1.0f
 #define ORANGE 0.9f, 0.3f, 0.3f, 1.0f
 #define B_BLUE 0.0f, 0.5f, 0.9f, 1.0f
 #define B_BLUE_SHADE 0.0f, 0.3f, 0.7f, 1.0f
 #define B_BLUE_DARK 0.0f, 0.1f, 0.5f, 1.0f
 #define WHITE 1.0f, 1.0f, 1.0f, 1.0f
+#define GREY 0.3f, 0.3f, 0.3f, 0.1f 
 
 struct Vertex
 {
