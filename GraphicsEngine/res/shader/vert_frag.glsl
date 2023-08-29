@@ -29,12 +29,11 @@ in vec4 v_Color;
 in vec2 v_TexCoord;
 in vec4 v_EyeSpacePosition;
 
-
 // fog parameters
-vec4 fogColor = vec4( 0.1f, 0.1f, 0.1f, 0.8f );
+vec4 fogColor = vec4( 0.1f, 0.1f, 0.1f, 1.0f );
 float linearStart = 15.0f;
 float linearEnd = 60.0f;
-float density = 0.1f;
+float density = 0.05f;
 bool fogEnabled = true;
 float fogFactor = 1.0f;
 
@@ -58,7 +57,13 @@ void main()
 		float fogCoordinate = abs(v_EyeSpacePosition.z / v_EyeSpacePosition.w);
 
 		// linear fog
-		fogFactor = (linearEnd - fogCoordinate) / (linearEnd - linearStart);
+		// fogFactor = (linearEnd - fogCoordinate) / (linearEnd - linearStart);
+
+		// exponential fog
+		// fogFactor = exp(-density * fogCoordinate);
+
+		// exponential squared fog
+		fogFactor = exp(-pow(density * fogCoordinate, 2.0));
 
 		fogFactor = 1 - clamp(fogFactor, 0.0, 1.0);
 		color = mix(color, fogColor, fogFactor);

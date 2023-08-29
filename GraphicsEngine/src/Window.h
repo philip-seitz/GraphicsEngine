@@ -11,9 +11,12 @@ public:
 	{
 		if (!glfwInit())
 			m_AllRunning = false;
-		else
+		else 
+		{
+			glfwWindowHint(GLFW_SAMPLES, 4);		// for multi sampling AA
 			m_InstWindow = glfwCreateWindow(width, height, title, NULL, NULL);
 			glViewport(0, 0, width, height);
+		}
 	}
 	~Window()
 	{

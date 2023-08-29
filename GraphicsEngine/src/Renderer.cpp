@@ -368,7 +368,7 @@ void Renderer::LoadMesh()
 	glm::vec4 darkCol = { 0.0f, 0.0f, 0.0f, 0.0f };
 	std::vector<glm::vec3> mesh;
 	std::vector< glm::highp_uvec3> indices;
-	ReadVertexData("res/objects/utah_teapot.obj", vert, ind);
+	ReadVertexData("res/objects/McLaren_Senna.obj", vert, ind);
 	// put the data into the triangle structures...
 	int vertexNumber = vert.size() / 3;
 	int triNumber = ind.size() / 3;
@@ -439,9 +439,7 @@ void Renderer::DrawGrid()
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.g_ib);
 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sData.LineToRenderCount * sizeof(LineIndices), sData.GridLineToRenderIndices);
 
-
-	// Anti-Aliasing
-	glEnable(GL_LINE_SMOOTH);
+	// improve appearence of the grid (anti z-fighting and thinner lines)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_DEPTH_TEST);
