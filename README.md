@@ -6,7 +6,8 @@ Graphics Engine using OpenGL and C++
 example:
 
 
-<img src="https://github.com/philip-seitz/GraphicsEngine/assets/93658810/10c45a73-42b7-4f07-a6ae-02af7363c2e9" width="540" height="360">
+<img src="https://github.com/philip-seitz/GraphicsEngine/assets/93658810/031b790b-2d82-44b4-ab9a-9e6b477b682c" width="540" height="360">
+
 
 currently implemented features like:
 - perspective (3D)
@@ -14,6 +15,13 @@ currently implemented features like:
 - camera with movement (lookAT)
 - simple form of direct lighting
 - rendering certain types of .obj files
-- drawing grids of variable sizes 
+- drawing grids of variable sizes
+- colored x and y grid lines
+- different types of fog (exponential squared in this example)
+- Mult Sample Anti Aliasing (MSAA 4x) for models and grid lines
 
+## Time Lapse
 
+older versions:
+
+<img src="https://github.com/philip-seitz/GraphicsEngine/assets/93658810/10c45a73-42b7-4f07-a6ae-02af7363c2e9" width="540" height="360">
