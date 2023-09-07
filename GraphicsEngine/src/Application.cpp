@@ -4,7 +4,7 @@
 Application::Application(const int& width, const int& height, const char* title)
 	:m_window(width, height, title), m_ClearColor(0.1f, 0.1f, 0.1f, 0.5f)
 {
-	
+
 }
 
 Application::~Application()

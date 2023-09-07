@@ -13,9 +13,18 @@ public:
 			m_AllRunning = false;
 		else 
 		{
+			int scale = 1;
+			int w = width;
+			int h = height;
+			const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+			if (mode->width > 1920)
+				scale = 2;
+
+			w *= scale;
+			h *= scale;
 			glfwWindowHint(GLFW_SAMPLES, 4);		// for multi sampling AA
-			m_InstWindow = glfwCreateWindow(width, height, title, NULL, NULL);
-			glViewport(0, 0, width, height);
+			m_InstWindow = glfwCreateWindow(w, h, title, NULL, NULL);
+			glViewport(0, 0, w, h);
 		}
 	}
 	~Window()
