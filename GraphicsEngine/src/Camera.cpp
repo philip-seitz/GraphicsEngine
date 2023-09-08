@@ -52,6 +52,11 @@ glm::vec3 Camera::Position()
 	return m_position;
 }
 
+glm::vec3 Camera::LookDirection()
+{
+	return m_look_direction;
+}
+
 glm::mat4x4 Camera::LookAtMatrix()
 {
 	return m_look_at;

@@ -88,7 +88,7 @@ public:
 	static void AddTriangle(const float& x, const float& y, const float& size);						// point bottom left (in 2D)
 	static void AddQuad(const float& x, const float& y, const float& size);							// point bottom left (in 2D)
 	static void AddCube(const float& x, const float& y, const float& z, const float& size);			// point front, bottom left (in 3D)
-	static void AddCubeTexture();
+	static void AddCubeTexture(const glm::vec3& center, const float& side);
 	static void LoadMesh();																			// load gemoetry from obj. file
 	static void DrawTriangles();
 	static void AddGrid();

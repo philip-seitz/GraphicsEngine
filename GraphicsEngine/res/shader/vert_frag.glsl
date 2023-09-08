@@ -75,5 +75,8 @@ void main()
 		o_Color = texColor*color;
 	}
 
-	o_Color = color;
+	else
+	{
+		o_Color = color;
+	}
 }

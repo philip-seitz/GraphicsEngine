@@ -322,33 +322,68 @@ void Renderer::AddCube(const float& x, const float& y, const float& z, const flo
 	}
 }
 
-void Renderer::AddCubeTexture()
+void Renderer::AddCubeTexture(const glm::vec3& center, const float& side)
 {
 	std::vector<Triangle> mesh;
 
-	//// NORTH (good)
-	mesh.push_back({ {{0.25f, -0.25f, -0.25f}, {WHITE}, {1.0f, 0.0f}}, { {-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{-0.25f, 0.25f, -0.25f}, {WHITE}, {0.0f, 1.0f}} });
-	mesh.push_back({ {{0.25f, -0.25f, -0.25f}, {WHITE}, {1.0f, 0.0f}}, {{  -0.25f, 0.25f, -0.25f}, {WHITE}, {0.0f, 1.0f}}, {{0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}} });
+	glm::vec3 front_center = center + glm::vec3(0.0f, 0.0f, side/2.0f);
+	glm::vec3 back_center = center - glm::vec3(0.0f, 0.0f, side / 2.0f);
+	glm::vec3 right_center = center + glm::vec3(side / 2.0f, 0.0f, 0.0f);
+	glm::vec3 left_center = center - glm::vec3(side / 2.0f, 0.0f, 0.0f);
+	glm::vec3 top_center = center + glm::vec3(0.0f, side / 2.0f, 0.0f);
+	glm::vec3 bottom_center = center - glm::vec3(0.0f, side / 2.0f, 0.0f);
 
-	// SOUTH (good)
-	mesh.push_back({ {{-0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, -0.25f, 0.25f}, {WHITE}, {1.0f, 0.0f}}, {{0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}} });
-	mesh.push_back({ {{-0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}}, {{-0.25f, 0.25f, 0.25f}, {WHITE}, {0.0f, 1.0f}} });
 
-	// EAST (good)
-	mesh.push_back({ {{0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, -0.25f, -0.25f}, {WHITE}, {1.0f, 0.0f}}, {{0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}} });
-	mesh.push_back({ {{0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}}, {{0.25f, 0.25f, 0.25f}, {WHITE}, {0.0f, 1.0f}} });
+	// NORTH (back)
+	mesh.push_back({{back_center + glm::vec3(side/2.0f, -side/2.0f, 0.0f),		{WHITE}, {1.0f, 0.0f}},
+					{back_center + glm::vec3(-side / 2.0f, -side / 2.0f, 0.0f), {WHITE}, {0.0f, 0.0f}},
+					{back_center + glm::vec3(-side / 2.0f, side / 2.0f, 0.0f),	{WHITE}, {0.0f, 1.0f}}});
 
-	// WEST (good)
-	mesh.push_back({ {{-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  -0.25f, -0.25f, 0.25f}, {WHITE}, {1.0f, 0.0f}}, {{-0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}} });
-	mesh.push_back({ {{-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  -0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}}, {{-0.25f, 0.25f, -0.25f}, {WHITE}, {0.0f, 1.0f}} });
+	mesh.push_back({{back_center + glm::vec3(side / 2.0f, -side / 2.0f, 0.0f),	{WHITE}, {1.0f, 0.0f}}, 
+					{back_center + glm::vec3(-side / 2.0f, side / 2.0f, 0.0f),	{WHITE}, {0.0f, 1.0f}}, 
+					{back_center + glm::vec3(side / 2.0f,  side / 2.0f, 0.0f),	{WHITE}, {1.0f, 1.0f}} });
+
+	// SOUTH (front)
+	mesh.push_back({{front_center + glm::vec3(-side / 2.0f, -side / 2.0f, 0.0f),	{WHITE}, {0.0f, 0.0f}}, 
+					{front_center + glm::vec3(side / 2.0f, -side / 2.0f, 0.0f),		{WHITE}, {1.0f, 0.0f}},
+					{front_center + glm::vec3(side / 2.0f, side / 2.0f, 0.0f),		{WHITE}, {1.0f, 1.0f}} });
+
+	mesh.push_back({{front_center + glm::vec3(-side / 2.0f, -side / 2.0f, 0.0f),	{WHITE}, {0.0f, 0.0f}}, 
+					{front_center + glm::vec3(side / 2.0f, side / 2.0f, 0.0f),		{WHITE}, {1.0f, 1.0f}}, 
+					{front_center + glm::vec3(-side / 2.0f, side / 2.0f, 0.0f),		{WHITE}, {0.0f, 1.0f}} });
+
+	// EAST (right)
+	mesh.push_back({{right_center + glm::vec3(0.0f, -side / 2.0f, side / 2.0f), {WHITE}, {0.0f, 0.0f}}, 
+					{right_center + glm::vec3(0.0f, -side / 2.0f, -side / 2.0f), {WHITE}, {1.0f, 0.0f}}, 
+					{right_center + glm::vec3(0.0f, side / 2.0f, -side / 2.0f), {WHITE}, {1.0f, 1.0f}} });
+
+	mesh.push_back({{right_center + glm::vec3(0.0f, -side / 2.0f, side / 2.0f), {WHITE}, {0.0f, 0.0f}}, 
+					{right_center + glm::vec3(0.0f, side / 2.0f, -side / 2.0f), {WHITE}, {1.0f, 1.0f}}, 
+					{right_center + glm::vec3(0.0f, side / 2.0f, side / 2.0f), {WHITE}, {0.0f, 1.0f}} });
+
+	// WEST (left)
+	mesh.push_back({{left_center + glm::vec3(0.0f, -side / 2.0f, -side / 2.0f), {WHITE}, {0.0f, 0.0f}}, 
+					{left_center + glm::vec3(0.0f, -side / 2.0f, side / 2.0f), {WHITE}, {1.0f, 0.0f}}, 
+					{left_center + glm::vec3(0.0f, side / 2.0f, side / 2.0f), {WHITE}, {1.0f, 1.0f}} });
+	mesh.push_back({{left_center + glm::vec3(0.0f, -side / 2.0f, -side / 2.0f), {WHITE}, {0.0f, 0.0f}}, 
+					{left_center + glm::vec3(0.0f, side / 2.0f, side / 2.0f), {WHITE}, {1.0f, 1.0f}}, 
+					{left_center + glm::vec3(0.0f, side / 2.0f, -side / 2.0f), {WHITE}, {0.0f, 1.0f}} });
 
 	// BOTTOM 
-	mesh.push_back({ {{-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, -0.25f, -0.25f}, {WHITE}, {1.0f, 0.0f}}, {{0.25f, -0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}} });
-	mesh.push_back({ {{-0.25f, -0.25f, -0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, -0.25f, 0.25f}, {WHITE}, {1.0f, 1.0f}}, {{-0.25f, -0.25f, 0.25f}, {WHITE}, {0.0f, 1.0f}} });
+	mesh.push_back({{bottom_center + glm::vec3(-side / 2.0f, 0.0f, -side / 2.0f), {WHITE}, {0.0f, 0.0f}}, 
+					{bottom_center + glm::vec3(side / 2.0f, 0.0f, -side / 2.0f), {WHITE}, {1.0f, 0.0f}},
+					{bottom_center + glm::vec3(side / 2.0f, 0.0f, side / 2.0f), {WHITE}, {1.0f, 1.0f}} });
+	mesh.push_back({{bottom_center + glm::vec3(-side / 2.0f, 0.0f, -side / 2.0f), {WHITE}, {0.0f, 0.0f}}, 
+					{bottom_center + glm::vec3(side / 2.0f, 0.0f, side / 2.0f), {WHITE}, {1.0f, 1.0f}}, 
+					{bottom_center + glm::vec3(-side / 2.0f, 0.0f, side / 2.0f), {WHITE}, {0.0f, 1.0f}} });
 
 	// TOP 
-	mesh.push_back({ {{-0.25f, 0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, 0.25f, 0.25f}, {WHITE}, {1.0f, 0.0f}}, {{0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}} });
-	mesh.push_back({ {{-0.25f, 0.25f, 0.25f}, {WHITE}, {0.0f, 0.0f}}, {{  0.25f, 0.25f, -0.25f}, {WHITE}, {1.0f, 1.0f}}, {{-0.25f, 0.25f, -0.25f}, {WHITE}, {0.0f, 1.0f}} });
+	mesh.push_back({{top_center + glm::vec3(-side / 2.0f, 0.0f, side / 2.0f), {WHITE}, {0.0f, 0.0f}}, 
+					{top_center + glm::vec3(side / 2.0f, 0.0f, side / 2.0f), {WHITE}, {1.0f, 0.0f}}, 
+					{top_center + glm::vec3(side / 2.0f, 0.0f, -side / 2.0f), {WHITE}, {1.0f, 1.0f}} });
+	mesh.push_back({{top_center + glm::vec3(-side / 2.0f, 0.0f, side / 2.0f), {WHITE}, {0.0f, 0.0f}}, 
+					{top_center + glm::vec3(side / 2.0f, 0.0f, -side / 2.0f), {WHITE}, {1.0f, 1.0f}}, 
+					{top_center + glm::vec3(-side / 2.0f, 0.0f, -side / 2.0f), {WHITE}, {0.0f, 1.0f}} });
 
 
 	for (unsigned int i = 0; i < mesh.size(); i++)
@@ -421,7 +456,7 @@ void Renderer::DrawTriangles()
 	// glPointSize(10.0f);
 
 	// enable textures [0 -> no; 1 -> yes]
-	sData.shader->SetUniform1i("u_Use_Texture", 0);
+	sData.shader->SetUniform1i("u_Use_Texture", 1);
 
 	// Draw the triangles' outlines
 	glDrawElements(GL_TRIANGLES, 3 * sData.TriToRenderCount, GL_UNSIGNED_INT, nullptr);
@@ -453,6 +488,7 @@ void Renderer::DrawGrid()
 
 void Renderer::Calculate(const float& dt, Window& window)
 {
+	static bool space_press = false;
 	// Reset bc Calculate is contineously called while the app is running
 	sData.TriToRenderCount = 0;
 	sData.TriToRenderBufferPointer = sData.TriToRenderBuffer;
@@ -483,7 +519,18 @@ void Renderer::Calculate(const float& dt, Window& window)
 
 	translationZ = translationZ + 0.01 * dt;
 
+	
 	camera.ManageInputs(window, dt);
+	if (glfwGetKey(window.GetWindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
+	{
+		space_press = true;
+		
+	}
+	if (glfwGetKey(window.GetWindow(), GLFW_KEY_SPACE) == GLFW_RELEASE && space_press)
+	{
+		Renderer::AddCubeTexture(camera.Position() + camera.LookDirection() * 7.0f, 3.0f);
+		space_press = false;
+	}
 
 	glm::mat4x4 combinedRotation(0);
 	combinedRotation = glm::rotate(glm::mat4(1.0f), 0.0f, // 180.0f*3.14f*180.0f, (d2 map rotation)

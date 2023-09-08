@@ -13,6 +13,7 @@ public:
 	Camera();		// perspective is standard
 	Camera(bool& isPerspective);
 	glm::vec3 Position();
+	glm::vec3 LookDirection();
 	glm::mat4x4 LookAtMatrix();
 	glm::mat4x4 ProjectionMatrix();
 	const void ManageInputs(Window& window, const float& dt);

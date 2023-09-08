@@ -79,22 +79,22 @@ void ReadVertexData(const std::string& filepath, std::vector <float>&vert, std::
 	{
 		if (line.find("v") != std::string::npos)
 		{
-			for (int i = 1; i < line.size(); i++)
-			{
-				if ((line[i] >= 48 && line[i] <= 57) || line[i] == 45)		// numbers from 0 to 9 or minus
+				for (int i = 1; i < line.size(); i++)
 				{
-					std::vector<char> number_char;
-					
-					while (line[i] != 32 )				// space
-					{
-						number_char.push_back(line[i]);
-						if (i + 1 < line.size())
-							i++;
-						else
-							break;
-					}
-					vertex_vectors.push_back(number_char);
-				}
+						if ((line[i] >= 48 && line[i] <= 57) || line[i] == 45)		// numbers from 0 to 9 or minus
+						{
+							std::vector<char> number_char;
+
+							while (line[i] != 32)				// space
+							{
+								number_char.push_back(line[i]);
+								if (i + 1 < line.size())
+									i++;
+								else
+									break;
+							}
+							vertex_vectors.push_back(number_char);
+						}
 			}
 		}
 		else if (line.find("f") != std::string::npos)
