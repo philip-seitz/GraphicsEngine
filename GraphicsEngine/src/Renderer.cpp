@@ -34,36 +34,33 @@ Camera camera;
 
 struct RendererData
 {
+	// mesh/models and or cubes
 	unsigned int va = 0;
 	unsigned int vb = 0;
 	unsigned int ib = 0;
 
+	unsigned int TriCount = 0;
+	Triangle* TriBuffer = nullptr;
+	Triangle* TriBufferPointer = nullptr;
+	TriangleIndices* TriIndices = nullptr;
+	TriangleIndices* TriIndicesPointer = nullptr;
+
+	// grid
 	unsigned int g_va = 0;
 	unsigned int g_vb = 0;
 	unsigned int g_ib = 0;
 
-	Shader* shader = nullptr;
-	Texture* texture = nullptr;
-
-
-	unsigned int TriCount = 0;
-
-	// DEBUG
-	unsigned int TriClipCount = 0;
-
 	unsigned int LineCount = 0;
-
-	Triangle* TriBuffer = nullptr;
-	Triangle* TriBufferPointer = nullptr;
-
-	TriangleIndices* TriIndices = nullptr;
-	TriangleIndices* TriIndicesPointer = nullptr;
 	Line* LineBuffer = nullptr;
 	Line* LineBufferPointer = nullptr;
-	
 	LineIndices* GridLineIndices = nullptr;
 	LineIndices* GridLineIndicesPointer = nullptr;
 
+	// shaders and textures
+	Shader* shader = nullptr;
+	Texture* texture = nullptr;
+
+	// TODO: Refactor OpenGL objects and settings into Class for example
 };
 
 static RendererData sData;
@@ -88,17 +85,21 @@ void Renderer::Init()
 	sData.LineBufferPointer = sData.LineBuffer;
 	sData.GridLineIndicesPointer = sData.GridLineIndices;
 
+	// initialize models and grid
+	LoadMesh();
+	AddGrid();
+
 	// setup for triangles
 	glCreateVertexArrays(1, &sData.va);
 	glBindVertexArray(sData.va);
 
 	glCreateBuffers(1, &sData.vb);
 	glBindBuffer(GL_ARRAY_BUFFER, sData.vb);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * max_vertices, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * max_vertices, sData.TriBuffer, GL_STATIC_DRAW);
 
 	glCreateBuffers(1, &sData.ib);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.ib);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * max_indices, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * max_indices, sData.TriIndices, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, position));
@@ -115,11 +116,11 @@ void Renderer::Init()
 
 	glCreateBuffers(1, &sData.g_vb);
 	glBindBuffer(GL_ARRAY_BUFFER, sData.g_vb);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Line) * max_grid_lines, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Line) * max_grid_lines, sData.LineBuffer, GL_STATIC_DRAW);
 
 	glCreateBuffers(1, &sData.g_ib);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.g_ib);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * max_grid_lines*2, nullptr, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * max_grid_lines*2, sData.GridLineIndices, GL_STATIC_DRAW);
 
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, position));
@@ -175,7 +176,6 @@ void Renderer::AddGrid()
 	{
 		sData.LineBufferPointer->p0.color = { GREY };
 		sData.LineBufferPointer->p1.color = { GREY };
-
 
 		if (i < limit * 1/4)
 		{
@@ -286,7 +286,6 @@ void Renderer::AddCube(const float& x, const float& y, const float& z, const flo
 	mesh.push_back({ {{-0.25f, 0.25f, 0.25f}}, {{  0.25f, 0.25f, 0.25f}}, {{0.25f, 0.25f, -0.25f}} });
 	mesh.push_back({ {{-0.25f, 0.25f, 0.25f}}, {{  0.25f, 0.25f, -0.25f}}, {{-0.25f, 0.25f, -0.25f}} });
 
-	
 	for (unsigned int i = 0; i < mesh.size(); i++)
 	{
 		*(sData.TriBufferPointer) = mesh[i];
@@ -360,7 +359,6 @@ void Renderer::AddCubeTexture(const glm::vec3& center, const float& side)
 					{top_center + glm::vec3(side / 2.0f, 0.0f, -side / 2.0f), {WHITE}, {1.0f, 1.0f}}, 
 					{top_center + glm::vec3(-side / 2.0f, 0.0f, -side / 2.0f), {WHITE}, {0.0f, 1.0f}} });
 
-
 	for (unsigned int i = 0; i < mesh.size(); i++)
 	{
 		*(sData.TriBufferPointer) = mesh[i];
@@ -403,7 +401,6 @@ void Renderer::LoadMesh()
 		*(sData.TriIndicesPointer) = { {0 + 3 * (sData.TriCount), 1 + 3 * (sData.TriCount), 2 + 3 * (sData.TriCount)} };
 		sData.TriBufferPointer++;
 		sData.TriIndicesPointer++;
-		// std::cout << i << std::endl;
 		sData.TriCount++;
 	}
 }
@@ -411,13 +408,14 @@ void Renderer::LoadMesh()
 void Renderer::DrawTriangles()								
 {
 	glBindVertexArray(sData.va);
-	glBindBuffer(GL_ARRAY_BUFFER, sData.vb);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sData.TriCount * sizeof(Triangle), sData.TriBuffer);
-	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.ib);
-	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sData.TriCount * sizeof(TriangleIndices), sData.TriIndices);
 
-	// Enable wireframe drawing
+	// === Code for Dynamic Draw ===
+	// glBindBuffer(GL_ARRAY_BUFFER, sData.vb);
+	// glBufferSubData(GL_ARRAY_BUFFER, 0, sData.TriCount * sizeof(Triangle), sData.TriBuffer);
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.ib);
+	// glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sData.TriCount * sizeof(TriangleIndices), sData.TriIndices);
+
+	// === Enable wireframe drawing === 
 	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	// Blending 
@@ -426,7 +424,7 @@ void Renderer::DrawTriangles()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// Enable point smoothing and set the point size
+	// === Enable point smoothing and set the point size ====
 	// glEnable(GL_POINT_SMOOTH);
 	// glPointSize(10.0f);
 
@@ -436,18 +434,19 @@ void Renderer::DrawTriangles()
 	// Draw the triangles' outlines
 	glDrawElements(GL_TRIANGLES, 3 * sData.TriCount, GL_UNSIGNED_INT, nullptr);
 
-	// Draw the points
+	// === Draw the points === 
 	// glDrawArrays(GL_POINTS, 0, 3 * sData.TriToRenderCount);
 }
 
 void Renderer::DrawGrid()
 {
 	glBindVertexArray(sData.g_va);
-	glBindBuffer(GL_ARRAY_BUFFER, sData.g_vb);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sData.LineCount * sizeof(Line), sData.LineBuffer);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.g_ib);
-	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sData.LineCount * sizeof(LineIndices), sData.GridLineIndices);
+	// === Code for Dynamic Draw ===
+	// glBindBuffer(GL_ARRAY_BUFFER, sData.g_vb);
+	// glBufferSubData(GL_ARRAY_BUFFER, 0, sData.LineCount * sizeof(Line), sData.LineBuffer);
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.g_ib);
+	// glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sData.LineCount * sizeof(LineIndices), sData.GridLineIndices);
 
 	// improve appearence of the grid (anti z-fighting and thinner lines)
 	glEnable(GL_BLEND);
@@ -457,7 +456,6 @@ void Renderer::DrawGrid()
 
 	// enable textures [0 -> no; 1 -> yes]
 	sData.shader->SetUniform1i("u_Use_Texture", 0);
-
 	glDrawElements(GL_LINES, 2*sData.LineCount, GL_UNSIGNED_INT, nullptr);
 }
 
@@ -510,7 +508,6 @@ void Renderer::Calculate(const float& dt, Window& window)
 	sData.shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
 	sData.shader->SetUniform1i("u_Tex_Index", 0);
-
 }
 
 void Renderer::Clear()

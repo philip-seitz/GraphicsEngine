@@ -23,8 +23,7 @@ void Application::Run()
     float lastTime = glfwGetTime();
     // Renderer::AddCubeTexture({0.0f, 0.0f, 0.0f}, 1.0f);
     // Renderer::AddCube(0.05f, -0.25f, 0.3f, 0.0f);             // parameters dont matter yet!
-    Renderer::LoadMesh();
-    Renderer::AddGrid();
+    // Renderer::LoadMesh();
 
     // render loop
     while (!glfwWindowShouldClose(m_window.GetWindow()))
@@ -35,8 +34,6 @@ void Application::Run()
         Renderer::Clear();
 
         OnUpdate(dt);
-
-
 
         Renderer::DrawGrid();
         Renderer::DrawTriangles();
