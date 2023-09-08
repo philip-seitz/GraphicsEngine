@@ -7,19 +7,20 @@ out vec4 v_Color;
 out vec2 v_TexCoord;
 out vec4 v_EyeSpacePosition;
 
+uniform mat4 u_Model;
 uniform mat4 u_Projection;
 uniform mat4 u_View;
 
 void main()
 {
-	gl_Position = u_Projection*u_View*a_Position;
+	gl_Position = u_Projection * u_View * u_Model * a_Position;
 	v_TexCoord = a_TexCoord;
 	v_Color = a_Color;
 
 	// Disable perspective division (homogeneous cords to position)
 	// gl_Position /= gl_Position.w;
 
-	v_EyeSpacePosition = u_View * a_Position;
+	v_EyeSpacePosition = u_View * u_Model * a_Position;
 }
 
 #shader fragment
