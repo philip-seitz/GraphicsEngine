@@ -73,6 +73,73 @@ struct LineIndices
 	glm::highp_uvec2 indices;
 };
 
+struct Model
+{
+	unsigned int TriCount = 0;
+	Triangle* TriBuffer = nullptr;
+	Triangle* TriBufferPointer = nullptr;
+	TriangleIndices* TriIndices = nullptr;
+	TriangleIndices* TriIndicesPointer = nullptr;
+
+	unsigned int va = 0;
+	unsigned int vb = 0;
+	unsigned int ib = 0;
+
+
+
+	void InitMeshFromData(const std::string& filepath);
+	void LoadMesh(const std::string& filepath);
+	void InitCube(const bool& useTexture = true);
+	void LoadCube();
+	void InitTriangle();
+	void LoadTriangle();
+	void InitQuad();
+	void LoadQuad();
+	~Model();
+
+};
+
+struct ModelInstance
+{
+	glm::vec3 position = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 angles = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
+
+	glm::mat4x4 ModelMatrix();
+	void Draw(const Model& base_model);
+};
+
+struct Grid
+{
+	unsigned int LineCount = 0;
+	
+	Line* LineBuffer = nullptr;
+	Line* LineBufferPointer = nullptr;
+	LineIndices* GridLineIndices = nullptr;
+	LineIndices* GridLineIndicesPointer = nullptr;
+
+	unsigned int g_va = 0;
+	unsigned int g_vb = 0;
+	unsigned int g_ib = 0;
+
+	void InitGridxz();
+	void LoadGridxz();
+
+	~Grid();
+};
+
+struct GridInstance
+{
+	glm::vec3 position = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 angles = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
+
+	glm::mat4x4 ModelMatrix();
+	void Draw(const Grid& base_model);
+
+};
+
+
 class Renderer
 {
 public:
@@ -85,17 +152,10 @@ public:
 	static void EndBatch();
 	static void Flush();
 
-	static void AddTriangle(const float& x, const float& y, const float& size);						// point bottom left (in 2D)
-	static void AddQuad(const float& x, const float& y, const float& size);							// point bottom left (in 2D)
-	static void AddCube(const float& x, const float& y, const float& z, const float& size);			// point front, bottom left (in 3D)
-	static void AddCubeTexture(const glm::vec3& center, const float& side);
-	static void LoadMesh();																			// load gemoetry from obj. file
-	static void DrawTriangles();
-	static void AddGrid();
+	static void DrawModels();
 	static void DrawGrid();
 
 	static void Calculate(const float& dt, Window& window);
-
 	static void Clear();
 
 private:

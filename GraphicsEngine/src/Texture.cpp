@@ -1,27 +1,35 @@
 #include "Texture.h"
 #include "stb_image/stb_image.h"
 
-Texture::Texture(const std::string& path):
+Texture::Texture(const std::string& path, const int& slot, const unsigned short& wrap_mode):
 	m_RendererID(0),
 	m_FilePath(path),
 	m_LocalBuffer(nullptr),
+	m_Slot(slot),
 	m_Width(0),
 	m_Height(0),
 	m_BPP(0)
 {
+	short texture_slot = GL_TEXTURE0 + slot;
 	stbi_set_flip_vertically_on_load(1);
 
 	m_LocalBuffer = stbi_load(path.c_str(), &m_Width, &m_Height, &m_BPP, 4);
 
+	glActiveTexture(texture_slot);		// texture slot that should be used
 	glGenTextures(1, &m_RendererID);
 	glBindTexture(GL_TEXTURE_2D, m_RendererID);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// texture filtering 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);		// mipmaps switching only used when down scaling
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	// texture wrapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_mode);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_mode);
+
 	
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
+	// generate mipmap
+	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// Unbind and free
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -36,9 +44,9 @@ Texture::~Texture()
 	glDeleteTextures(1, &m_RendererID);
 }
 
-void Texture::Bind(unsigned int slot)
+void Texture::Bind()
 {
-	glActiveTexture(GL_TEXTURE0 + slot);
+	glActiveTexture(GL_TEXTURE0 + m_Slot);
 	glBindTexture(GL_TEXTURE_2D, m_RendererID);
 
 }

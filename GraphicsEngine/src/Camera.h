@@ -11,7 +11,7 @@ class Camera
 public:
 
 	Camera();		// perspective is standard
-	Camera(bool& isPerspective);
+	Camera(const bool& isPerspective);
 	glm::vec3 Position();
 	glm::vec3 LookDirection();
 	glm::mat4x4 LookAtMatrix();
@@ -32,6 +32,7 @@ private:
 	float m_zNear;
 	float m_zFar;
 	glm::mat4x4 m_perspective_proj;
+	glm::mat4x4 m_orthographic_proj;
 
 	// look at matrix
 	glm::vec3 m_position;

@@ -6,7 +6,7 @@
 float pi = 3.14159f;
 
 Camera::Camera():
-	m_position(-1.0f, 3.0f, 15.0f),
+	m_position(0.0f, 0.0f, 5.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
 	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
@@ -22,12 +22,13 @@ Camera::Camera():
 	m_aspectRatio(1080.0f/720.0f),
 	m_zNear(1.0f),
 	m_zFar(-10000.0f),
-	m_perspective_proj(glm::perspectiveRH(m_yFOV * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar))
+	m_perspective_proj(glm::perspectiveRH(m_yFOV * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar)),
+	m_orthographic_proj(glm::orthoRH(0.0f, 300.0f , 0.0f, 300.0f , m_zNear, m_zFar))
 {
 }
 
-Camera::Camera(bool& isPerspective):
-	m_position(0.0f, 0.0f, 19.0f),
+Camera::Camera(const bool& isPerspective):
+	m_position(0.0f, 0.0f, 8.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
 	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
@@ -38,12 +39,13 @@ Camera::Camera(bool& isPerspective):
 	// settings
 	m_proj_3D(isPerspective),
 	// values for the perspective transform
-	m_yFOV(30.0f),
+	m_yFOV(45.0f),
 	m_zoom(1.0f),
 	m_aspectRatio(1080.0f / 720.0f),
 	m_zNear(1.5f),
 	m_zFar(-10000.0f),
-	m_perspective_proj(glm::perspectiveRH(m_yFOV * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar))
+	m_perspective_proj(glm::perspectiveRH(m_yFOV * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar)),
+	m_orthographic_proj(glm::orthoRH(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f))
 {
 }
 
@@ -71,7 +73,7 @@ glm::mat4x4 Camera::ProjectionMatrix()
 	}
 	else
 	{
-		// orthographic projection matrix (TODO)
+		return m_orthographic_proj;
 	}
 }
 
@@ -118,18 +120,22 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 		if (glfwGetKey(window.GetWindow(), GLFW_KEY_UP) == GLFW_PRESS)
 		{
 			m_camera_angle_pitch += dt * m_movement_speed*5.0f;
-			m_camera_angle_pitch = fmod(m_camera_angle_pitch, 360.0f);
+			if (m_camera_angle_pitch >= 88.0f)
+				m_camera_angle_pitch = 88.0f;
+			// m_camera_angle_pitch = fmod(m_camera_angle_pitch, 360.0f);
 			
 		}
 
 		if (glfwGetKey(window.GetWindow(), GLFW_KEY_DOWN) == GLFW_PRESS)
 		{
 			m_camera_angle_pitch -= dt * m_movement_speed*5.0f;
-			m_camera_angle_pitch = fmod(m_camera_angle_pitch, 360.0f);
+			// m_camera_angle_pitch = fmod(m_camera_angle_pitch, 360.0f);
+			if (m_camera_angle_pitch <= -88.0f)
+				m_camera_angle_pitch = -88.0f;
 		}
 
 		// first yaw rotation, then pitch of the direction vector (relevant for z-component)
-			m_look_direction.x = glm::sin(m_camera_angle_yaw * pi / 180.0f);
+			m_look_direction.x = glm::sin(m_camera_angle_yaw * pi / 180.0f) * glm::cos(m_camera_angle_pitch * pi / 180.0f);
 			m_look_direction.y = glm::sin(m_camera_angle_pitch * pi / 180.0f);
 			m_look_direction.z = -glm::cos(m_camera_angle_yaw * pi / 180.0f) * glm::cos(m_camera_angle_pitch * pi / 180.0f);
 

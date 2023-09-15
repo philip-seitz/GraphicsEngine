@@ -2,7 +2,7 @@
 #include "Renderer.h"
 
 Application::Application(const int& width, const int& height, const char* title)
-	:m_window(width, height, title), m_ClearColor(0.1f, 0.1f, 0.1f, 0.5f)
+	:m_window(width, height, title), m_ClearColor(0.1f, 0.1f, 0.1f, 1.0f)
 {
 
 }
@@ -15,16 +15,9 @@ Application::~Application()
 void Application::Run()
 {
     OnAttach();
-    // Renderer::AddQuad(0.4f, 0.0f, 0.2f);
-    // Renderer::AddQuad(-0.2f, 0.0f, 0.2f);
-    // Renderer::AddQuad(0.05f, -0.25f, 0.3f);
-    // Renderer::AddTriangle(0.05f, 0.25f, 0.3f);
 
     float lastTime = glfwGetTime();
-    // Renderer::AddCubeTexture({0.0f, 0.0f, 0.0f}, 1.0f);
-    // Renderer::AddCube(0.05f, -0.25f, 0.3f, 0.0f);             // parameters dont matter yet!
-    // Renderer::LoadMesh();
-
+   
     // render loop
     while (!glfwWindowShouldClose(m_window.GetWindow()))
     {
@@ -36,7 +29,7 @@ void Application::Run()
         OnUpdate(dt);
 
         Renderer::DrawGrid();
-        Renderer::DrawTriangles();
+        Renderer::DrawModels();
         
         glfwSwapBuffers(m_window.GetWindow());
         glfwPollEvents();
@@ -49,7 +42,6 @@ void Application::Run()
         }
         if (glfwGetKey(m_window.GetWindow(), GLFW_KEY_SPACE == GLFW_PRESS))
         {
-            Renderer::AddCubeTexture({ 0.0f, 0.0f, 0.0f }, 1.0f);
         }
 
     }

@@ -39,45 +39,52 @@ bool fogEnabled = true;
 float fogFactor = 1.0f;
 
 uniform bool u_Use_Texture;
-uniform sampler2D u_Tex_Index;
+uniform float u_Texture_Mix;
+uniform sampler2D u_Texture_0;
+uniform sampler2D u_Texture_1;
+
 void main()
 {
-	vec4 color;
-	if (u_Use_Texture)
-	{
-		vec4 texColor = texture(u_Tex_Index, v_TexCoord);
-		color = texColor * v_Color;
-	}
-	else
-	{
-		color = v_Color;
-	}
-	
-	if (fogEnabled)
-	{
-		float fogCoordinate = abs(v_EyeSpacePosition.z / v_EyeSpacePosition.w);
+	vec4 color = v_Color;
+	float fogCoordinate = abs(v_EyeSpacePosition.z / v_EyeSpacePosition.w);
 
-		// linear fog
-		// fogFactor = (linearEnd - fogCoordinate) / (linearEnd - linearStart);
+	// linear fog
+	// fogFactor = (linearEnd - fogCoordinate) / (linearEnd - linearStart);
 
-		// exponential fog
-		// fogFactor = exp(-density * fogCoordinate);
+	// exponential fog
+	// fogFactor = exp(-density * fogCoordinate);
 
-		// exponential squared fog
-		fogFactor = exp(-pow(density * fogCoordinate, 2.0));
-
-		fogFactor = 1 - clamp(fogFactor, 0.0, 1.0);
-		color = mix(color, fogColor, fogFactor);
-	}
+	// exponential squared fog
+	fogFactor = exp(-pow(density * fogCoordinate, 2.0));
+	fogFactor = 1 - clamp(fogFactor, 0.0, 1.0);
 
 	if (u_Use_Texture)
 	{
-		vec4 texColor = texture(u_Tex_Index, v_TexCoord);
-		o_Color = texColor*color;
+		vec4 transparent_texture = texture(u_Texture_0, v_TexCoord);
+		vec4 background_texture = texture(u_Texture_1, v_TexCoord);
+		background_texture.a = 1.0f;
+		vec4 texColor = mix(background_texture, transparent_texture, u_Texture_Mix);
+		texColor.a = 1.0f;
+		if (fogEnabled)
+		{
+			o_Color = mix(texColor, fogColor, fogFactor);
+		}
+		else
+		{
+			o_Color = texColor;
+		}
 	}
 
 	else
 	{
-		o_Color = color;
+		if (fogEnabled)
+		{
+			o_Color = mix(color, fogColor, fogFactor);
+		}
+		else
+		{
+			o_Color = color;
+		}
 	}
+
 }
