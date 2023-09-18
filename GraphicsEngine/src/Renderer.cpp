@@ -57,12 +57,14 @@ struct RendererData
 	Shader* shader = nullptr;
 	Texture* texture_0 = nullptr;
 	Texture* texture_1 = nullptr;
+	Window* window = nullptr;
 };
 
 static RendererData sData;
 
-void Renderer::Init()
+void Renderer::Init(Window* window)
 {
+	sData.window = window;
 	sData.shader = new Shader("res/shader/vert_frag.glsl");
 	glUseProgram(sData.shader->GetRendererID());
 	
@@ -140,8 +142,6 @@ void Renderer::DrawModels()
 	{
 		sData.iCube[i].Draw(sData.cube);
 	}
-	
-
 }
 
 void Renderer::DrawGrid()
@@ -149,7 +149,7 @@ void Renderer::DrawGrid()
 	sData.iGrid.Draw(sData.grid_xz);
 }
 
-void Renderer::Calculate(const float& dt, Window& window)
+void Renderer::Calculate(const float& dt)
 {
 	static bool space_press = false;
 	static float texture_mix = 0.3f;
@@ -168,18 +168,17 @@ void Renderer::Calculate(const float& dt, Window& window)
 		if (i == 0 || (i + 1) % 3 == 0)
 		{
 			sData.iCube[i].angles.z = glfwGetTime() * 20.0f;
-
 		}
 	}
 
 
-	camera.ManageInputs(window, dt);
-	if (glfwGetKey(window.GetWindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
+	camera.ManageInputs(*sData.window, dt);
+	if (glfwGetKey(sData.window->GetWindow(), GLFW_KEY_SPACE) == GLFW_PRESS)
 	{
 		space_press = true;
 		
 	}
-	if (glfwGetKey(window.GetWindow(), GLFW_KEY_SPACE) == GLFW_RELEASE && space_press)
+	if (glfwGetKey(sData.window->GetWindow(), GLFW_KEY_SPACE) == GLFW_RELEASE && space_press)
 	{
 		// Renderer::AddCubeTexture(camera.Position() + camera.LookDirection() * 7.0f, 3.0f);
 		space_press = false;
@@ -196,9 +195,6 @@ void Renderer::Clear()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-
-
-
 
 // Model/Grid Loading and Initialization
 // -------------------------------------------------------------------------------
@@ -664,3 +660,32 @@ void GridInstance::Draw(const Grid& base_model)
 	glDrawElements(GL_LINES, 2 * base_model.LineCount, GL_UNSIGNED_INT, nullptr);
 }
 
+
+// mouse input callback
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	const static float sens = 0.2f;
+	static float lastx = 400;
+	static float lasty = 300;
+	static bool init = false;
+
+	if (!init)
+	{
+		lastx = xpos;
+		lasty = ypos;
+		init = true;
+	}
+
+	float xoffset = (xpos - lastx) * sens;
+	float yoffset = (lasty - ypos) * sens;
+
+	camera.UpdateFromMouseCallback(xoffset, yoffset);
+
+	lastx = xpos;
+	lasty = ypos;
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	camera.UpdateFromScrollCallback((float)xoffset, (float)yoffset);
+}

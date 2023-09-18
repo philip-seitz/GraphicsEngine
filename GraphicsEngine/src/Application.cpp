@@ -53,14 +53,14 @@ void Application::OnAttach()
 	if (!m_window.Init())
 		std::exit(0);
 
-	Renderer::Init();
+	Renderer::Init(&m_window);
 }
 
 void Application::OnUpdate(const float& dt)
 {
     // caclulations etc
 	glClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, m_ClearColor.a);
-    Renderer::Calculate(dt, m_window);
+    Renderer::Calculate(dt);
 }
 
 void Application::OnRender()

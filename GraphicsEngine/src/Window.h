@@ -5,12 +5,20 @@
 
 
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+
 
 class Window
 {
 public:
-	Window(const int& width, const int& height, const char* title)
-		:m_AllRunning(true), m_InstWindow(nullptr)
+	int m_Height;
+	int m_Width;
+	Window(const int& width, const int& height, const char* title):
+		m_AllRunning(true), 
+		m_InstWindow(nullptr),
+		m_Height(height),
+		m_Width(width)
 	{
 		if (!glfwInit())
 			m_AllRunning = false;
@@ -26,7 +34,15 @@ public:
 			m_InstWindow = glfwCreateWindow(w, h, title, NULL, NULL);
 			// register window resize callback
 			glfwSetFramebufferSizeCallback(m_InstWindow, framebuffer_resize_callback);
+
+			// settings for mouse input
+			glfwSetInputMode(m_InstWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);	// hide cursor and keep in window when focused
+			glfwSetCursorPosCallback(m_InstWindow, mouse_callback);
+			glfwSetScrollCallback(m_InstWindow, scroll_callback);
+
 			glViewport(0, 0, w, h);
+			m_Width = w;
+			m_Height = h;
 		}
 	}
 	~Window()
@@ -76,7 +92,6 @@ private:
 
 		w *= scale;
 		h *= scale;
-
 	}
 
 };

@@ -9,7 +9,6 @@ class Camera
 {
 
 public:
-
 	Camera();		// perspective is standard
 	Camera(const bool& isPerspective);
 	glm::vec3 Position();
@@ -18,12 +17,15 @@ public:
 	glm::mat4x4 ProjectionMatrix();
 	const void ManageInputs(Window& window, const float& dt);
 	const void UpdatePosition(Window& window, const float& dt);
+	const void UpdateDirection(Window& window, const float& dt);
+	const void UpdateFromMouseCallback(const short& xoffset, const short& yoffset);
+	const void UpdateFromScrollCallback(const float& xoffset, const float& yoffset);
 	const void Zoom(Window& window, const float& dt);
 
 private:
-
 	// 3D or 2D 
 	bool m_proj_3D;
+	bool m_UseMouseInput;
 
 	// projection matrix
 	float m_yFOV;

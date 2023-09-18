@@ -85,8 +85,6 @@ struct Model
 	unsigned int vb = 0;
 	unsigned int ib = 0;
 
-
-
 	void InitMeshFromData(const std::string& filepath);
 	void LoadMesh(const std::string& filepath);
 	void InitCube(const bool& useTexture = true);
@@ -145,7 +143,7 @@ class Renderer
 public:
 	// static class (keine Instanz)
 
-	static void Init();
+	static void Init(Window* window);
 	static void Shutdown();
 
 	static void BeginBatch();
@@ -155,7 +153,7 @@ public:
 	static void DrawModels();
 	static void DrawGrid();
 
-	static void Calculate(const float& dt, Window& window);
+	static void Calculate(const float& dt);
 	static void Clear();
 
 private:

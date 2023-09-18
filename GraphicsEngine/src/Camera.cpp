@@ -5,17 +5,20 @@
 
 float pi = 3.14159f;
 
+glm::mat4x4 myLookAt(const glm::vec3 pos, const glm::vec3 trgt, const glm::vec3 up);
+
 Camera::Camera():
 	m_position(0.0f, 0.0f, 5.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
-	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
+	m_look_at(myLookAt(m_position, m_target, m_up)),
 	m_look_direction(0.0f, 0.0f, -1.0f),
 	m_camera_angle_yaw(0.0f),
 	m_camera_angle_pitch(0.0f),
 	m_movement_speed(8.0f),
 	// settings
 	m_proj_3D(true),
+	m_UseMouseInput(true),
 	// values for the perspective transform
 	m_yFOV(45.0f),
 	m_zoom(1.0f),
@@ -31,13 +34,14 @@ Camera::Camera(const bool& isPerspective):
 	m_position(0.0f, 0.0f, 8.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
-	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
+	m_look_at(myLookAt(m_position, m_target, m_up)),
 	m_look_direction(0.0f, 0.0f, -1.0f),
 	m_camera_angle_yaw(0.0f),
 	m_camera_angle_pitch(0.0f),
 	m_movement_speed(8.0f),
 	// settings
 	m_proj_3D(isPerspective),
+	m_UseMouseInput(true),
 	// values for the perspective transform
 	m_yFOV(45.0f),
 	m_zoom(1.0f),
@@ -79,6 +83,7 @@ glm::mat4x4 Camera::ProjectionMatrix()
 
 const void Camera::ManageInputs(Window& window, const float& dt)
 {
+	UpdateDirection(window, dt);
 	UpdatePosition(window, dt);
 	Zoom(window, dt);
 }
@@ -90,6 +95,7 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 	float z_limit = m_zFar - int(0.1 * m_zFar);		// avoid moving camera outside behind zFar (mirrored image... not good)
 	if (m_position.z > z_limit)
 	{
+		// movement
 		if (glfwGetKey(window.GetWindow(), GLFW_KEY_W) == GLFW_PRESS)
 		{
 			m_position += m_look_direction * dt * m_movement_speed;
@@ -103,44 +109,6 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 
 		if (glfwGetKey(window.GetWindow(), GLFW_KEY_A) == GLFW_PRESS)
 			m_position -= glm::normalize(glm::cross(m_look_direction, glm::vec3(0.0f, 1.0f, 0.0f))) * dt * m_movement_speed;
-
-		if (glfwGetKey(window.GetWindow(), GLFW_KEY_RIGHT) == GLFW_PRESS)
-		{
-			m_camera_angle_yaw += dt * m_movement_speed*10.0f;
-			m_camera_angle_yaw = fmod(m_camera_angle_yaw, 360.0f);
-		}
-
-		if (glfwGetKey(window.GetWindow(), GLFW_KEY_LEFT) == GLFW_PRESS)
-		{
-			m_camera_angle_yaw -= dt * m_movement_speed*10.0f;
-			m_camera_angle_yaw = fmod(m_camera_angle_yaw, 360.0f);
-		}
-
-
-		if (glfwGetKey(window.GetWindow(), GLFW_KEY_UP) == GLFW_PRESS)
-		{
-			m_camera_angle_pitch += dt * m_movement_speed*5.0f;
-			if (m_camera_angle_pitch >= 88.0f)
-				m_camera_angle_pitch = 88.0f;
-			// m_camera_angle_pitch = fmod(m_camera_angle_pitch, 360.0f);
-			
-		}
-
-		if (glfwGetKey(window.GetWindow(), GLFW_KEY_DOWN) == GLFW_PRESS)
-		{
-			m_camera_angle_pitch -= dt * m_movement_speed*5.0f;
-			// m_camera_angle_pitch = fmod(m_camera_angle_pitch, 360.0f);
-			if (m_camera_angle_pitch <= -88.0f)
-				m_camera_angle_pitch = -88.0f;
-		}
-
-		// first yaw rotation, then pitch of the direction vector (relevant for z-component)
-			m_look_direction.x = glm::sin(m_camera_angle_yaw * pi / 180.0f) * glm::cos(m_camera_angle_pitch * pi / 180.0f);
-			m_look_direction.y = glm::sin(m_camera_angle_pitch * pi / 180.0f);
-			m_look_direction.z = -glm::cos(m_camera_angle_yaw * pi / 180.0f) * glm::cos(m_camera_angle_pitch * pi / 180.0f);
-
-		// without this updating target the camera will be locked on to the initial target 
-		m_target = m_position + m_look_direction;
 	}
 
 	else {
@@ -151,7 +119,7 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 	}
 
 	// update matrix
-	m_look_at = glm::lookAtRH(m_position, m_target, m_up);
+	m_look_at = myLookAt(m_position, m_target, m_up);
 
 	// additional outpuots for debugging 
 	if (time >= 2.0f)
@@ -163,27 +131,107 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 		time += dt;
 }
 
+const void Camera::UpdateDirection(Window& window, const float& dt)
+{
+	// look around 
+	if (!m_UseMouseInput)
+	{
+		if (glfwGetKey(window.GetWindow(), GLFW_KEY_RIGHT) == GLFW_PRESS)
+		{
+			m_camera_angle_yaw += dt * m_movement_speed * 10.0f;
+			m_camera_angle_yaw = fmod(m_camera_angle_yaw, 360.0f);
+		}
+
+		if (glfwGetKey(window.GetWindow(), GLFW_KEY_LEFT) == GLFW_PRESS)
+		{
+			m_camera_angle_yaw -= dt * m_movement_speed * 10.0f;
+			m_camera_angle_yaw = fmod(m_camera_angle_yaw, 360.0f);
+		}
+
+		if (glfwGetKey(window.GetWindow(), GLFW_KEY_UP) == GLFW_PRESS)
+		{
+			m_camera_angle_pitch += dt * m_movement_speed * 5.0f;
+			if (m_camera_angle_pitch >= 88.0f)
+				m_camera_angle_pitch = 88.0f;
+		}
+
+		if (glfwGetKey(window.GetWindow(), GLFW_KEY_DOWN) == GLFW_PRESS)
+		{
+			m_camera_angle_pitch -= dt * m_movement_speed * 5.0f;
+			if (m_camera_angle_pitch <= -88.0f)
+				m_camera_angle_pitch = -88.0f;
+		}
+	}
+
+	else
+	{
+		// handled by callback function
+	}
+
+	// first yaw rotation, then pitch of the direction vector (relevant for z-component)
+	m_look_direction.x = glm::sin(m_camera_angle_yaw * pi / 180.0f) * glm::cos(m_camera_angle_pitch * pi / 180.0f);
+	m_look_direction.y = glm::sin(m_camera_angle_pitch * pi / 180.0f);
+	m_look_direction.z = -glm::cos(m_camera_angle_yaw * pi / 180.0f) * glm::cos(m_camera_angle_pitch * pi / 180.0f);
+
+	// without this updating target the camera will be locked on to the initial target 
+	m_target = m_position + m_look_direction;
+}
+
+const void Camera::UpdateFromMouseCallback(const short& xoffset, const short& yoffset)
+{
+	m_camera_angle_yaw += xoffset;
+	if (m_camera_angle_pitch + yoffset >= 89.0f)
+		m_camera_angle_pitch = 89.0f;
+	else if (m_camera_angle_pitch + yoffset <= -89.0f)
+		m_camera_angle_pitch = -89.0f;
+	else
+	{
+		m_camera_angle_pitch += yoffset;
+	}
+}
+
+const void Camera::UpdateFromScrollCallback(const float& xoffset, const float& yoffset)
+{
+	float zoom = m_zoom;
+	const float speed = 0.1f;
+	if (zoom + yoffset * speed >= 5.0f)
+		zoom = 5.0f;
+	else if (zoom + yoffset * speed <= 1.0f)
+		zoom = 1.0f;
+	else
+		zoom += yoffset * speed;
+
+	m_zoom = zoom;
+}
+
 const void Camera::Zoom(Window& window, const float& dt)
 {
 	static float time_z = 0.0f;
-	if (glfwGetKey(window.GetWindow(), GLFW_KEY_P) == GLFW_PRESS)
+	if (!m_UseMouseInput)
 	{
-		if (m_yFOV / (m_zoom + dt * m_movement_speed * 0.5f) <= 5.0f)
+		if (glfwGetKey(window.GetWindow(), GLFW_KEY_P) == GLFW_PRESS)
 		{
-			m_zoom -= dt * m_movement_speed * 5.0f;
+			if (m_yFOV / (m_zoom + dt * m_movement_speed * 0.5f) <= 5.0f)
+			{
+				m_zoom -= dt * m_movement_speed * 5.0f;
+			}
+			else
+				m_zoom += dt * m_movement_speed * 0.5f;
 		}
-		else
-			m_zoom += dt * m_movement_speed * 0.5f;
-	}
 
-	if (glfwGetKey(window.GetWindow(), GLFW_KEY_M) == GLFW_PRESS)
-	{
-		if (m_yFOV / (m_zoom - dt * m_movement_speed * 0.5f) >= 90.0f)
+		if (glfwGetKey(window.GetWindow(), GLFW_KEY_M) == GLFW_PRESS)
 		{
-			m_zoom += dt * m_movement_speed * 0.05f;
+			if (m_yFOV / (m_zoom - dt * m_movement_speed * 0.5f) >= 90.0f)
+			{
+				m_zoom += dt * m_movement_speed * 0.05f;
+			}
+			else
+				m_zoom -= dt * m_movement_speed * 0.5f;
 		}
-		else
-			m_zoom -= dt * m_movement_speed * 0.5f;
+	}
+	else
+	{
+		// handled by zoom/scroll callback
 	}
 
 	// update the corresponding projection matrix
@@ -203,5 +251,37 @@ const void Camera::Zoom(Window& window, const float& dt)
 	}
 	else
 		time_z += dt;
+}
 
+glm::mat4x4 myLookAt(const glm::vec3 pos, const glm::vec3 trgt, const glm::vec3 up)
+{
+	glm::vec3 dir = glm::normalize(trgt - pos);
+	glm::vec3 forward = -dir;
+	glm::vec3 right = glm::normalize(glm::cross(dir, up));
+	glm::vec3 u = glm::normalize(glm::cross(right, dir));
+	glm::mat4x4 lookat(0);
+
+	lookat[0][2] = forward.x;
+	lookat[1][2] = forward.y;
+	lookat[2][2] = forward.z;
+
+	lookat[0][0] = right.x;
+	lookat[1][0] = right.y;
+	lookat[2][0] = right.z;
+
+	lookat[0][1] = u.x;
+	lookat[1][1] = u.y;
+	lookat[2][1] = u.z;
+
+	glm::vec3 pf = -(pos * forward);
+	glm::vec3 pr = -(pos * right);
+	glm::vec3 pu = -(pos * u);
+
+	lookat[3][2] = float(pf.x + pf.y + pf.z);
+	lookat[3][0] = float(pr.x + pr.y + pr.z);
+	lookat[3][1] = float(pu.x + pu.y + pu.z);
+
+	lookat[3][3] = 1;
+
+	return lookat;
 }
