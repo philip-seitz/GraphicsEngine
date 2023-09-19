@@ -1,5 +1,6 @@
 #include <vector>
 #include "Window.h"
+#include "Shader.h"
 #include <glm/glm.hpp>
 
 #define RED 0.8f, 0.3f, 0.3f, 1.0f
@@ -87,8 +88,12 @@ struct Model
 
 	void InitMeshFromData(const std::string& filepath);
 	void LoadMesh(const std::string& filepath);
+
 	void InitCube(const bool& useTexture = true);
 	void LoadCube();
+
+	void InitSimpleCube();		// only vertex positions
+	void LoadSimpleCube();
 	void InitTriangle();
 	void LoadTriangle();
 	void InitQuad();
@@ -104,7 +109,7 @@ struct ModelInstance
 	glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
 
 	glm::mat4x4 ModelMatrix();
-	void Draw(const Model& base_model);
+	void Draw(const Model& base_model, Shader* shader);
 };
 
 struct Grid
@@ -150,6 +155,17 @@ public:
 	static void EndBatch();
 	static void Flush();
 
+	// static void CreateModelFromData(const std::string& filepath);
+	static void CreatePrimitiveCube();
+	static void SpawnPrimitiveCube(const int& number, const glm::vec3& pos);
+
+	static void CreateCube();
+	static void SpawnCube(const int& number, const glm::vec3& pos);
+
+	static void CreateGrid();
+	static void SpawnGrid();
+
+	static int ModelGridLayout(ModelInstance** inst, const int& number, const glm::vec3& pos);
 	static void DrawModels();
 	static void DrawGrid();
 

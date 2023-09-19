@@ -5,7 +5,7 @@
 
 #include "Window.h"
 #include "Renderer.h"
-#include "Application.h"
+#include "LightingScene.h"
 
 int win_width = 1080;
 int win_height = 720;
@@ -14,8 +14,10 @@ const char* shader_path = "res/shader/vert_frag.shader";
 
 int main(void)
 {
-    Application app(win_width, win_height, win_title);
-    app.Run();
+    // Application app(win_width, win_height, win_title);
+    // app.Run();
+    Application* selector  = new LightingScene(win_width, win_height, win_title);
+    selector->Run();
 
     return 0;
 }

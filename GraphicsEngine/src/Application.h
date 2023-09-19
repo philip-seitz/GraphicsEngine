@@ -4,13 +4,14 @@
 class Application
 {
 public:
+	Application();
 	Application(const int& width, const int& height, const char* title);
 	~Application();
 
-	void Run();
-	void OnAttach();
-	void OnUpdate(const float& dt);
+	virtual void Run() = 0;
+	virtual void OnUpdate() = 0;
 	void OnRender();
+	void OnEvent();
 
 public:
 	Window m_window;

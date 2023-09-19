@@ -48,6 +48,9 @@
     <ClCompile Include="src\vendor\stb_image\stb_image.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="src\LightingScene.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Window.h">
@@ -923,6 +926,9 @@
     <ClInclude Include="src\vendor\stb_image\stb_image.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="src\LightingScene.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\vendor\glm\detail\func_common.inl">
@@ -1334,5 +1340,7 @@
       <Filter>Headerdateien</Filter>
     </None>
     <None Include="res\shader\vert_frag.glsl" />
+    <None Include="res\shader\light_source_shader.glsl" />
+    <None Include="res\shader\lighting_shader.glsl" />
   </ItemGroup>
 </Project>

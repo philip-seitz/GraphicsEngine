@@ -160,6 +160,7 @@
     <ClCompile Include="src\DebugUtil.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
+    <ClCompile Include="src\LightingScene.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\Util.cpp" />
@@ -171,6 +172,7 @@
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\DebugUtil.h" />
     <ClInclude Include="src\Renderer.h" />
+    <ClInclude Include="src\LightingScene.h" />
     <ClInclude Include="src\Shader.h" />
     <ClInclude Include="src\Texture.h" />
     <ClInclude Include="src\Util.h" />
@@ -460,6 +462,8 @@
     <ClInclude Include="src\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\shader\light_source_shader.glsl" />
+    <None Include="res\shader\lighting_shader.glsl" />
     <None Include="res\shader\vert_frag.glsl" />
     <None Include="src\vendor\glm\detail\func_common.inl" />
     <None Include="src\vendor\glm\detail\func_common_simd.inl" />
