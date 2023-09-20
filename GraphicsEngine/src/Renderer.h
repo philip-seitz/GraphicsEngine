@@ -19,6 +19,7 @@ struct Vertex
 	glm::vec3 position;
 	glm::vec4 color;
 	glm::vec2 texture_cords;
+	glm::vec3 normal;
 };
 
 struct Triangle
@@ -38,6 +39,17 @@ struct Triangle
 		p0.color = color;
 		p1.color = color;
 		p2.color = color;
+	}
+
+	void SetNormal()
+	{
+		glm::vec3 p01 = p1.position - p0.position;
+		glm::vec3 p02 = p2.position - p0.position;
+		glm::vec3 normal = glm::normalize(glm::cross(p01, p02));
+
+		p0.normal = normal;
+		p1.normal = normal;
+		p2.normal = normal;
 	}
 };
 
@@ -109,6 +121,7 @@ struct ModelInstance
 	glm::vec3 scale = { 1.0f, 1.0f, 1.0f };
 
 	glm::mat4x4 ModelMatrix();
+	glm::mat3x3 NormalMatrix();
 	void Draw(const Model& base_model, Shader* shader);
 };
 

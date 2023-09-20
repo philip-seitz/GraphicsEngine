@@ -127,6 +127,7 @@ void Renderer::SpawnPrimitiveCube(const int& number, const glm::vec3& pos)
 	{
 		sData.iLight = new ModelInstance[1];
 		sData.iLight[0].position = pos;
+		sData.iLight[0].scale = glm::vec3(0.2f);
 		sData.lightNumber = number;
 	}
 	else if (number > 1)
@@ -147,6 +148,8 @@ void Renderer::SpawnCube(const int& number, const glm::vec3& pos)
 	{
 		sData.iCube = new ModelInstance[1];
 		sData.iCube[0].position = pos;
+		sData.iCube[0].scale = glm::vec3(1.0f);
+		sData.iCube[0].angles.x = 0.0f;
 		sData.cubeNumber = number;
 	}
 	else if (number > 1)
@@ -181,6 +184,8 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 
 void Renderer::DrawModels()
 {
+
+	// Light Source
 	sData.light_source_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.light_source_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
 	
@@ -190,14 +195,20 @@ void Renderer::DrawModels()
 		sData.iLight[i].Draw(sData.primitive_cube, sData.light_source_shader);
 	}
 
+	// Lighting Object
+	
 	sData.lighting_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.lighting_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
 	sData.lighting_shader->SetUniform4f("u_Light_Color", sData.light_color.x, sData.light_color.y, sData.light_color.z, sData.light_color.w);
 	sData.lighting_shader->SetUniform4f("u_Object_Color", sData.object_color.x, sData.object_color.y, sData.object_color.z, sData.object_color.w);
 
+	sData.lighting_shader->SetUniform4f("u_Light_Position", sData.iLight[0].position.x, sData.iLight[0].position.y, sData.iLight[0].position.z, 1.0f);
+	sData.lighting_shader->SetUniform4f("u_Camera_Position", camera.Position().x, camera.Position().y, camera.Position().z, 1.0f);
+
 	int len_obj = sData.cubeNumber;
 	for (int i = 0; i < len_obj; i++)
 	{
+		sData.lighting_shader->SetUniformMat3f("u_Normal_Matrix", sData.iCube[i].NormalMatrix());
 		sData.iCube[i].Draw(sData.cube, sData.lighting_shader);
 	}
 }
@@ -370,6 +381,7 @@ void Model::LoadSimpleCube()
 
 	for (unsigned int i = 0; i < mesh.size(); i++)
 	{
+		mesh[i].SetNormal();
 		*(TriBufferPointer) = mesh[i];
 		*(TriIndicesPointer) = { {0 + 3 * (TriCount), 1 + 3 * (TriCount), 2 + 3 * (TriCount)} };
 		TriBufferPointer++;
@@ -402,6 +414,9 @@ void Model::InitCube(const bool& useTexture)
 
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, texture_cords));
+
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, normal));
 }
 
 void Model::LoadCube()
@@ -479,6 +494,7 @@ void Model::LoadCube()
 
 	for (unsigned int i = 0; i < mesh.size(); i++)
 	{
+		mesh[i].SetNormal();
 		*(TriBufferPointer) = mesh[i];
 		*(TriIndicesPointer) = { {0 + 3 * (TriCount), 1 + 3 * (TriCount), 2 + 3 * (TriCount)} };
 		TriBufferPointer++;
@@ -533,6 +549,7 @@ void Model::LoadTriangle()
 
 	for (unsigned int i = 0; i < mesh.size(); i++)
 	{
+		mesh[i].SetNormal();
 		*(TriBufferPointer) = mesh[i];
 		*(TriIndicesPointer) = { {0 + 3 * (TriCount), 1 + 3 * (TriCount), 2 + 3 * (TriCount)} };
 		TriBufferPointer++;
@@ -589,6 +606,7 @@ void Model::LoadQuad()
 
 	for (unsigned int i = 0; i < mesh.size(); i++)
 	{
+		mesh[i].SetNormal();
 		*(TriBufferPointer) = mesh[i];
 		*(TriIndicesPointer) = { {0 + 3 * (TriCount), 1 + 3 * (TriCount), 2 + 3 * (TriCount)} };
 		TriBufferPointer++;
@@ -632,6 +650,7 @@ void Model::LoadMesh(const std::string& filepath)
 	for (int i = 0; i < triNumber; i++)
 	{
 		*(TriBufferPointer) = Triangle{ {mesh[indices[i][0] - 1], color}, {mesh[indices[i][1] - 1], color}, {mesh[indices[i][2] - 1], color} };
+		TriBufferPointer->SetNormal();
 		*(TriIndicesPointer) = { {0 + 3 * (TriCount), 1 + 3 * (TriCount), 2 + 3 * (TriCount)} };
 		TriBufferPointer++;
 		TriIndicesPointer++;
@@ -665,6 +684,11 @@ glm::mat4x4 ModelInstance::ModelMatrix()
 	scaling = glm::scale(glm::mat4(1.0f), scale);
 
 	return translation * combinedRotation * scaling;
+}
+
+glm::mat3x3 ModelInstance::NormalMatrix()
+{
+	return glm::transpose(glm::inverse(ModelMatrix()));
 }
 
 void ModelInstance::Draw(const Model& base_model, Shader* shader)

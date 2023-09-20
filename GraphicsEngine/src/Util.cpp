@@ -18,11 +18,10 @@ void StringToFloat(const std::vector<std::vector <char>>& stream, std::vector <f
 			negative = true;
 		}
 
-		while (stream[i][p_idx] != 46)			// dot
+		while (stream[i][p_idx] != 46)					// dot
 		{
 			p_idx++;
 		}
-
 
 		for (int j = 0 + negative; j < p_idx; j++)
 		{
@@ -95,7 +94,7 @@ void ReadVertexData(const std::string& filepath, std::vector <float>&vert, std::
 							}
 							vertex_vectors.push_back(number_char);
 						}
-			}
+				}
 		}
 		else if (line.find("f") != std::string::npos)
 		{
@@ -116,7 +115,6 @@ void ReadVertexData(const std::string& filepath, std::vector <float>&vert, std::
 					index_vectors.push_back(number_char);
 				}
 			}
-		
 		}
 		else
 		{
@@ -175,7 +173,6 @@ int CalculateNumberOfLines(float size, float distance)
 			t = t + (2.0 - std::fmod(t, 2.0));
 			return  2 + 4 * t;
 		}
-
 	}
 	else
 	{
