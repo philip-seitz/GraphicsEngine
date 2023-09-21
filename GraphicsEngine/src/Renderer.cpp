@@ -250,9 +250,9 @@ void Renderer::Calculate(const float& dt)
 	}	
 
 	// light movement per frame 
-	sData.iLight[0].position.x = 2 * glm::sin(glfwGetTime());
-	sData.iLight[0].position.y = 2 * glm::sin(glfwGetTime());
-	sData.iLight[0].position.z = 2 * glm::cos(glfwGetTime());
+	//sData.iLight[0].position.x = 2 * glm::sin(glfwGetTime());
+	//sData.iLight[0].position.y = 2 * glm::sin(glfwGetTime());
+	//sData.iLight[0].position.z = 2 * glm::cos(glfwGetTime());
 
 }
 

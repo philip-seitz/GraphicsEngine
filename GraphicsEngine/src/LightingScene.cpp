@@ -17,7 +17,7 @@ LightingScene::~LightingScene()
 
 void LightingScene::Run()
 {
-    glm::vec3 lightSourcePosition = { 4.0f, 0.0f, 1.3f };
+    glm::vec3 lightSourcePosition = { 4.0f, 2.0f, 3.3f };
     glm::vec3 objectPosition = { 0.0f, 0.0f, 0.0f };
     if (!m_window.Init())
         std::exit(0);
