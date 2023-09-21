@@ -248,6 +248,12 @@ void Renderer::Calculate(const float& dt)
 		// Renderer::AddCubeTexture(camera.Position() + camera.LookDirection() * 7.0f, 3.0f);
 		space_press = false;
 	}	
+
+	// light movement per frame 
+	sData.iLight[0].position.x = 2 * glm::sin(glfwGetTime());
+	sData.iLight[0].position.y = 2 * glm::sin(glfwGetTime());
+	sData.iLight[0].position.z = 2 * glm::cos(glfwGetTime());
+
 }
 
 void Renderer::Clear()
@@ -688,7 +694,7 @@ glm::mat4x4 ModelInstance::ModelMatrix()
 
 glm::mat3x3 ModelInstance::NormalMatrix()
 {
-	return glm::transpose(glm::inverse(ModelMatrix()));
+	return glm::transpose(glm::inverse(camera.LookAtMatrix() * ModelMatrix()));
 }
 
 void ModelInstance::Draw(const Model& base_model, Shader* shader)
