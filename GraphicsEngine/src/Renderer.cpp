@@ -67,6 +67,7 @@ struct RendererData
 
 	Texture* texture_0 = nullptr;
 	Texture* texture_1 = nullptr;
+	Texture* texture_2 = nullptr;
 	Window* window = nullptr;
 };
 
@@ -82,10 +83,22 @@ void Renderer::Init(Window* window)
 	glUseProgram(sData.light_source_shader->GetRendererID());
 	glUseProgram(sData.shader->GetRendererID());
 	
-	sData.texture_0 = new Texture("res/textures/flappy.png", 0, GL_CLAMP_TO_EDGE);
-	sData.texture_1 = new Texture("res/textures/cp2077.png", 1, GL_CLAMP_TO_EDGE);
+	sData.texture_0 = new Texture("res/textures/container2.png", 0, GL_CLAMP_TO_EDGE);
+	sData.texture_1 = new Texture("res/textures/container_specular.png", 1, GL_CLAMP_TO_EDGE);
+	sData.texture_2 = new Texture("res/textures/matrix.png", 2, GL_CLAMP_TO_EDGE);
 	sData.texture_0->Bind();
-	sData.texture_1->Bind();	
+	sData.texture_1->Bind();
+	sData.texture_2->Bind();
+
+	sData.lighting_shader->SetUniform1i("u_Material.diffuse", 0);
+	sData.lighting_shader->SetUniform1i("u_Material.specular", 1);
+	sData.lighting_shader->SetUniform1i("u_Material.emissive", 2);
+	sData.lighting_shader->SetUniform1f("u_Material.shininess", 32.0f);
+
+	sData.lighting_shader->SetUniform3f("u_Light.ambient", sData.light_color.r, sData.light_color.r, sData.light_color.r);
+	sData.lighting_shader->SetUniform3f("u_Light.diffuse", sData.light_color.r, sData.light_color.r, sData.light_color.r);
+	sData.lighting_shader->SetUniform3f("u_Light.specular", sData.light_color.r, sData.light_color.r, sData.light_color.r);
+	
 }
 
 void Renderer::Shutdown()
@@ -184,10 +197,11 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 
 void Renderer::DrawModels()
 {
-
 	// Light Source
 	sData.light_source_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.light_source_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
+
+	sData.light_source_shader->SetUniform3f("u_LightColor", sData.light_color.r, sData.light_color.g, sData.light_color.b);
 	
 	int len_light = sData.lightNumber;
 	for (int i = 0; i < len_light; i++)
@@ -199,11 +213,13 @@ void Renderer::DrawModels()
 	
 	sData.lighting_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.lighting_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
-	sData.lighting_shader->SetUniform4f("u_Light_Color", sData.light_color.x, sData.light_color.y, sData.light_color.z, sData.light_color.w);
-	sData.lighting_shader->SetUniform4f("u_Object_Color", sData.object_color.x, sData.object_color.y, sData.object_color.z, sData.object_color.w);
-
-	sData.lighting_shader->SetUniform4f("u_Light_Position", sData.iLight[0].position.x, sData.iLight[0].position.y, sData.iLight[0].position.z, 1.0f);
-	sData.lighting_shader->SetUniform4f("u_Camera_Position", camera.Position().x, camera.Position().y, camera.Position().z, 1.0f);
+	glm::vec3 ambient = glm::vec3(sData.light_color) * glm::vec3(0.2f);
+	glm::vec3 diffuse = glm::vec3(sData.light_color) * glm::vec3(0.5f);
+	glm::vec3 specular = glm::vec3(sData.light_color) * glm::vec3(0.5f);
+	sData.lighting_shader->SetUniform3f("u_Light.ambient", ambient.r, ambient.g, ambient.b);
+	sData.lighting_shader->SetUniform3f("u_Light.diffuse", diffuse.r, diffuse.g, diffuse.b);
+	sData.lighting_shader->SetUniform3f("u_Light.specular", specular.r, specular.g, specular.b);
+	sData.lighting_shader->SetUniform3f("u_Light.position", sData.iLight[0].position.x, sData.iLight[0].position.y, sData.iLight[0].position.z);
 
 	int len_obj = sData.cubeNumber;
 	for (int i = 0; i < len_obj; i++)
@@ -250,10 +266,13 @@ void Renderer::Calculate(const float& dt)
 	}	
 
 	// light movement per frame 
-	sData.iLight[0].position.x = 2 * glm::sin(glfwGetTime());
-	sData.iLight[0].position.y = 2 * glm::sin(glfwGetTime());
-	sData.iLight[0].position.z = 2 * glm::cos(glfwGetTime());
+	// sData.iLight[0].position.x = 2 * glm::sin(glfwGetTime());
+	// sData.iLight[0].position.y = 2 * glm::sin(glfwGetTime());
+	// sData.iLight[0].position.z = 2 * glm::cos(glfwGetTime());
 
+	/*sData.light_color.r = glm::sin(glfwGetTime());
+	sData.light_color.g = glm::sin(glfwGetTime());
+	sData.light_color.b = 0.7f;*/ 
 }
 
 void Renderer::Clear()
