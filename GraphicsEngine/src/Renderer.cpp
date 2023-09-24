@@ -96,9 +96,10 @@ void Renderer::Init(Window* window)
 	sData.lighting_shader->SetUniform1f("u_Material.shininess", 32.0f);
 
 	// 1st point light
-	sData.lighting_shader->SetUniform3f("u_PointLight[0].ambient", sData.light_color);
-	sData.lighting_shader->SetUniform3f("u_PointLight[0].diffuse", sData.light_color);
-	sData.lighting_shader->SetUniform3f("u_PointLight[0].specular", sData.light_color);
+	
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].ambient", glm::vec3(0.7f, 0.3f, 0.3f));
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].diffuse", glm::vec3(0.7f, 0.3f, 0.3f));
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].specular", glm::vec3(0.7f, 0.3f, 0.3f));
 										   
 	sData.lighting_shader->SetUniform1f("u_PointLight[0].constant", 1.0f);
 	sData.lighting_shader->SetUniform1f("u_PointLight[0].linear", 0.045f);
@@ -146,8 +147,8 @@ void Renderer::Init(Window* window)
 	sData.lighting_shader->SetUniform1f("u_SpotLight.linear", 0.045f);
 	sData.lighting_shader->SetUniform1f("u_SpotLight.quadratic", 0.0075f);
 
-	sData.lighting_shader->SetUniform1f("u_SpotLight.innerCutoff", glm::cos(glm::radians(5.5f)));
-	sData.lighting_shader->SetUniform1f("u_SpotLight.outerCutoff", glm::cos(glm::radians(10.5f)));
+	sData.lighting_shader->SetUniform1f("u_SpotLight.innerCutoff", glm::cos(glm::radians(12.5f)));
+	sData.lighting_shader->SetUniform1f("u_SpotLight.outerCutoff", glm::cos(glm::radians(15.5f)));
 
 
 	// sData.lighting_shader->SetUniform1f("u_PointLight.innerCutoff", glm::cos(glm::radians(2.5f)));
@@ -210,6 +211,7 @@ void Renderer::SpawnPrimitiveCube(const int& number, const glm::vec3& pos)
 			int up = i % 2 == 0 ? 1 : -1;
 			sData.iLight[i].position.y = 5.0 * i * up;
 			sData.iLight[i].scale = glm::vec3(0.2f);
+			sData.iLight[i].color = glm::vec3(1.0f / sData.lightNumber * i + 0.2f, 0.3f, -1.0f / sData.lightNumber * i + 1.0f);
 		}
 	}
 }
@@ -272,11 +274,10 @@ void Renderer::DrawModels()
 	sData.light_source_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.light_source_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
 
-	sData.light_source_shader->SetUniform3f("u_LightColor", sData.light_color);
-	
 	int len_light = sData.lightNumber;
 	for (int i = 0; i < len_light; i++)
 	{
+		sData.light_source_shader->SetUniform3f("u_LightColor", sData.iLight[i].color);
 		sData.iLight[i].Draw(sData.primitive_cube, sData.light_source_shader);
 	}
 
@@ -288,9 +289,25 @@ void Renderer::DrawModels()
 	sData.lighting_shader->SetUniform3f("u_CameraPosition", camera.Position());
 
 	sData.lighting_shader->SetUniform3f("u_PointLight[0].position", sData.iLight[0].position);
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].ambient", 0.2f*sData.iLight[0].color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].diffuse", 0.5f*sData.iLight[0].color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].specular", 0.5f*sData.iLight[0].color);
+
 	sData.lighting_shader->SetUniform3f("u_PointLight[1].position", sData.iLight[1].position);
+	sData.lighting_shader->SetUniform3f("u_PointLight[1].ambient", 0.2f * sData.iLight[1].color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[1].diffuse", 0.5f * sData.iLight[1].color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[1].specular", 0.5f *sData.iLight[1].color);
+
+
 	sData.lighting_shader->SetUniform3f("u_PointLight[2].position", sData.iLight[2].position);
+	sData.lighting_shader->SetUniform3f("u_PointLight[2].ambient", 0.2f * sData.iLight[2].color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[2].diffuse", 0.5f * sData.iLight[2].color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[2].specular", 0.5f * sData.iLight[2].color);
+
 	sData.lighting_shader->SetUniform3f("u_PointLight[3].position", sData.iLight[3].position);
+	sData.lighting_shader->SetUniform3f("u_PointLight[3].ambient", 0.2f * sData.iLight[3].color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[3].diffuse", 0.5f * sData.iLight[3].color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[3].specular", 0.5f * sData.iLight[3].color);
 
 	sData.lighting_shader->SetUniform3f("u_DirLight.direction", glm::vec3(-1.0f, 3.0f, 0.4f));
 

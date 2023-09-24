@@ -125,8 +125,8 @@ void main()
 	{
 		color += CalcPointLight(u_PointLight[i], normal, view_direction);
 	}
-	color += CalcDirectionalLight(u_DirLight, normal, view_direction);
-	color += CalcSpotLight(u_SpotLight, normal, view_direction); 
+	// color += CalcDirectionalLight(u_DirLight, normal, view_direction);
+	// color += CalcSpotLight(u_SpotLight, normal, view_direction); 
 
 	o_Color = vec4(color, 1.0f);
 }
@@ -201,7 +201,7 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 
 	vec3 diffuse = light.diffuse * attenuation_factor * intensity * (diffuseValue * diffuseMap);
 	vec3 specular = light.specular * attenuation_factor * intensity * (specularValue * specularMap);
-	vec3 ambient = light.ambient * attenuation_factor * diffuseMap;
+	vec3 ambient = light.ambient * attenuation_factor * intensity * diffuseMap;
 	vec3 emission = emissionMap;		// for glow effects
 
 	vec3 color = ambient + diffuse + specular; 
