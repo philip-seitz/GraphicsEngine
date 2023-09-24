@@ -25,6 +25,46 @@ void main()
 #version 330 core
 layout(location = 0) out vec4 o_Color;
 
+struct DirectionalLight
+{
+	vec3 direction;
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+};
+
+struct PointLight
+{
+	vec3 position;
+
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+
+	// attenuation coefficients
+	float constant;
+	float linear;
+	float quadratic;
+};
+
+struct SpotLight
+{
+	vec3 position;
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+
+	// attenuation coefficients
+	float constant;
+	float linear;
+	float quadratic;
+
+	// spot light parameters 
+	vec3 direction;
+	float innerCutoff;
+	float outerCutoff;
+
+};
 
 struct Material 
 {
@@ -53,6 +93,12 @@ struct Light
 	float outerCutoff;
 };
 
+vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_dir);
+vec3 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir);
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir);
+
+#define NR_POINTS_LIGHTS 4
+
 in vec3 v_Normal;
 in vec3 v_FragmentPosition;
 in vec3 v_LightPosition;
@@ -64,70 +110,100 @@ uniform vec3 u_Light_Color;
 uniform vec3 u_CameraPosition;
 uniform Material u_Material;
 uniform Light u_Light;
-
-bool isFlashLight = false;
+uniform PointLight u_PointLight[NR_POINTS_LIGHTS];
+uniform DirectionalLight u_DirLight;
+uniform SpotLight u_SpotLight;
 
 void main()
 {
-	vec4 color;		
+	vec3 color = vec3(0.0f);		
 
+	vec3 normal = normalize(v_Normal);
+	vec3 view_direction = -normalize(v_FragmentPosition - u_CameraPosition);
+
+	for (int i = 0; i < NR_POINTS_LIGHTS; i++)
+	{
+		color += CalcPointLight(u_PointLight[i], normal, view_direction);
+	}
+	color += CalcDirectionalLight(u_DirLight, normal, view_direction);
+	color += CalcSpotLight(u_SpotLight, normal, view_direction); 
+
+	o_Color = vec4(color, 1.0f);
+}
+
+vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_dir)
+{
 	vec3 diffuseMap = texture(u_Material.diffuse, v_TexCoord).xyz;
 	vec3 specularMap = texture(u_Material.specular, v_TexCoord).xyz;
 	vec3 emissionMap = texture(u_Material.emissive, v_TexCoord).xyz;
 
-	vec3 ambient;
-	vec3 diffuse;
-	vec3 specular;
-	vec3 emission;
-
-	vec3 light_direction;
-	float attenuation_factor = 1.0f;
-	
-	if(u_Light.vector.w == 1.0f)	// point or spot light
-	{
-		light_direction = -normalize(v_FragmentPosition - u_Light.vector.xyz);	// from object to light source (easier calc)
-		// light attenuation
-		float d = distance(u_Light.vector.xyz, v_FragmentPosition);
-		attenuation_factor = 1.0f/(u_Light.constant + u_Light.linear*d + u_Light.quadratic*d*d);
-	}
-	else	// directional light
-	{
-		light_direction = -normalize(u_Light.vector.xyz);	// direction vector is not transformed (no w component)
-	}
 	// diffuse calculation
-	vec3 normal = normalize(v_Normal);
-	float diffuseValue = max(dot(normal, light_direction), 0.0f);		// values between 1 and 0; 1 if directly lit, 0 if not lit at all
+	vec3 light_direction = -normalize(light.direction.xyz);
+	float diffuseValue = max(dot(normal, light_direction), 0.0f);
 
 	// specular calculation
-	vec3 view_direction = -normalize(v_FragmentPosition - u_CameraPosition);
 	vec3 reflection_direction = reflect(-light_direction, normal);
-	float specularValue = pow(max(dot(view_direction, reflection_direction), 0.0f), u_Material.shininess);
+	float specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), u_Material.shininess);
 
-	// spot Light
-	if(isFlashLight)
-	{
-		vec3 spotDirection = -u_Light.direction;
-		float theta = dot(light_direction, spotDirection);
-		float intensity = (theta - u_Light.outerCutoff)/(u_Light.innerCutoff - u_Light.outerCutoff);
-		clamp(intensity, 0.0f, 1.0f);
+	vec3 ambient = light.ambient * diffuseMap;
+	vec3 diffuse = light.diffuse * (diffuseValue * diffuseMap);
+	vec3 specular = light.specular * (specularValue * specularMap);
+	vec3 emission = emissionMap;		// for glow effects
+	vec3 color = ambient + diffuse + specular; 
+	return color;
+}
 
-		diffuse = u_Light.diffuse * attenuation_factor * intensity * (diffuseValue * diffuseMap);
-		specular = u_Light.specular * attenuation_factor * intensity * (specularValue * specularMap);
-		ambient = u_Light.ambient * attenuation_factor * diffuseMap;
-		emission = emissionMap;		// for glow effects
+vec3 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir)
+{
+	vec3 diffuseMap = texture(u_Material.diffuse, v_TexCoord).xyz;
+	vec3 specularMap = texture(u_Material.specular, v_TexCoord).xyz;
+	vec3 emissionMap = texture(u_Material.emissive, v_TexCoord).xyz;
+	
+	vec3 light_direction = -normalize(v_FragmentPosition - light.position.xyz);	// from object to light source (easier calc)
+	float diffuseValue = max(dot(normal, light_direction), 0.0f);
+	// light attenuation
+	float d = distance(light.position.xyz, v_FragmentPosition);
+	float attenuation_factor = 1.0f/(light.constant + light.linear*d + light.quadratic*d*d);
+	
+	// specular calculation
+	vec3 reflection_direction = reflect(-light_direction, normal);
+	float specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), u_Material.shininess);
+	
+	
+	vec3 ambient = light.ambient * attenuation_factor * diffuseMap;
+	vec3 diffuse = light.diffuse * attenuation_factor * (diffuseValue * diffuseMap);
+	vec3 specular = light.specular * attenuation_factor * (specularValue * specularMap);
+	vec3 emission = emissionMap;		// for glow effects
+	return ambient + diffuse + specular; 
+}
 
-		color = vec4(ambient + diffuse + specular, 1.0f); 
-	}
-	// point light
-	else 
-	{
-		// final color
-		ambient = u_Light.ambient * attenuation_factor * diffuseMap;
-		diffuse = u_Light.diffuse * attenuation_factor * (diffuseValue * diffuseMap);
-		specular = u_Light.specular * attenuation_factor * (specularValue * specularMap);
-		emission = emissionMap;		// for glow effects
-		color = vec4(ambient + diffuse + specular, 1.0f); 
-	}
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
+{
+	vec3 diffuseMap = texture(u_Material.diffuse, v_TexCoord).xyz;
+	vec3 specularMap = texture(u_Material.specular, v_TexCoord).xyz;
+	vec3 emissionMap = texture(u_Material.emissive, v_TexCoord).xyz;
 
-	o_Color = color;
+	vec3 light_direction = -normalize(v_FragmentPosition - light.position.xyz);	// from object to light source (easier calc)
+	float diffuseValue = max(dot(normal, light_direction), 0.0f);
+
+	// specular calculation
+	vec3 reflection_direction = reflect(-light_direction, normal);
+	float specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), u_Material.shininess);
+
+	// light attenuation
+	float d = distance(light.position.xyz, v_FragmentPosition);
+	float attenuation_factor = 1.0f/(light.constant + light.linear*d + light.quadratic*d*d);
+
+	vec3 spotDirection = -light.direction;
+	float theta = dot(light_direction, spotDirection);
+	float intensity = (theta - light.outerCutoff)/(light.innerCutoff - light.outerCutoff);
+	intensity = clamp(intensity, 0.0f, 1.0f);
+
+	vec3 diffuse = light.diffuse * attenuation_factor * intensity * (diffuseValue * diffuseMap);
+	vec3 specular = light.specular * attenuation_factor * intensity * (specularValue * specularMap);
+	vec3 ambient = light.ambient * attenuation_factor * diffuseMap;
+	vec3 emission = emissionMap;		// for glow effects
+
+	vec3 color = ambient + diffuse + specular; 
+	return color;
 }

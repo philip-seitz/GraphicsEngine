@@ -23,9 +23,9 @@ void LightingScene::Run()
         std::exit(0);
     Renderer::Init(&m_window);
     Renderer::CreatePrimitiveCube();
-    Renderer::SpawnPrimitiveCube(1, lightSourcePosition);
+    Renderer::SpawnPrimitiveCube(4, lightSourcePosition);
     Renderer::CreateCube();
-    Renderer::SpawnCube(9, objectPosition);
+    Renderer::SpawnCube(16, objectPosition);
 
     // render loop
     while (!glfwWindowShouldClose(m_window.GetWindow()))

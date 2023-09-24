@@ -95,16 +95,63 @@ void Renderer::Init(Window* window)
 	sData.lighting_shader->SetUniform1i("u_Material.emissive", 2);
 	sData.lighting_shader->SetUniform1f("u_Material.shininess", 32.0f);
 
-	sData.lighting_shader->SetUniform3f("u_Light.ambient", sData.light_color.r, sData.light_color.r, sData.light_color.r);
-	sData.lighting_shader->SetUniform3f("u_Light.diffuse", sData.light_color.r, sData.light_color.r, sData.light_color.r);
-	sData.lighting_shader->SetUniform3f("u_Light.specular", sData.light_color.r, sData.light_color.r, sData.light_color.r);
+	// 1st point light
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].ambient", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].diffuse", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].specular", sData.light_color);
+										   
+	sData.lighting_shader->SetUniform1f("u_PointLight[0].constant", 1.0f);
+	sData.lighting_shader->SetUniform1f("u_PointLight[0].linear", 0.045f);
+	sData.lighting_shader->SetUniform1f("u_PointLight[0].quadratic", 0.0075f);
 
-	sData.lighting_shader->SetUniform1f("u_Light.constant", 1.0f);
-	sData.lighting_shader->SetUniform1f("u_Light.linear", 0.045f);
-	sData.lighting_shader->SetUniform1f("u_Light.quadratic", 0.0075f);
+	// 2nd point light
+	
+	sData.lighting_shader->SetUniform3f("u_PointLight[1].ambient", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[1].diffuse", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[1].specular", sData.light_color);
+													  
+	sData.lighting_shader->SetUniform1f("u_PointLight[1].constant", 1.0f);
+	sData.lighting_shader->SetUniform1f("u_PointLight[1].linear", 0.045f);
+	sData.lighting_shader->SetUniform1f("u_PointLight[1].quadratic", 0.0075f);
 
-	sData.lighting_shader->SetUniform1f("u_Light.innerCutoff", glm::cos(glm::radians(2.5f)));
-	sData.lighting_shader->SetUniform1f("u_Light.outerCutoff", glm::cos(glm::radians(12.5f)));
+	// 3rd point light
+	sData.lighting_shader->SetUniform3f("u_PointLight[2].ambient", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[2].diffuse", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[2].specular", sData.light_color);
+													  
+	sData.lighting_shader->SetUniform1f("u_PointLight[2].constant", 1.0f);
+	sData.lighting_shader->SetUniform1f("u_PointLight[2].linear", 0.045f);
+	sData.lighting_shader->SetUniform1f("u_PointLight[2].quadratic", 0.0075f);
+
+	// 4th point light
+	sData.lighting_shader->SetUniform3f("u_PointLight[3].ambient", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[3].diffuse", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[3].specular", sData.light_color);
+													  
+	sData.lighting_shader->SetUniform1f("u_PointLight[3].constant", 1.0f);
+	sData.lighting_shader->SetUniform1f("u_PointLight[3].linear", 0.045f);
+	sData.lighting_shader->SetUniform1f("u_PointLight[3].quadratic", 0.0075f);
+
+	// directional light
+	sData.lighting_shader->SetUniform3f("u_DirLight.ambient", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_DirLight.diffuse", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_DirLight.specular", sData.light_color);
+
+	// spot light
+	sData.lighting_shader->SetUniform3f("u_SpotLight.ambient", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_SpotLight.diffuse", sData.light_color);
+	sData.lighting_shader->SetUniform3f("u_SpotLight.specular", sData.light_color);
+
+	sData.lighting_shader->SetUniform1f("u_SpotLight.constant", 1.0f);
+	sData.lighting_shader->SetUniform1f("u_SpotLight.linear", 0.045f);
+	sData.lighting_shader->SetUniform1f("u_SpotLight.quadratic", 0.0075f);
+
+	sData.lighting_shader->SetUniform1f("u_SpotLight.innerCutoff", glm::cos(glm::radians(5.5f)));
+	sData.lighting_shader->SetUniform1f("u_SpotLight.outerCutoff", glm::cos(glm::radians(10.5f)));
+
+
+	// sData.lighting_shader->SetUniform1f("u_PointLight.innerCutoff", glm::cos(glm::radians(2.5f)));
+	// sData.lighting_shader->SetUniform1f("u_PointLight.outerCutoff", glm::cos(glm::radians(12.5f)));
 	std::cout << glm::cos(glm::radians(20.5f)) << std::endl;
 }
 
@@ -154,6 +201,16 @@ void Renderer::SpawnPrimitiveCube(const int& number, const glm::vec3& pos)
 	{
 		// creates square grid -> number of instances is adjusted to fit that shape
 		sData.lightNumber = ModelGridLayout(&sData.iLight, number, pos);
+
+		// scatter
+
+		for (int i = 0; i < sData.lightNumber; i++)
+		{
+			sData.iLight[i].angles = { 20.0f * i, 10.0f * i, 0.0f };
+			int up = i % 2 == 0 ? 1 : -1;
+			sData.iLight[i].position.y = 5.0 * i * up;
+			sData.iLight[i].scale = glm::vec3(0.2f);
+		}
 	}
 }
 
@@ -180,11 +237,8 @@ void Renderer::SpawnCube(const int& number, const glm::vec3& pos)
 		for (int i = 0; i < sData.cubeNumber; i++)
 		{
 			sData.iCube[i].angles = { 20.0f * i, 10.0f * i, 0.0f };
-		}
-		for (int i = 0; i < sData.cubeNumber; i++)
-		{
 			int up = i % 2 == 0 ? 1 : -1;
-			sData.iCube[i].position.y = 2.0 * i * up;
+			sData.iCube[i].position.y = pos.y + 2.0 * i * up;
 		}
 	}
 }
@@ -218,7 +272,7 @@ void Renderer::DrawModels()
 	sData.light_source_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.light_source_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
 
-	sData.light_source_shader->SetUniform3f("u_LightColor", sData.light_color.r, sData.light_color.g, sData.light_color.b);
+	sData.light_source_shader->SetUniform3f("u_LightColor", sData.light_color);
 	
 	int len_light = sData.lightNumber;
 	for (int i = 0; i < len_light; i++)
@@ -231,21 +285,22 @@ void Renderer::DrawModels()
 	sData.lighting_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.lighting_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
 
-	sData.lighting_shader->SetUniform3f("u_CameraPosition", camera.Position().x, camera.Position().y, camera.Position().z);
-	glm::vec3 ambient = glm::vec3(sData.light_color) * glm::vec3(0.2f);
+	sData.lighting_shader->SetUniform3f("u_CameraPosition", camera.Position());
+
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].position", sData.iLight[0].position);
+	sData.lighting_shader->SetUniform3f("u_PointLight[1].position", sData.iLight[1].position);
+	sData.lighting_shader->SetUniform3f("u_PointLight[2].position", sData.iLight[2].position);
+	sData.lighting_shader->SetUniform3f("u_PointLight[3].position", sData.iLight[3].position);
+
+	sData.lighting_shader->SetUniform3f("u_DirLight.direction", glm::vec3(-1.0f, 3.0f, 0.4f));
+
+	sData.lighting_shader->SetUniform3f("u_SpotLight.position", camera.Position());
+	sData.lighting_shader->SetUniform3f("u_SpotLight.direction", camera.LookDirection());
+	/*glm::vec3 ambient = glm::vec3(sData.light_color) * glm::vec3(0.2f);
 	glm::vec3 diffuse = glm::vec3(sData.light_color) * glm::vec3(0.5f);
-	glm::vec3 specular = glm::vec3(sData.light_color) * glm::vec3(0.5f);
-	sData.lighting_shader->SetUniform3f("u_Light.ambient", ambient.r, ambient.g, ambient.b);
-	sData.lighting_shader->SetUniform3f("u_Light.diffuse", diffuse.r, diffuse.g, diffuse.b);
-	sData.lighting_shader->SetUniform3f("u_Light.specular", specular.r, specular.g, specular.b);
-	// sData.lighting_shader->SetUniform4f("u_Light.vector", sData.iLight[0].position.x, sData.iLight[0].position.y, sData.iLight[0].position.z, 1.0f);	// position
-	// sData.lighting_shader->SetUniform4f("u_Light.vector", 0.0f, -1.0f, 0.0f, 0.0f);	// direction
-
-	// sData.lighting_shader->SetUniform4f("u_Light.vector", camera.Position().x, camera.Position().y, camera.Position().z, 1.0f);
-	// sData.lighting_shader->SetUniform3f("u_Light.direction", camera.LookDirection().x, camera.LookDirection().y, camera.LookDirection().z);
-
-	sData.lighting_shader->SetUniform4f("u_Light.vector", 0.0f, 0.0f, 4.0f, 1.0f);
-	sData.lighting_shader->SetUniform3f("u_Light.direction", 0.0f, 0.0f, -1.0f);
+	glm::vec3 specular = glm::vec3(sData.light_color) * glm::vec3(0.5f);*/
+	
+	
 	int len_obj = sData.cubeNumber;
 	for (int i = 0; i < len_obj; i++)
 	{
