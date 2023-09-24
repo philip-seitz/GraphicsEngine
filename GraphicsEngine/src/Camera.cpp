@@ -11,7 +11,7 @@ Camera::Camera():
 	m_position(0.0f, 0.0f, 5.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
-	m_look_at(myLookAt(m_position, m_target, m_up)),
+	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
 	m_look_direction(0.0f, 0.0f, -1.0f),
 	m_camera_angle_yaw(0.0f),
 	m_camera_angle_pitch(0.0f),
@@ -25,7 +25,7 @@ Camera::Camera():
 	m_aspectRatio(1080.0f/720.0f),
 	m_zNear(1.0f),
 	m_zFar(-10000.0f),
-	m_perspective_proj(glm::perspectiveRH(m_yFOV * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar)),
+	m_perspective_proj(glm::perspectiveRH(glm::radians(m_yFOV), m_aspectRatio, m_zNear, m_zFar)),
 	m_orthographic_proj(glm::orthoRH(0.0f, 300.0f , 0.0f, 300.0f , m_zNear, m_zFar))
 {
 }
@@ -34,7 +34,7 @@ Camera::Camera(const bool& isPerspective):
 	m_position(0.0f, 0.0f, 8.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
-	m_look_at(myLookAt(m_position, m_target, m_up)),
+	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
 	m_look_direction(0.0f, 0.0f, -1.0f),
 	m_camera_angle_yaw(0.0f),
 	m_camera_angle_pitch(0.0f),
@@ -48,7 +48,7 @@ Camera::Camera(const bool& isPerspective):
 	m_aspectRatio(1080.0f / 720.0f),
 	m_zNear(1.5f),
 	m_zFar(-10000.0f),
-	m_perspective_proj(glm::perspectiveRH(m_yFOV * pi / 180.0f, m_aspectRatio, m_zNear, m_zFar)),
+	m_perspective_proj(glm::perspectiveRH(glm::radians(m_yFOV), m_aspectRatio, m_zNear, m_zFar)),
 	m_orthographic_proj(glm::orthoRH(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f))
 {
 }
@@ -119,7 +119,7 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 	}
 
 	// update matrix
-	m_look_at = myLookAt(m_position, m_target, m_up);
+	m_look_at = glm::lookAtRH(m_position, m_target, m_up);
 
 	// additional outpuots for debugging 
 	if (time >= 2.0f)
@@ -169,9 +169,9 @@ const void Camera::UpdateDirection(Window& window, const float& dt)
 	}
 
 	// first yaw rotation, then pitch of the direction vector (relevant for z-component)
-	m_look_direction.x = glm::sin(m_camera_angle_yaw * pi / 180.0f) * glm::cos(m_camera_angle_pitch * pi / 180.0f);
-	m_look_direction.y = glm::sin(m_camera_angle_pitch * pi / 180.0f);
-	m_look_direction.z = -glm::cos(m_camera_angle_yaw * pi / 180.0f) * glm::cos(m_camera_angle_pitch * pi / 180.0f);
+	m_look_direction.x = glm::sin(glm::radians(m_camera_angle_yaw)) * glm::cos(glm::radians(m_camera_angle_pitch));
+	m_look_direction.y = glm::sin(glm::radians(m_camera_angle_pitch));
+	m_look_direction.z = -glm::cos(glm::radians(m_camera_angle_yaw)) * glm::cos(glm::radians(m_camera_angle_pitch));
 
 	// without this updating target the camera will be locked on to the initial target 
 	m_target = m_position + m_look_direction;

@@ -17,7 +17,7 @@ LightingScene::~LightingScene()
 
 void LightingScene::Run()
 {
-    glm::vec3 lightSourcePosition = { 4.0f, 1.0f, 4.5f };
+    glm::vec3 lightSourcePosition = { 0.0f, 0.0f, 4.0f };
     glm::vec3 objectPosition = { 0.0f, 0.0f, 0.0f };
     if (!m_window.Init())
         std::exit(0);
@@ -25,7 +25,7 @@ void LightingScene::Run()
     Renderer::CreatePrimitiveCube();
     Renderer::SpawnPrimitiveCube(1, lightSourcePosition);
     Renderer::CreateCube();
-    Renderer::SpawnCube(1, objectPosition);
+    Renderer::SpawnCube(9, objectPosition);
 
     // render loop
     while (!glfwWindowShouldClose(m_window.GetWindow()))

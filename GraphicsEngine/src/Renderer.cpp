@@ -98,7 +98,14 @@ void Renderer::Init(Window* window)
 	sData.lighting_shader->SetUniform3f("u_Light.ambient", sData.light_color.r, sData.light_color.r, sData.light_color.r);
 	sData.lighting_shader->SetUniform3f("u_Light.diffuse", sData.light_color.r, sData.light_color.r, sData.light_color.r);
 	sData.lighting_shader->SetUniform3f("u_Light.specular", sData.light_color.r, sData.light_color.r, sData.light_color.r);
-	
+
+	sData.lighting_shader->SetUniform1f("u_Light.constant", 1.0f);
+	sData.lighting_shader->SetUniform1f("u_Light.linear", 0.045f);
+	sData.lighting_shader->SetUniform1f("u_Light.quadratic", 0.0075f);
+
+	sData.lighting_shader->SetUniform1f("u_Light.innerCutoff", glm::cos(glm::radians(2.5f)));
+	sData.lighting_shader->SetUniform1f("u_Light.outerCutoff", glm::cos(glm::radians(12.5f)));
+	std::cout << glm::cos(glm::radians(20.5f)) << std::endl;
 }
 
 void Renderer::Shutdown()
@@ -169,6 +176,16 @@ void Renderer::SpawnCube(const int& number, const glm::vec3& pos)
 	{
 		// creates square grid -> number of instances is adjusted to fit that shape
 		sData.cubeNumber = ModelGridLayout(&sData.iCube, number, pos);
+		// scatterd around
+		for (int i = 0; i < sData.cubeNumber; i++)
+		{
+			sData.iCube[i].angles = { 20.0f * i, 10.0f * i, 0.0f };
+		}
+		for (int i = 0; i < sData.cubeNumber; i++)
+		{
+			int up = i % 2 == 0 ? 1 : -1;
+			sData.iCube[i].position.y = 2.0 * i * up;
+		}
 	}
 }
 
@@ -213,14 +230,22 @@ void Renderer::DrawModels()
 	
 	sData.lighting_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.lighting_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
+
+	sData.lighting_shader->SetUniform3f("u_CameraPosition", camera.Position().x, camera.Position().y, camera.Position().z);
 	glm::vec3 ambient = glm::vec3(sData.light_color) * glm::vec3(0.2f);
 	glm::vec3 diffuse = glm::vec3(sData.light_color) * glm::vec3(0.5f);
 	glm::vec3 specular = glm::vec3(sData.light_color) * glm::vec3(0.5f);
 	sData.lighting_shader->SetUniform3f("u_Light.ambient", ambient.r, ambient.g, ambient.b);
 	sData.lighting_shader->SetUniform3f("u_Light.diffuse", diffuse.r, diffuse.g, diffuse.b);
 	sData.lighting_shader->SetUniform3f("u_Light.specular", specular.r, specular.g, specular.b);
-	sData.lighting_shader->SetUniform3f("u_Light.position", sData.iLight[0].position.x, sData.iLight[0].position.y, sData.iLight[0].position.z);
+	// sData.lighting_shader->SetUniform4f("u_Light.vector", sData.iLight[0].position.x, sData.iLight[0].position.y, sData.iLight[0].position.z, 1.0f);	// position
+	// sData.lighting_shader->SetUniform4f("u_Light.vector", 0.0f, -1.0f, 0.0f, 0.0f);	// direction
 
+	// sData.lighting_shader->SetUniform4f("u_Light.vector", camera.Position().x, camera.Position().y, camera.Position().z, 1.0f);
+	// sData.lighting_shader->SetUniform3f("u_Light.direction", camera.LookDirection().x, camera.LookDirection().y, camera.LookDirection().z);
+
+	sData.lighting_shader->SetUniform4f("u_Light.vector", 0.0f, 0.0f, 4.0f, 1.0f);
+	sData.lighting_shader->SetUniform3f("u_Light.direction", 0.0f, 0.0f, -1.0f);
 	int len_obj = sData.cubeNumber;
 	for (int i = 0; i < len_obj; i++)
 	{
@@ -228,7 +253,6 @@ void Renderer::DrawModels()
 		sData.iCube[i].Draw(sData.cube, sData.lighting_shader);
 	}
 }
-
 void Renderer::CreateGrid()
 {
 	sData.grid_xz.InitGridxz();
@@ -266,13 +290,15 @@ void Renderer::Calculate(const float& dt)
 	}	
 
 	// light movement per frame 
-	// sData.iLight[0].position.x = 2 * glm::sin(glfwGetTime());
-	// sData.iLight[0].position.y = 2 * glm::sin(glfwGetTime());
-	// sData.iLight[0].position.z = 2 * glm::cos(glfwGetTime());
+	/*sData.iLight[0].position.x = 2 * glm::sin(glfwGetTime());
+	sData.iLight[0].position.y = 2 * glm::sin(glfwGetTime());
+	sData.iLight[0].position.z = 2 * glm::cos(glfwGetTime());*/
 
 	/*sData.light_color.r = glm::sin(glfwGetTime());
 	sData.light_color.g = glm::sin(glfwGetTime());
 	sData.light_color.b = 0.7f;*/ 
+
+	// sData.iLight[0].position = camera.Position() + camera.LookDirection()*5.0f;
 }
 
 void Renderer::Clear()
@@ -713,7 +739,7 @@ glm::mat4x4 ModelInstance::ModelMatrix()
 
 glm::mat3x3 ModelInstance::NormalMatrix()
 {
-	return glm::transpose(glm::inverse(camera.LookAtMatrix() * ModelMatrix()));
+	return glm::transpose(glm::inverse(ModelMatrix()));
 }
 
 void ModelInstance::Draw(const Model& base_model, Shader* shader)
