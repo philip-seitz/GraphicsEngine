@@ -51,6 +51,12 @@
     <ClCompile Include="src\LightingScene.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="src\Mesh.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ModelScene.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Window.h">
@@ -929,6 +935,12 @@
     <ClInclude Include="src\LightingScene.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="src\Mesh.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ModelScene.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\vendor\glm\detail\func_common.inl">
@@ -1342,5 +1354,6 @@
     <None Include="res\shader\vert_frag.glsl" />
     <None Include="res\shader\light_source_shader.glsl" />
     <None Include="res\shader\lighting_shader.glsl" />
+    <None Include="res\shader\model_shader.glsl" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@
 #include "Shader.h"
 #include "Texture.h"
 #include "Camera.h"
+#include "ModelScene.h"
 #include <iostream>
 #include "Util.h"
 
@@ -37,7 +38,7 @@ struct RendererData
 	int cubeNumber = 0;
 	int lightNumber = 0;
 
-	glm::vec4 light_color = { 1.0f, 1.0f, 1.0f, 1.0f};
+	glm::vec4 light_color = { 0.8f, 0.4f, 0.3f, 1.0f};
 	glm::vec4 object_color = { 0.8f, 0.2f, 0.2f, 1.0f };
 
 	// Models
@@ -48,6 +49,10 @@ struct RendererData
 
 	// Other objects
 	Model primitive_cube;
+
+
+	// assimp models
+	ModelScene backpack;
 
 	ModelInstance* iMclaren = nullptr;
 	ModelInstance* iCube = nullptr;
@@ -64,10 +69,11 @@ struct RendererData
 	Shader* shader = nullptr;
 	Shader* light_source_shader = nullptr;
 	Shader* lighting_shader = nullptr;
+	Shader* model_shader = nullptr;
 
-	Texture* texture_0 = nullptr;
+	/*Texture* texture_0 = nullptr;
 	Texture* texture_1 = nullptr;
-	Texture* texture_2 = nullptr;
+	Texture* texture_2 = nullptr;*/
 	Window* window = nullptr;
 };
 
@@ -79,31 +85,43 @@ void Renderer::Init(Window* window)
 	sData.light_source_shader = new Shader("res/shader/light_source_shader.glsl");
 	sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	sData.shader = new Shader("res/shader/vert_frag.glsl");
+	sData.model_shader = new Shader("res/shader/model_shader.glsl");
 	glUseProgram(sData.lighting_shader->GetRendererID());
 	glUseProgram(sData.light_source_shader->GetRendererID());
 	glUseProgram(sData.shader->GetRendererID());
+	glUseProgram(sData.model_shader->GetRendererID());
 	
-	sData.texture_0 = new Texture("res/textures/container2.png", 0, GL_CLAMP_TO_EDGE);
+	/*sData.texture_0 = new Texture("res/textures/container2.png", 0, GL_CLAMP_TO_EDGE);
 	sData.texture_1 = new Texture("res/textures/container_specular.png", 1, GL_CLAMP_TO_EDGE);
 	sData.texture_2 = new Texture("res/textures/matrix.png", 2, GL_CLAMP_TO_EDGE);
 	sData.texture_0->Bind();
 	sData.texture_1->Bind();
-	sData.texture_2->Bind();
+	sData.texture_2->Bind();*/
 
-	sData.lighting_shader->SetUniform1i("u_Material.diffuse", 0);
+	/*sData.lighting_shader->SetUniform1i("u_Material.diffuse", 0);
 	sData.lighting_shader->SetUniform1i("u_Material.specular", 1);
 	sData.lighting_shader->SetUniform1i("u_Material.emissive", 2);
-	sData.lighting_shader->SetUniform1f("u_Material.shininess", 32.0f);
+	sData.lighting_shader->SetUniform1f("u_Material.shininess", 32.0f);*/
 
 	// 1st point light
 	
-	sData.lighting_shader->SetUniform3f("u_PointLight[0].ambient", glm::vec3(0.7f, 0.3f, 0.3f));
+	/*sData.lighting_shader->SetUniform3f("u_PointLight[0].ambient", glm::vec3(0.7f, 0.3f, 0.3f));
 	sData.lighting_shader->SetUniform3f("u_PointLight[0].diffuse", glm::vec3(0.7f, 0.3f, 0.3f));
 	sData.lighting_shader->SetUniform3f("u_PointLight[0].specular", glm::vec3(0.7f, 0.3f, 0.3f));
 										   
 	sData.lighting_shader->SetUniform1f("u_PointLight[0].constant", 1.0f);
 	sData.lighting_shader->SetUniform1f("u_PointLight[0].linear", 0.045f);
-	sData.lighting_shader->SetUniform1f("u_PointLight[0].quadratic", 0.0075f);
+	sData.lighting_shader->SetUniform1f("u_PointLight[0].quadratic", 0.0075f);*/
+
+	// 1st point light
+
+	sData.model_shader->SetUniform3f("u_PointLight[0].ambient", sData.light_color);
+	sData.model_shader->SetUniform3f("u_PointLight[0].diffuse", sData.light_color);
+	sData.model_shader->SetUniform3f("u_PointLight[0].specular", sData.light_color);
+		  
+	sData.model_shader->SetUniform1f("u_PointLight[0].constant", 1.0f);
+	sData.model_shader->SetUniform1f("u_PointLight[0].linear", 0.09f);
+	sData.model_shader->SetUniform1f("u_PointLight[0].quadratic", 0.032f);
 
 	// 2nd point light
 	
@@ -138,6 +156,11 @@ void Renderer::Init(Window* window)
 	sData.lighting_shader->SetUniform3f("u_DirLight.diffuse", sData.light_color);
 	sData.lighting_shader->SetUniform3f("u_DirLight.specular", sData.light_color);
 
+	// directional light
+	sData.model_shader->SetUniform3f("u_DirLight.ambient", sData.light_color);
+	sData.model_shader->SetUniform3f("u_DirLight.diffuse", sData.light_color);
+	sData.model_shader->SetUniform3f("u_DirLight.specular", sData.light_color);
+
 	// spot light
 	sData.lighting_shader->SetUniform3f("u_SpotLight.ambient", sData.light_color);
 	sData.lighting_shader->SetUniform3f("u_SpotLight.diffuse", sData.light_color);
@@ -154,6 +177,9 @@ void Renderer::Init(Window* window)
 	// sData.lighting_shader->SetUniform1f("u_PointLight.innerCutoff", glm::cos(glm::radians(2.5f)));
 	// sData.lighting_shader->SetUniform1f("u_PointLight.outerCutoff", glm::cos(glm::radians(12.5f)));
 	std::cout << glm::cos(glm::radians(20.5f)) << std::endl;
+
+	// load backback model
+	sData.backpack = ModelScene("res/models/backpack/backpack.obj");
 }
 
 void Renderer::Shutdown()
@@ -162,8 +188,8 @@ void Renderer::Shutdown()
 	delete sData.light_source_shader;
 	delete sData.lighting_shader;
 
-	delete sData.texture_0;
-	delete sData.texture_1;
+	/*delete sData.texture_0;
+	delete sData.texture_1;*/
 
 	delete[] sData.iCube;
 }
@@ -196,6 +222,7 @@ void Renderer::SpawnPrimitiveCube(const int& number, const glm::vec3& pos)
 		sData.iLight = new ModelInstance[1];
 		sData.iLight[0].position = pos;
 		sData.iLight[0].scale = glm::vec3(0.2f);
+		sData.iLight[0].color = { 0.8f, 0.6f, 0.7f };
 		sData.lightNumber = number;
 	}
 	else if (number > 1)
@@ -270,6 +297,8 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 
 void Renderer::DrawModels()
 {
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	// Light Source
 	sData.light_source_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
 	sData.light_source_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
@@ -288,12 +317,17 @@ void Renderer::DrawModels()
 
 	sData.lighting_shader->SetUniform3f("u_CameraPosition", camera.Position());
 
-	sData.lighting_shader->SetUniform3f("u_PointLight[0].position", sData.iLight[0].position);
+	sData.model_shader->SetUniform3f("u_PointLight[0].position", sData.iLight[0].position);
+	sData.model_shader->SetUniform3f("u_PointLight[0].ambient", sData.iLight[0].color);
+	sData.model_shader->SetUniform3f("u_PointLight[0].diffuse", sData.iLight[0].color);
+	sData.model_shader->SetUniform3f("u_PointLight[0].specular", sData.iLight[0].color);
+
+	/*sData.lighting_shader->SetUniform3f("u_PointLight[0].position", sData.iLight[0].position);
 	sData.lighting_shader->SetUniform3f("u_PointLight[0].ambient", 0.2f*sData.iLight[0].color);
 	sData.lighting_shader->SetUniform3f("u_PointLight[0].diffuse", 0.5f*sData.iLight[0].color);
-	sData.lighting_shader->SetUniform3f("u_PointLight[0].specular", 0.5f*sData.iLight[0].color);
+	sData.lighting_shader->SetUniform3f("u_PointLight[0].specular", 0.5f*sData.iLight[0].color);*/
 
-	sData.lighting_shader->SetUniform3f("u_PointLight[1].position", sData.iLight[1].position);
+	/*sData.lighting_shader->SetUniform3f("u_PointLight[1].position", sData.iLight[1].position);
 	sData.lighting_shader->SetUniform3f("u_PointLight[1].ambient", 0.2f * sData.iLight[1].color);
 	sData.lighting_shader->SetUniform3f("u_PointLight[1].diffuse", 0.5f * sData.iLight[1].color);
 	sData.lighting_shader->SetUniform3f("u_PointLight[1].specular", 0.5f *sData.iLight[1].color);
@@ -312,10 +346,12 @@ void Renderer::DrawModels()
 	sData.lighting_shader->SetUniform3f("u_DirLight.direction", glm::vec3(-1.0f, 3.0f, 0.4f));
 
 	sData.lighting_shader->SetUniform3f("u_SpotLight.position", camera.Position());
-	sData.lighting_shader->SetUniform3f("u_SpotLight.direction", camera.LookDirection());
+	sData.lighting_shader->SetUniform3f("u_SpotLight.direction", camera.LookDirection());*/
 	/*glm::vec3 ambient = glm::vec3(sData.light_color) * glm::vec3(0.2f);
 	glm::vec3 diffuse = glm::vec3(sData.light_color) * glm::vec3(0.5f);
 	glm::vec3 specular = glm::vec3(sData.light_color) * glm::vec3(0.5f);*/
+
+	// sData.model_shader->SetUniform3f("u_DirLight.direction", glm::vec3(11.0f, 2.0f, 0.4f));
 	
 	
 	int len_obj = sData.cubeNumber;
@@ -324,6 +360,11 @@ void Renderer::DrawModels()
 		sData.lighting_shader->SetUniformMat3f("u_Normal_Matrix", sData.iCube[i].NormalMatrix());
 		sData.iCube[i].Draw(sData.cube, sData.lighting_shader);
 	}
+
+	sData.model_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
+	sData.model_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());
+
+	sData.backpack.Draw(sData.model_shader);
 }
 void Renderer::CreateGrid()
 {
@@ -366,9 +407,9 @@ void Renderer::Calculate(const float& dt)
 	sData.iLight[0].position.y = 2 * glm::sin(glfwGetTime());
 	sData.iLight[0].position.z = 2 * glm::cos(glfwGetTime());*/
 
-	/*sData.light_color.r = glm::sin(glfwGetTime());
-	sData.light_color.g = glm::sin(glfwGetTime());
-	sData.light_color.b = 0.7f;*/ 
+	/*sData.iLight[0].color.r = glm::sin(glfwGetTime());
+	sData.iLight[0].color.g = glm::sin(glfwGetTime());
+	sData.iLight[0].color.b = 0.7f;*/
 
 	// sData.iLight[0].position = camera.Position() + camera.LookDirection()*5.0f;
 }

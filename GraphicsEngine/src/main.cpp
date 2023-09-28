@@ -4,7 +4,6 @@
 #include <string>
 
 #include "Window.h"
-#include "Renderer.h"
 #include "LightingScene.h"
 
 int win_width = 1080;
