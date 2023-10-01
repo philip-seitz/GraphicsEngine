@@ -17,12 +17,12 @@ public:
 	ModelScene();
 	ModelScene(const std::string& path);
 	void Draw(Shader* shader);
-	glm::mat4x4 ModelMatrix();
+	// glm::mat4x4 ModelMatrix();
 
+	
 private:
 	std::vector<Mesh> m_Meshes;
 	std::string m_Directory;
-
 	std::vector<Texture> m_TexturesLoaded;
 
 	void LoadModel(std::string path);

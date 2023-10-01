@@ -1,5 +1,6 @@
 #pragma once
 #include "Application.h"
+#include "SceneGraph.h"
 
 class LightingScene : public Application
 {
@@ -10,8 +11,11 @@ public:
 
 	void Run();	
 	void OnUpdate();	
+	void OnRender();
+	void OnEvent(float& dt);
 
 private:
 	glm::vec4 m_ClearColor;
+	SceneGraph m_SceneGraph;
 
 };

@@ -2,8 +2,9 @@
 
 #include <iostream>
 #include <vector>
-#include "Renderer.h"
 #include "Texture.h"
+#include "Shader.h"
+#include "Util.h"
 
 class Mesh
 {
