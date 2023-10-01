@@ -1,3 +1,4 @@
+#pragma once
 #include "Shader.h"
 #include "Window.h"
 
@@ -10,8 +11,8 @@ public:
 
 	virtual void Run() = 0;
 	virtual void OnUpdate() = 0;
-	void OnRender();
-	void OnEvent();
+	virtual void OnRender() = 0;
+	virtual void OnEvent(float& dt) = 0;
 
 public:
 	Window m_window;

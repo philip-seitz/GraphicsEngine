@@ -1,6 +1,8 @@
 #include "Util.h"
 #include <iostream>
 #include <vector>
+#include "stb_image/stb_image.h"
+#include <GL/glew.h>
 
 
 void StringToFloat(const std::vector<std::vector <char>>& stream, std::vector <float>& vert)
@@ -180,4 +182,32 @@ int CalculateNumberOfLines(float size, float distance)
 	}
 }
 
+void TextureFromFile(const std::string& path, unsigned int& id)
+{
+	stbi_set_flip_vertically_on_load(1);
+	int width;
+	int height;
+	int bpp;
 
+	unsigned char* buffer = stbi_load(path.c_str(), &width, &height, &bpp, 4);
+	// glActiveTexture(texture_slot);		// texture slot that should be used
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_2D, id);
+
+	// texture filtering 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);		// mipmaps switching only used when down scaling
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// texture wrapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	if (buffer)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+		// generate mipmap
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);		// unbind
+	stbi_image_free(buffer);
+}

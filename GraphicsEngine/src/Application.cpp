@@ -20,24 +20,6 @@ Application::~Application()
 	
 }
 
-void Application::OnRender()
-{
-    Renderer::DrawGrid();
-    Renderer::DrawModels();
-    glfwSwapBuffers(m_window.GetWindow());
-}
-
-void Application::OnEvent()
-{
-    glfwPollEvents();
-
-    // check for window termination 
-    if (glfwGetKey(m_window.GetWindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(m_window.GetWindow(), true);
-    }
-}
-
 // callback function for resizing window
 void framebuffer_resize_callback(GLFWwindow* window, int width, int height)
 {
