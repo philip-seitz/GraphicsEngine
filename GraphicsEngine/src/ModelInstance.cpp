@@ -7,7 +7,8 @@ ModelInstance::ModelInstance() :
 	position(0.0f, 0.0f, 0.0f),
 	angles(0.0f, 0.0f, 0.0f),
 	scale(1.0f, 1.0f, 1.0f),
-	color(0.5f, 0.5f, 0.5f)
+	color(0.5f, 0.5f, 0.5f),
+	hasOutline(true)
 {
 }
 
@@ -44,4 +45,17 @@ void ModelInstance::Draw(const Model& base_model, Shader* shader)
 
 	// === Draw the points === 
 	// glDrawArrays(GL_POINTS, 0, 3 * sData.TriToRenderCount);
+}
+
+void ModelInstance::DrawOutline(const Model& base_model, Shader* shader, Shader* outline)
+{
+	glBindVertexArray(base_model.va);
+	// scale model for outline
+	float border = 0.01f;
+	glm::vec3 temp = scale;
+	scale = { scale.x* (scale.x + border)/(scale.x),scale.y* (scale.y + border) / (scale.y), scale.z * (scale.z + border) / (scale.z) };
+	outline->SetUniformMat4f("u_Model", ModelMatrix());
+	
+	glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
+	scale = temp;
 }

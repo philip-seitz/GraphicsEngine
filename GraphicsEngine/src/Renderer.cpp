@@ -45,6 +45,8 @@ struct RendererData
 	Shader* light_source_shader = nullptr;
 	Shader* lighting_shader = nullptr;
 	Shader* model_shader = nullptr;
+	Shader* texture_shader = nullptr;
+	Shader* clear_color_shader = nullptr;
 
 	Window* window = nullptr;
 };
@@ -57,7 +59,8 @@ void Renderer::Init(Window* window)
 	sData.light_source_shader = new Shader("res/shader/light_source_shader.glsl");
 	sData.model_shader = new Shader("res/shader/model_shader.glsl");
 	sData.shader = new Shader("res/shader/vert_frag.glsl");
-
+	sData.texture_shader = new Shader("res/shader/texture_shader.glsl"); // only textures no lighting
+	sData.clear_color_shader = new Shader("res/shader/clear_color_shader.glsl");
 	//sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
 	// initialize models (send data to GPU)
@@ -122,6 +125,14 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	glClear(GL_STENCIL_BUFFER_BIT);
+	// enable stencil 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	// if stenicil and depth pass
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);		// enable writing to stencil buffer
+
 	// get main camera 
 	// TODO: check for some camera type or flag perhaps
 	Camera sg_cam = scene_graph->m_Cameras[0];
@@ -163,26 +174,57 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	sData.model_shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
 	sData.model_shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
 
+	sData.clear_color_shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
+	sData.clear_color_shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
+	
+	// draw all objects without outline
 	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
 	{
-		scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
+		if (!scene_graph->m_Cubes[i].m_Instance.hasOutline)
+		{
+			glStencilMask(0x00);
+			scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
+			glStencilMask(0xFF);
+		}
+	}
+	// draw objects with outline
+	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+	{
+		if (scene_graph->m_Cubes[i].m_Instance.hasOutline)
+		{
+			scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
+		}
 	}
 
-	// sData.backpack.Draw(sData.model_shader);
+	// draw outlines
+	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+	{
+		if (scene_graph->m_Cubes[i].m_Instance.hasOutline)
+			scene_graph->m_Cubes[i].DrawOutline(sData.model_shader, sData.clear_color_shader, &sData.cube);
+	}
+	
 	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
 	{
 		scene_graph->m_Backpacks[i].Draw(sData.model_shader, sData.backpack);
 	}
 
+	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	{
+		scene_graph->m_Backpacks[i].DrawOutline(sData.backpack, sData.model_shader, sData.clear_color_shader);
+	}
+
 	// draw grid (blending will be disabled)
 	sData.shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
 	sData.shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
-	scene_graph->m_Grid.Draw(sData.grid_xz, sData.shader);
+	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
+	{
+		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);
+	}
 }
 
 void Renderer::Clear()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 // Callback functions 

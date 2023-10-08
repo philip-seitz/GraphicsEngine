@@ -102,6 +102,8 @@ vec4 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_dir);
 vec4 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir);
 vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir);
 
+float LinearizeDepth(float depth);
+
 #define NR_POINTS_LIGHTS 1
 
 in vec3 v_Normal;
@@ -119,6 +121,9 @@ uniform PointLight u_PointLight[NR_POINTS_LIGHTS];
 uniform DirectionalLight u_DirLight;
 uniform SpotLight u_SpotLight;
 
+float near = 0.5f;
+float far = 1000.0f;
+
 void main()
 {
 	vec4 color = vec4(0.0f);
@@ -130,9 +135,11 @@ void main()
 	{
 		color += CalcPointLight(u_PointLight[i], normal, view_direction);
 	}
-	//color += CalcDirectionalLight(u_DirLight, normal, view_direction);
-	color += CalcSpotLight(u_SpotLight, normal, view_direction); 
+	// color += CalcDirectionalLight(u_DirLight, normal, view_direction);
+	// color += CalcSpotLight(u_SpotLight, normal, view_direction); 
 	color.w = 1.0f;
+
+	// o_Color = vec4(vec3(LinearizeDepth(gl_FragCoord.z)/far), 1.0f);
 	o_Color = color;
 }
 
@@ -203,4 +210,10 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 	vec4 ambient = vec4(light.ambient, 1.0f) * attenuation_factor * intensity * diffuseMap;
 
 	return ambient + diffuse + specular;
+}
+
+float LinearizeDepth(float depth)
+{
+	float z = depth*2.0f - 1.0f;
+	return (2.0f * near * far) / (far + near - z * (far - near));
 }

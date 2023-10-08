@@ -23,8 +23,8 @@ Camera::Camera():
 	m_yFOV(45.0f),
 	m_zoom(1.0f),
 	m_aspectRatio(1080.0f/720.0f),
-	m_zNear(1.0f),
-	m_zFar(-10000.0f),
+	m_zNear(0.5f),
+	m_zFar(1000.0f),
 	m_perspective_proj(glm::perspectiveRH(glm::radians(m_yFOV), m_aspectRatio, m_zNear, m_zFar)),
 	m_orthographic_proj(glm::orthoRH(0.0f, 300.0f , 0.0f, 300.0f , m_zNear, m_zFar))
 {
@@ -34,7 +34,7 @@ Camera::Camera(const bool& isPerspective):
 	m_position(0.0f, 0.0f, 8.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
-	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
+	m_look_at(glm::lookAt(m_position, m_target, m_up)),
 	m_look_direction(0.0f, 0.0f, -1.0f),
 	m_camera_angle_yaw(0.0f),
 	m_camera_angle_pitch(0.0f),
@@ -46,8 +46,8 @@ Camera::Camera(const bool& isPerspective):
 	m_yFOV(45.0f),
 	m_zoom(1.0f),
 	m_aspectRatio(1080.0f / 720.0f),
-	m_zNear(1.5f),
-	m_zFar(-10000.0f),
+	m_zNear(0.5f),
+	m_zFar(1000.0f),
 	m_perspective_proj(glm::perspectiveRH(glm::radians(m_yFOV), m_aspectRatio, m_zNear, m_zFar)),
 	m_orthographic_proj(glm::orthoRH(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f))
 {
@@ -93,30 +93,22 @@ const void Camera::UpdatePosition(Window& window, const float& dt)
 {
 	static float time = 0.0f;
 	float z_limit = m_zFar - int(0.1 * m_zFar);		// avoid moving camera outside behind zFar (mirrored image... not good)
-	if (m_position.z > z_limit)
+	
+	// movement
+	if (glfwGetKey(window.GetWindow(), GLFW_KEY_W) == GLFW_PRESS)
 	{
-		// movement
-		if (glfwGetKey(window.GetWindow(), GLFW_KEY_W) == GLFW_PRESS)
-		{
-			m_position += m_look_direction * dt * m_movement_speed;
-		}
-
-		if (glfwGetKey(window.GetWindow(), GLFW_KEY_S) == GLFW_PRESS)
-			m_position -= m_look_direction * dt * m_movement_speed;
-
-		if (glfwGetKey(window.GetWindow(), GLFW_KEY_D) == GLFW_PRESS)
-			m_position += glm::normalize(glm::cross(m_look_direction, glm::vec3(0.0f, 1.0f, 0.0f))) * dt * m_movement_speed;
-
-		if (glfwGetKey(window.GetWindow(), GLFW_KEY_A) == GLFW_PRESS)
-			m_position -= glm::normalize(glm::cross(m_look_direction, glm::vec3(0.0f, 1.0f, 0.0f))) * dt * m_movement_speed;
+		m_position += m_look_direction * dt * m_movement_speed;
 	}
 
-	else {
-		if (glm::vec3(m_look_direction * dt * m_movement_speed * 10.0f + m_position).z < z_limit )
-			m_position -= m_look_direction * dt * m_movement_speed * 10.0f;
-		else
-			m_position += m_look_direction * dt * m_movement_speed * 10.0f;
-	}
+	if (glfwGetKey(window.GetWindow(), GLFW_KEY_S) == GLFW_PRESS)
+		m_position -= m_look_direction * dt * m_movement_speed;
+
+	if (glfwGetKey(window.GetWindow(), GLFW_KEY_D) == GLFW_PRESS)
+		m_position += glm::normalize(glm::cross(m_look_direction, glm::vec3(0.0f, 1.0f, 0.0f))) * dt * m_movement_speed;
+
+	if (glfwGetKey(window.GetWindow(), GLFW_KEY_A) == GLFW_PRESS)
+		m_position -= glm::normalize(glm::cross(m_look_direction, glm::vec3(0.0f, 1.0f, 0.0f))) * dt * m_movement_speed;
+
 
 	// update matrix
 	m_look_at = glm::lookAtRH(m_position, m_target, m_up);

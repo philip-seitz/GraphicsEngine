@@ -6,6 +6,6 @@ SceneGraph::SceneGraph() :
 	m_Cubes(),
 	m_Backpacks(),
 	m_Cameras(),
-	m_Grid()
+	m_Grids()
 {
 }

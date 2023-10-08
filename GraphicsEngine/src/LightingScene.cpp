@@ -35,7 +35,7 @@ void LightingScene::Run()
     }
 
     GridInstance grid;
-    m_SceneGraph.m_Grid = grid;         // unnecessary bc not a vector but einheitlicher
+    m_SceneGraph.m_Grids.push_back(grid);         // unnecessary bc not a vector but einheitlicher
 
     // create point light
     for (int i = 0; i < 1; i++)

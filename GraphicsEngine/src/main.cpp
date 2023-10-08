@@ -5,6 +5,7 @@
 
 #include "Window.h"
 #include "LightingScene.h"
+#include "AdvancedOGLScene.h"
 
 int win_width = 1080;
 int win_height = 720;
@@ -15,7 +16,8 @@ int main(void)
 {
     // Application app(win_width, win_height, win_title);
     // app.Run();
-    Application* selector  = new LightingScene(win_width, win_height, win_title);
+    // Application* selector  = new LightingScene(win_width, win_height, win_title);
+    Application* selector = new AdvancedOGLScene(win_width, win_height, win_title);
     selector->Run();
 
     return 0;

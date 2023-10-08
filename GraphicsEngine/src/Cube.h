@@ -11,6 +11,7 @@ public:
 
 	Cube();
 	void Draw(Shader* shader, Model* base_model);
+	void DrawOutline(Shader* shader, Shader* outline, Model* base_model);
 	void SetLightingUniforms(Shader* shader, const int& idx);
 
 	ModelInstance m_Instance;		// stores postion, rotation etc.

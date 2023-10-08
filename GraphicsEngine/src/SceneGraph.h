@@ -19,7 +19,7 @@ public:
 	std::vector<SpotLight> m_SpotLights;
 	std::vector<Cube> m_Cubes;
 	std::vector<ModelSceneInstance> m_Backpacks;
-	GridInstance m_Grid;	// only one grid
+	std::vector<GridInstance> m_Grids;	
 	
 private:
 

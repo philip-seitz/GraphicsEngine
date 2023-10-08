@@ -38,3 +38,24 @@ glm::mat3x3 ModelSceneInstance::NormalMatrix()
 {
 	return glm::inverse(ModelMatrix());
 }
+
+void ModelSceneInstance::DrawOutline(ModelScene& base_model, Shader* shader, Shader* outline)
+{
+	
+	glm::vec3 temp = m_scale;
+	float border = 0.01f;
+	m_scale = { m_scale.x * (m_scale.x + border) / (m_scale.x), m_scale.y * (m_scale.y + border) / (m_scale.y), m_scale.z * (m_scale.z + border) / (m_scale.z) };
+	outline->SetUniformMat4f("u_Model", ModelMatrix());
+
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilMask(0x00);		// disable writing to stencil buffer
+	base_model.Draw(outline);
+
+	glEnable(GL_DEPTH_TEST);
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);		// enable writing to stencil buffer
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	// if stenicil and depth pass
+	m_scale = temp;
+}
+

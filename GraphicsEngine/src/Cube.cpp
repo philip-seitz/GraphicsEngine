@@ -40,6 +40,21 @@ void Cube::Draw(Shader* shader, Model* base_model)
 	m_Instance.Draw(*base_model, shader);
 }
 
+void Cube::DrawOutline(Shader* shader, Shader* outline, Model* base_model)
+{
+
+	// set stencil for outline
+	//glDisable(GL_DEPTH_TEST);
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glStencilMask(0x00);	// disable writing to stencil buffer
+	m_Instance.DrawOutline(*base_model, shader, outline);
+	glEnable(GL_DEPTH_TEST);
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);		// enable writing to stencil buffer
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	// if stenicil and depth pass
+}
+
 void Cube::SetLightingUniforms(Shader* shader, const int& idx)
 {
 }
