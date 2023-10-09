@@ -14,11 +14,15 @@ void GridInstance::Draw(const Grid& base_model, Shader* shader)
 	// improve appearence of the grid (anti z-fighting and thinner lines)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	glEnable(GL_DEPTH_TEST);
 	glLineWidth(1.0f);
 
 	shader->SetUniformMat4f("u_Model", ModelMatrix());
 	glDrawElements(GL_LINES, 2 * base_model.m_LineCount, GL_UNSIGNED_INT, nullptr);
+
+	// disable blending when done
+	glDisable(GL_BLEND);
 }
 
 glm::mat4x4 GridInstance::ModelMatrix()

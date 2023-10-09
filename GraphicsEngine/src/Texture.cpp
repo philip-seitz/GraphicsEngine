@@ -12,10 +12,7 @@ Texture::Texture(const std::string& path, std::string& type, const int& id) :
 	m_BPP(0)
 {
 	// TODO: when implementation is clearer
-
 }
-
-
 
 Texture::Texture(const std::string& path, const unsigned short& slot, const unsigned short& wrap_mode):
 	m_RendererID(0),
@@ -44,7 +41,7 @@ Texture::Texture(const std::string& path, const unsigned short& slot, const unsi
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_mode);
 
 	
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
 	// generate mipmap
 	glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -66,7 +63,6 @@ void Texture::Bind()
 {
 	glActiveTexture(GL_TEXTURE0 + m_Slot);
 	glBindTexture(GL_TEXTURE_2D, m_RendererID);
-
 }
 
 void Texture::UnBind()
@@ -95,7 +91,7 @@ void Texture::Init()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
 	// generate mipmap
 	glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -105,8 +101,6 @@ void Texture::Init()
 	{
 		stbi_image_free(m_LocalBuffer);
 	}
-
-
 }
 
 std::string Texture::GetType()

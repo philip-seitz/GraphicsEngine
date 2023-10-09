@@ -50,6 +50,17 @@ void AdvancedOGLScene::Run()
         m_SceneGraph.m_Cubes.push_back(t_cube);
     }
 
+    // add quads (vegetation or other textures)
+    for (int i = 0; i < 3; i++)
+    {
+        Quad quad;
+        quad.m_Instance.position = { -3.0f + i * 3.0f, 2.52f, -3.0f - i };
+        m_SceneGraph.m_Quads.push_back(quad);
+    }
+
+    GridInstance grid;
+    m_SceneGraph.m_Grids.push_back(grid);
+
     // create floor
     Cube floor;
     floor.m_Instance.position = { 0.0f, 0.0f, 0.0f };

@@ -1,13 +1,14 @@
 #include "Renderer.h"
-#include <GL/glew.h>
 #include "Shader.h"
 #include "Texture.h"
 #include "Camera.h"
 #include "Model.h"
 #include "ModelScene.h"
-#include <iostream>
 #include "Util.h"
 #include "ModelInstance.h"
+#include <iostream>
+#include <GL/glew.h>
+#include <map>
 
 // constants for vertices and textures
 const unsigned int max_vertices = 4000000;
@@ -33,6 +34,7 @@ struct RendererData
 
 	// Other objects
 	Model primitive_cube;
+	Model quad;
 
 	// assimp models
 	ModelScene backpack;
@@ -66,9 +68,9 @@ void Renderer::Init(Window* window)
 	// initialize models (send data to GPU)
 	sData.primitive_cube.InitSimpleCube();
 	sData.cube.InitCube();
+	sData.quad.InitQuad();
 	sData.grid_xz.InitGridxz();
 	sData.backpack = ModelScene("res/models/backpack/backpack.obj");
-	
 }
 
 void Renderer::Shutdown()
@@ -119,9 +121,14 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 
 void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 {
-	// Blending 
+	// enable backface culling
+	glEnable(GL_CULL_FACE);
+
+	// Depth Test
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
+
+	// Blending 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -139,7 +146,6 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	cam = &scene_graph->m_Cameras[0];
 
 	// point lights
-	// set uniforms for point lights
 	sData.light_source_shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
 	sData.light_source_shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
 	sData.model_shader->SetUniform3f("u_CameraPosition", sg_cam.Position());
@@ -166,11 +172,8 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
 		// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
 		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
-
 	}
 
-	/*sData.model_shader->SetUniformMat4f("u_Projection", camera.ProjectionMatrix());
-	sData.model_shader->SetUniformMat4f("u_View", camera.LookAtMatrix());*/
 	sData.model_shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
 	sData.model_shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
 
@@ -212,8 +215,27 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	{
 		scene_graph->m_Backpacks[i].DrawOutline(sData.backpack, sData.model_shader, sData.clear_color_shader);
 	}
+	sData.texture_shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
+	sData.texture_shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
 
-	// draw grid (blending will be disabled)
+	// NOTE: should be drawn after all opaque objects; to improve performance look into order independent transparency
+	// draw windows (transparent objects) from back to front (in terms of distance from camera)
+	std::map<float, Quad*> distance_sorted;		// unique float keys, sorted in ascending order (has to be a pointer or it will copy or create a bunch of textures)
+	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
+	{
+		glm::vec3 pos = scene_graph->m_Quads[i].m_Instance.position;
+		float distance = glm::distance(sg_cam.Position(), pos);
+		distance_sorted[distance] = &scene_graph->m_Quads[i];
+	}
+	
+	// disable backface culling
+	glDisable(GL_CULL_FACE);
+	for (std::map<float, Quad*>::reverse_iterator rit = distance_sorted.rbegin(); rit != distance_sorted.rend(); ++rit)
+	{
+		rit->second->Draw(sData.texture_shader, &sData.quad);
+	}
+
+	// draw grid (blending will be enabled and disabled again)
 	sData.shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
 	sData.shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
 	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
