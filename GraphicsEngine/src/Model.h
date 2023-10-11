@@ -17,8 +17,8 @@ public:
 	void LoadSimpleCube();
 	void InitTriangle();
 	void LoadTriangle();
-	void InitQuad();
-	void LoadQuad();
+	void InitQuad(float side = 4.0f);
+	void LoadQuad(float side = 4.0f);
 
 	unsigned int TriCount;
 	Triangle* TriBuffer;

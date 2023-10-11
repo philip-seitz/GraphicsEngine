@@ -47,7 +47,7 @@ Texture::Texture(const std::string& path, const unsigned short& slot, const unsi
 
 	// Unbind and free
 	glBindTexture(GL_TEXTURE_2D, 0);
-	if (m_LocalBuffer)
+	if (m_LocalBuffer)  
 	{
 		stbi_image_free(m_LocalBuffer);
 	}

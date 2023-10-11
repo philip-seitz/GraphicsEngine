@@ -42,8 +42,6 @@ void main()
 {
 	vec4 diffuseMap = texture(u_Material.texture_diffuse1, v_TexCoord);
 	vec4 color = diffuseMap;
-	if (color.w < 0.1f)
-		discard;
 	// color.w = 1.0f;
 	o_Color = color;
 }

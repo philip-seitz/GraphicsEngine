@@ -14,6 +14,8 @@ public:
 	void OnRender();
 	void OnEvent(float& dt);
 
+	Window m_window;
+
 private:
 	glm::vec4 m_ClearColor;
 	SceneGraph m_SceneGraph;

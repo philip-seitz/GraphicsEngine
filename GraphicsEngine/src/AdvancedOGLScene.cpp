@@ -6,12 +6,14 @@
 #include "Camera.h"
 #include "ModelSceneInstance.h"
 
-AdvancedOGLScene::AdvancedOGLScene()
+AdvancedOGLScene::AdvancedOGLScene():
+    m_window(1000, 500, "Advanced")
 {
 	m_ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 }
 
 AdvancedOGLScene::AdvancedOGLScene(const int& width, const int& height, const char* title)
+    :m_window(width, height, title)
 {
 	m_ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 }
@@ -96,8 +98,8 @@ void AdvancedOGLScene::OnUpdate()
 
 void AdvancedOGLScene::OnRender()
 {
-    glClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, m_ClearColor.a);
-    Renderer::Clear();
+    // glClearColor(m_ClearColor.r, m_ClearColor.g, m_ClearColor.b, m_ClearColor.a);
+    // Renderer::Clear();
     Renderer::RenderSceneGraph(&m_SceneGraph);
     glfwSwapBuffers(m_window.GetWindow());
 }

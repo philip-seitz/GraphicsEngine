@@ -15,8 +15,7 @@ const unsigned int max_vertices = 4000000;
 const unsigned int max_indices = max_vertices;
 const unsigned int max_texture_slots = 32;				// checken
 
-Camera camera(true);
-Camera* cam = nullptr;		// pointed at the main camera for input handling
+Camera* main_cam = nullptr;		// pointed at the main camera for input handling
 
 struct RendererData
 {
@@ -35,6 +34,7 @@ struct RendererData
 	// Other objects
 	Model primitive_cube;
 	Model quad;
+	Model screen_quad;
 
 	// assimp models
 	ModelScene backpack;
@@ -49,8 +49,14 @@ struct RendererData
 	Shader* model_shader = nullptr;
 	Shader* texture_shader = nullptr;
 	Shader* clear_color_shader = nullptr;
+	Shader* postprocessing_shader = nullptr;
 
 	Window* window = nullptr;
+
+	// frame buffer oject
+	unsigned int fbo_id = 0;
+	unsigned int fbo_tex = 0;
+	unsigned int fbo_rbo_id = 0;
 };
 
 static RendererData sData;
@@ -63,14 +69,49 @@ void Renderer::Init(Window* window)
 	sData.shader = new Shader("res/shader/vert_frag.glsl");
 	sData.texture_shader = new Shader("res/shader/texture_shader.glsl"); // only textures no lighting
 	sData.clear_color_shader = new Shader("res/shader/clear_color_shader.glsl");
+	sData.postprocessing_shader = new Shader("res/shader/postprocessing.glsl");
 	//sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
 	// initialize models (send data to GPU)
 	sData.primitive_cube.InitSimpleCube();
 	sData.cube.InitCube();
 	sData.quad.InitQuad();
+	sData.screen_quad.InitQuad(2.0f);
 	sData.grid_xz.InitGridxz();
 	sData.backpack = ModelScene("res/models/backpack/backpack.obj");
+
+
+	// code for framebuffer object 
+	glGenFramebuffers(1, &sData.fbo_id);
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id);
+
+	// texture attachment
+	glGenTextures(1, &sData.fbo_tex);
+	glActiveTexture(GL_TEXTURE0 + 5);
+	glBindTexture(GL_TEXTURE_2D, sData.fbo_tex);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sData.window->m_Width, sData.window->m_Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.fbo_tex, 0);
+
+	// renderbuffer attachment
+
+	glGenRenderbuffers(1, &sData.fbo_rbo_id);
+	glBindRenderbuffer(GL_RENDERBUFFER, sData.fbo_rbo_id);
+
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, sData.window->m_Width, sData.window->m_Height);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sData.fbo_rbo_id);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "FBO SUCCESSFUL" << std::endl;
+	else
+		std::cout << "FBO FAILED" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void Renderer::Shutdown()
@@ -121,6 +162,11 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 
 void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 {
+	// draw to seperate frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
 	// enable backface culling
 	glEnable(GL_CULL_FACE);
 
@@ -142,13 +188,12 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	// get main camera 
 	// TODO: check for some camera type or flag perhaps
-	Camera sg_cam = scene_graph->m_Cameras[0];
-	cam = &scene_graph->m_Cameras[0];
+	main_cam = &scene_graph->m_Cameras[0];
 
 	// point lights
-	sData.light_source_shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
-	sData.light_source_shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
-	sData.model_shader->SetUniform3f("u_CameraPosition", sg_cam.Position());
+	sData.light_source_shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
+	sData.light_source_shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
+	sData.model_shader->SetUniform3f("u_CameraPosition", main_cam->Position());
 
 	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
 	{
@@ -166,19 +211,19 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
 	{
 		// as flash light
-		scene_graph->m_SpotLights[i].m_Direction = sg_cam.LookDirection();
-		scene_graph->m_SpotLights[i].m_Instance.position = sg_cam.Position();
+		scene_graph->m_SpotLights[i].m_Direction = main_cam->LookDirection();
+		scene_graph->m_SpotLights[i].m_Instance.position = main_cam->Position();
 
 		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
 		// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
 		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
 	}
 
-	sData.model_shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
-	sData.model_shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
+	sData.model_shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
+	sData.model_shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
 
-	sData.clear_color_shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
-	sData.clear_color_shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
+	sData.clear_color_shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
+	sData.clear_color_shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
 	
 	// draw all objects without outline
 	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
@@ -215,8 +260,8 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	{
 		scene_graph->m_Backpacks[i].DrawOutline(sData.backpack, sData.model_shader, sData.clear_color_shader);
 	}
-	sData.texture_shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
-	sData.texture_shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
+	sData.texture_shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
+	sData.texture_shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
 
 	// NOTE: should be drawn after all opaque objects; to improve performance look into order independent transparency
 	// draw windows (transparent objects) from back to front (in terms of distance from camera)
@@ -224,7 +269,7 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
 	{
 		glm::vec3 pos = scene_graph->m_Quads[i].m_Instance.position;
-		float distance = glm::distance(sg_cam.Position(), pos);
+		float distance = glm::distance(main_cam->Position(), pos);
 		distance_sorted[distance] = &scene_graph->m_Quads[i];
 	}
 	
@@ -236,12 +281,26 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	}
 
 	// draw grid (blending will be enabled and disabled again)
-	sData.shader->SetUniformMat4f("u_Projection", sg_cam.ProjectionMatrix());
-	sData.shader->SetUniformMat4f("u_View", sg_cam.LookAtMatrix());
+	sData.shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
+	sData.shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
 	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
 	{
 		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);
 	}
+
+	// draw texture of other framebuffer onto a quad using the default frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	sData.postprocessing_shader->Bind();
+	glActiveTexture(GL_TEXTURE0 + 5);
+	glBindTexture(GL_TEXTURE_2D, sData.fbo_tex);
+	sData.postprocessing_shader->SetUniform1i("tex", 5);
+	glBindVertexArray(sData.screen_quad.va);
+	glDisable(GL_DEPTH_TEST);
+	
+	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
 }
 
 void Renderer::Clear()
@@ -270,7 +329,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	float xoffset = (xpos - lastx) * sens;
 	float yoffset = (lasty - ypos) * sens;
 
-	cam->UpdateFromMouseCallback(xoffset, yoffset);
+	main_cam->UpdateFromMouseCallback(xoffset, yoffset);
 
 	lastx = xpos;
 	lasty = ypos;
@@ -278,5 +337,5 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	cam->UpdateFromScrollCallback((float)xoffset, (float)yoffset);
+	main_cam->UpdateFromScrollCallback((float)xoffset, (float)yoffset);
 }

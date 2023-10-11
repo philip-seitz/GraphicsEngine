@@ -3,13 +3,13 @@
 
 
 Application::Application():
-    m_window(1000, 500, "App"), m_ClearColor(0.1f, 0.1f, 0.1f, 1.0f)
+    m_ClearColor(0.1f, 0.1f, 0.1f, 1.0f)
 
 {
 
 }
-Application::Application(const int& width, const int& height, const char* title)
-	:m_window(width, height, title), m_ClearColor(0.1f, 0.1f, 0.1f, 1.0f)
+Application::Application(const int& width, const int& height, const char* title):
+	m_ClearColor(0.1f, 0.1f, 0.1f, 1.0f)
 {
 
 }

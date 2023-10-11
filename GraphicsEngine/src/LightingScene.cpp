@@ -7,11 +7,13 @@
 #include "ModelSceneInstance.h"
 
 
-LightingScene::LightingScene():Application()
+LightingScene::LightingScene():
+    m_window(1000, 500, "Lighting")
 {
     m_ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 }
-LightingScene::LightingScene(const int& width, const int& height, const char* title):Application(width, height, title)
+LightingScene::LightingScene(const int& width, const int& height, const char* title):
+    m_window(width, height, title)
 {
     m_ClearColor = { 0.1f, 0.1f, 0.1f, 1.0f };
 }
