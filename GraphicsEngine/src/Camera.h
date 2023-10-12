@@ -21,6 +21,7 @@ public:
 	const void UpdateFromMouseCallback(const short& xoffset, const short& yoffset);
 	const void UpdateFromScrollCallback(const float& xoffset, const float& yoffset);
 	const void Zoom(Window& window, const float& dt);
+	const void SetDirection(glm::vec3 direction);
 
 private:
 	// 3D or 2D 

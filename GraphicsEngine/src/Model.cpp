@@ -338,9 +338,9 @@ void Model::LoadTriangle()
 	}
 }
 
-void Model::InitQuad(float side)
+void Model::InitQuad(float side, glm::vec3 center)
 {
-	LoadQuad(side);
+	LoadQuad(side, center);
 
 	// vertex array object setup
 	glCreateVertexArrays(1, &va);
@@ -365,12 +365,10 @@ void Model::InitQuad(float side)
 
 }
 
-void Model::LoadQuad(float side)
+void Model::LoadQuad(float side, glm::vec3 center)
 {
 	// init and setting data
 	std::vector<Triangle> mesh;
-
-	glm::vec3 center = { 0.0f, 0.0f, -1.0f };
 
 	// two triangles = 1 quad
 	mesh.push_back({ {{  center.x - side / 2, center.y - side / 2, center.z}, {WHITE}, {0.0f, 0.0f}}, {{center.x + side / 2, center.y - side / 2, center.z}, {WHITE}, {1.0f, 0.0f}}, {{center.x + side / 2, center.y + side / 2, center.z}, {WHITE}, {1.0f, 1.0f}} });

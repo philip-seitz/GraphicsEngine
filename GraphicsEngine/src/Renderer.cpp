@@ -15,7 +15,7 @@ const unsigned int max_vertices = 4000000;
 const unsigned int max_indices = max_vertices;
 const unsigned int max_texture_slots = 32;				// checken
 
-Camera* main_cam = nullptr;		// pointed at the main camera for input handling
+Camera* cameras[2];		// pointed at the main camera for input handling
 
 struct RendererData
 {
@@ -35,6 +35,7 @@ struct RendererData
 	Model primitive_cube;
 	Model quad;
 	Model screen_quad;
+	Model rearview_quad;
 
 	// assimp models
 	ModelScene backpack;
@@ -54,9 +55,9 @@ struct RendererData
 	Window* window = nullptr;
 
 	// frame buffer oject
-	unsigned int fbo_id = 0;
-	unsigned int fbo_tex = 0;
-	unsigned int fbo_rbo_id = 0;
+	unsigned int fbo_id[2];
+	unsigned int fbo_tex[2];
+	unsigned int fbo_rbo_id[2];
 };
 
 static RendererData sData;
@@ -76,42 +77,46 @@ void Renderer::Init(Window* window)
 	sData.primitive_cube.InitSimpleCube();
 	sData.cube.InitCube();
 	sData.quad.InitQuad();
-	sData.screen_quad.InitQuad(2.0f);
+	sData.screen_quad.InitQuad(2.0f, {0.0f, 0.0f, -0.7f});
+	sData.rearview_quad.InitQuad(0.5f, { 0.75f, 0.5f, -0.5f });
+
 	sData.grid_xz.InitGridxz();
 	sData.backpack = ModelScene("res/models/backpack/backpack.obj");
 
+	for (int i = 0; i < 2; i++)
+	{
+		// code for framebuffer object 
+		glGenFramebuffers(1, &sData.fbo_id[i]);
+		glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[i]);
 
-	// code for framebuffer object 
-	glGenFramebuffers(1, &sData.fbo_id);
-	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id);
+		// texture attachment
+		glGenTextures(1, &sData.fbo_tex[i]);
+		glActiveTexture(GL_TEXTURE0 + 5 + i);
+		glBindTexture(GL_TEXTURE_2D, sData.fbo_tex[i]);
 
-	// texture attachment
-	glGenTextures(1, &sData.fbo_tex);
-	glActiveTexture(GL_TEXTURE0 + 5);
-	glBindTexture(GL_TEXTURE_2D, sData.fbo_tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sData.window->m_Width, sData.window->m_Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glBindTexture(GL_TEXTURE_2D, 0);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sData.window->m_Width, sData.window->m_Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glBindTexture(GL_TEXTURE_2D, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.fbo_tex[i], 0);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.fbo_tex, 0);
+		// renderbuffer attachment
 
-	// renderbuffer attachment
+		glGenRenderbuffers(1, &sData.fbo_rbo_id[i]);
+		glBindRenderbuffer(GL_RENDERBUFFER, sData.fbo_rbo_id[i]);
 
-	glGenRenderbuffers(1, &sData.fbo_rbo_id);
-	glBindRenderbuffer(GL_RENDERBUFFER, sData.fbo_rbo_id);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, sData.window->m_Width, sData.window->m_Height);
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, sData.window->m_Width, sData.window->m_Height);
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sData.fbo_rbo_id);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sData.fbo_rbo_id[i]);
 
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-		std::cout << "FBO SUCCESSFUL" << std::endl;
-	else
-		std::cout << "FBO FAILED" << std::endl;
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+			std::cout << "FBO SUCCESSFUL" << std::endl;
+		else
+			std::cout << "FBO FAILED" << std::endl;
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
 }
 
 void Renderer::Shutdown()
@@ -162,130 +167,136 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 
 void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 {
-	// draw to seperate frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id);
-	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-	// enable backface culling
-	glEnable(GL_CULL_FACE);
-
-	// Depth Test
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-
-	// Blending 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glClear(GL_STENCIL_BUFFER_BIT);
-	// enable stencil 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	// if stenicil and depth pass
-	glStencilFunc(GL_ALWAYS, 1, 0xFF);
-	glStencilMask(0xFF);		// enable writing to stencil buffer
-
-	// get main camera 
-	// TODO: check for some camera type or flag perhaps
-	main_cam = &scene_graph->m_Cameras[0];
-
-	// point lights
-	sData.light_source_shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
-	sData.light_source_shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
-	sData.model_shader->SetUniform3f("u_CameraPosition", main_cam->Position());
-
-	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
+	for (int c = 0; c < 2; c++)
 	{
-		scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
-		// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
-		scene_graph->m_PointLights[i].SetLightingUniforms(sData.model_shader, i);
-	}
+		// draw to seperate frame buffer
+		glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[c]);
+		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-	for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
-	{
-		//scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.lighting_shader);
-		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.model_shader);
-	}
+		// enable backface culling
+		glEnable(GL_CULL_FACE);
 
-	for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
-	{
-		// as flash light
-		scene_graph->m_SpotLights[i].m_Direction = main_cam->LookDirection();
-		scene_graph->m_SpotLights[i].m_Instance.position = main_cam->Position();
+		// Depth Test
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
 
-		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
-		// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
-		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
-	}
+		// Blending 
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	sData.model_shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
-	sData.model_shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
+		glClear(GL_STENCIL_BUFFER_BIT);
+		// enable stencil 
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_STENCIL_TEST);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	// if stenicil and depth pass
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);		// enable writing to stencil buffer
 
-	sData.clear_color_shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
-	sData.clear_color_shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
-	
-	// draw all objects without outline
-	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
-	{
-		if (!scene_graph->m_Cubes[i].m_Instance.hasOutline)
+		// get main camera 
+		// TODO: check for some camera type or flag perhaps
+		Camera cams[2];
+		cams[0] = scene_graph->m_Cameras[0];
+		cams[1] = cams[0];
+		cams[1].SetDirection(-cams[0].LookDirection());
+		cameras[0] = &scene_graph->m_Cameras[0];
+		
+		// point lights
+		sData.light_source_shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
+		sData.light_source_shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
+		sData.model_shader->SetUniform3f("u_CameraPosition", cams[c].Position());
+		for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
 		{
-			glStencilMask(0x00);
-			scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
-			glStencilMask(0xFF);
+			scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+			// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
+			scene_graph->m_PointLights[i].SetLightingUniforms(sData.model_shader, i);
 		}
-	}
-	// draw objects with outline
-	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
-	{
-		if (scene_graph->m_Cubes[i].m_Instance.hasOutline)
+
+		for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
 		{
-			scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
+			//scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.lighting_shader);
+			scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.model_shader);
 		}
-	}
 
-	// draw outlines
-	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
-	{
-		if (scene_graph->m_Cubes[i].m_Instance.hasOutline)
-			scene_graph->m_Cubes[i].DrawOutline(sData.model_shader, sData.clear_color_shader, &sData.cube);
-	}
-	
-	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
-	{
-		scene_graph->m_Backpacks[i].Draw(sData.model_shader, sData.backpack);
-	}
+		for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
+		{
+			// as flash light
+			scene_graph->m_SpotLights[i].m_Direction = cams[c].LookDirection();
+			scene_graph->m_SpotLights[i].m_Instance.position = cams[c].Position();
 
-	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
-	{
-		scene_graph->m_Backpacks[i].DrawOutline(sData.backpack, sData.model_shader, sData.clear_color_shader);
-	}
-	sData.texture_shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
-	sData.texture_shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
+			scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+			// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
+			scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
+		}
 
-	// NOTE: should be drawn after all opaque objects; to improve performance look into order independent transparency
-	// draw windows (transparent objects) from back to front (in terms of distance from camera)
-	std::map<float, Quad*> distance_sorted;		// unique float keys, sorted in ascending order (has to be a pointer or it will copy or create a bunch of textures)
-	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
-	{
-		glm::vec3 pos = scene_graph->m_Quads[i].m_Instance.position;
-		float distance = glm::distance(main_cam->Position(), pos);
-		distance_sorted[distance] = &scene_graph->m_Quads[i];
-	}
-	
-	// disable backface culling
-	glDisable(GL_CULL_FACE);
-	for (std::map<float, Quad*>::reverse_iterator rit = distance_sorted.rbegin(); rit != distance_sorted.rend(); ++rit)
-	{
-		rit->second->Draw(sData.texture_shader, &sData.quad);
-	}
+		sData.model_shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
+		sData.model_shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
 
-	// draw grid (blending will be enabled and disabled again)
-	sData.shader->SetUniformMat4f("u_Projection", main_cam->ProjectionMatrix());
-	sData.shader->SetUniformMat4f("u_View", main_cam->LookAtMatrix());
-	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
-	{
-		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);
+		sData.clear_color_shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
+		sData.clear_color_shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
+
+		// draw all objects without outline
+		for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+		{
+			if (!scene_graph->m_Cubes[i].m_Instance.hasOutline)
+			{
+				glStencilMask(0x00);
+				scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
+				glStencilMask(0xFF);
+			}
+		}
+		// draw objects with outline
+		for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+		{
+			if (scene_graph->m_Cubes[i].m_Instance.hasOutline)
+			{
+				scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
+			}
+		}
+
+		// draw outlines
+		for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+		{
+			if (scene_graph->m_Cubes[i].m_Instance.hasOutline)
+				scene_graph->m_Cubes[i].DrawOutline(sData.model_shader, sData.clear_color_shader, &sData.cube);
+		}
+
+		for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+		{
+			scene_graph->m_Backpacks[i].Draw(sData.model_shader, sData.backpack);
+		}
+
+		for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+		{
+			scene_graph->m_Backpacks[i].DrawOutline(sData.backpack, sData.model_shader, sData.clear_color_shader);
+		}
+		sData.texture_shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
+		sData.texture_shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
+
+		// NOTE: should be drawn after all opaque objects; to improve performance look into order independent transparency
+		// draw windows (transparent objects) from back to front (in terms of distance from camera)
+		std::map<float, Quad*> distance_sorted;		// unique float keys, sorted in ascending order (has to be a pointer or it will copy or create a bunch of textures)
+		for (int i = 0; i < scene_graph->m_Quads.size(); i++)
+		{
+			glm::vec3 pos = scene_graph->m_Quads[i].m_Instance.position;
+			float distance = glm::distance(cams[c].Position(), pos);
+			distance_sorted[distance] = &scene_graph->m_Quads[i];
+		}
+
+		// disable backface culling
+		glDisable(GL_CULL_FACE);
+		for (std::map<float, Quad*>::reverse_iterator rit = distance_sorted.rbegin(); rit != distance_sorted.rend(); ++rit)
+		{
+			rit->second->Draw(sData.texture_shader, &sData.quad);
+		}
+
+		// draw grid (blending will be enabled and disabled again)
+		sData.shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
+		sData.shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
+		for (int i = 0; i < scene_graph->m_Grids.size(); i++)
+		{
+			scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);
+		}
 	}
 
 	// draw texture of other framebuffer onto a quad using the default frame buffer
@@ -293,14 +304,22 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	// draw main camera image
 	sData.postprocessing_shader->Bind();
 	glActiveTexture(GL_TEXTURE0 + 5);
-	glBindTexture(GL_TEXTURE_2D, sData.fbo_tex);
+	glBindTexture(GL_TEXTURE_2D, sData.fbo_tex[0]);
 	sData.postprocessing_shader->SetUniform1i("tex", 5);
 	glBindVertexArray(sData.screen_quad.va);
 	glDisable(GL_DEPTH_TEST);
-	
 	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
+
+	// draw reverse camera image
+	sData.postprocessing_shader->Bind();
+	glActiveTexture(GL_TEXTURE0 + 6);
+	glBindTexture(GL_TEXTURE_2D, sData.fbo_tex[1]);
+	sData.postprocessing_shader->SetUniform1i("tex", 6);
+	glBindVertexArray(sData.rearview_quad.va);
+	glDrawElements(GL_TRIANGLES, 3 * sData.rearview_quad.TriCount, GL_UNSIGNED_INT, nullptr);
 }
 
 void Renderer::Clear()
@@ -329,7 +348,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	float xoffset = (xpos - lastx) * sens;
 	float yoffset = (lasty - ypos) * sens;
 
-	main_cam->UpdateFromMouseCallback(xoffset, yoffset);
+	cameras[0]->UpdateFromMouseCallback(xoffset, yoffset);
+	// cameras[1]->UpdateFromMouseCallback(xoffset, yoffset);
 
 	lastx = xpos;
 	lasty = ypos;
@@ -337,5 +357,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	main_cam->UpdateFromScrollCallback((float)xoffset, (float)yoffset);
+	cameras[0]->UpdateFromScrollCallback((float)xoffset, (float)yoffset);
+	// cameras[1]->UpdateFromScrollCallback((float)xoffset, (float)yoffset);
 }

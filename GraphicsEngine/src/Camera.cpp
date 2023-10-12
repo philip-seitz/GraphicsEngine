@@ -245,6 +245,14 @@ const void Camera::Zoom(Window& window, const float& dt)
 		time_z += dt;
 }
 
+const void Camera::SetDirection(glm::vec3 direction)
+{
+	m_look_direction = direction;
+	m_target = m_position + m_look_direction;
+	// update matrix
+	m_look_at = glm::lookAtRH(m_position, m_target, m_up);
+}
+
 glm::mat4x4 myLookAt(const glm::vec3 pos, const glm::vec3 trgt, const glm::vec3 up)
 {
 	glm::vec3 dir = glm::normalize(trgt - pos);

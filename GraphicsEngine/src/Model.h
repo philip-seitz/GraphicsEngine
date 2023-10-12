@@ -17,8 +17,8 @@ public:
 	void LoadSimpleCube();
 	void InitTriangle();
 	void LoadTriangle();
-	void InitQuad(float side = 4.0f);
-	void LoadQuad(float side = 4.0f);
+	void InitQuad(float side = 4.0f, glm::vec3 center = {0.0f, 0.0f, 0.0f});
+	void LoadQuad(float side = 4.0f, glm::vec3 center = { 0.0f, 0.0f, 0.0f });
 
 	unsigned int TriCount;
 	Triangle* TriBuffer;

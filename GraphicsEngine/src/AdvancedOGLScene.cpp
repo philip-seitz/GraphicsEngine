@@ -114,5 +114,4 @@ void AdvancedOGLScene::OnEvent(float& dt)
     }
 
     m_SceneGraph.m_Cameras[0].ManageInputs(m_window, dt);
-    m_SceneGraph.m_Cameras[0].ManageInputs(m_window, dt);
 }
