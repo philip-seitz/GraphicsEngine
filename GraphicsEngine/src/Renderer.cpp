@@ -167,159 +167,85 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 
 void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 {
-	for (int c = 0; c < 2; c++)
-	{
-		// draw to seperate frame buffer
-		glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[c]);
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		// enable backface culling
-		glEnable(GL_CULL_FACE);
+	// enable backface culling
+	glEnable(GL_CULL_FACE);
 
-		// Depth Test
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
+	// Depth Test
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
-		// Blending 
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// Blending 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		glClear(GL_STENCIL_BUFFER_BIT);
-		// enable stencil 
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_STENCIL_TEST);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	// if stenicil and depth pass
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilMask(0xFF);		// enable writing to stencil buffer
+	glClear(GL_STENCIL_BUFFER_BIT);
+	// enable stencil 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);	// if stencil and depth pass
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);		// enable writing to stencil buffer
 
-		// get main camera 
-		// TODO: check for some camera type or flag perhaps
-		Camera cams[2];
-		cams[0] = scene_graph->m_Cameras[0];
-		cams[1] = cams[0];
-		cams[1].SetDirection(-cams[0].LookDirection());
-		cameras[0] = &scene_graph->m_Cameras[0];
+	cameras[0] = &scene_graph->m_Cameras[0];
 		
-		// point lights
-		sData.light_source_shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
-		sData.light_source_shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
-		sData.model_shader->SetUniform3f("u_CameraPosition", cams[c].Position());
-		for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
-		{
-			scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
-			// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
-			scene_graph->m_PointLights[i].SetLightingUniforms(sData.model_shader, i);
-		}
-
-		for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
-		{
-			//scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.lighting_shader);
-			scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.model_shader);
-		}
-
-		for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
-		{
-			// as flash light
-			scene_graph->m_SpotLights[i].m_Direction = cams[c].LookDirection();
-			scene_graph->m_SpotLights[i].m_Instance.position = cams[c].Position();
-
-			scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
-			// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
-			scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
-		}
-
-		sData.model_shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
-		sData.model_shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
-
-		sData.clear_color_shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
-		sData.clear_color_shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
-
-		// draw all objects without outline
-		for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
-		{
-			if (!scene_graph->m_Cubes[i].m_Instance.hasOutline)
-			{
-				glStencilMask(0x00);
-				scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
-				glStencilMask(0xFF);
-			}
-		}
-		// draw objects with outline
-		for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
-		{
-			if (scene_graph->m_Cubes[i].m_Instance.hasOutline)
-			{
-				scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
-			}
-		}
-
-		// draw outlines
-		for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
-		{
-			if (scene_graph->m_Cubes[i].m_Instance.hasOutline)
-				scene_graph->m_Cubes[i].DrawOutline(sData.model_shader, sData.clear_color_shader, &sData.cube);
-		}
-
-		for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
-		{
-			scene_graph->m_Backpacks[i].Draw(sData.model_shader, sData.backpack);
-		}
-
-		for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
-		{
-			scene_graph->m_Backpacks[i].DrawOutline(sData.backpack, sData.model_shader, sData.clear_color_shader);
-		}
-		sData.texture_shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
-		sData.texture_shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
-
-		// NOTE: should be drawn after all opaque objects; to improve performance look into order independent transparency
-		// draw windows (transparent objects) from back to front (in terms of distance from camera)
-		std::map<float, Quad*> distance_sorted;		// unique float keys, sorted in ascending order (has to be a pointer or it will copy or create a bunch of textures)
-		for (int i = 0; i < scene_graph->m_Quads.size(); i++)
-		{
-			glm::vec3 pos = scene_graph->m_Quads[i].m_Instance.position;
-			float distance = glm::distance(cams[c].Position(), pos);
-			distance_sorted[distance] = &scene_graph->m_Quads[i];
-		}
-
-		// disable backface culling
-		glDisable(GL_CULL_FACE);
-		for (std::map<float, Quad*>::reverse_iterator rit = distance_sorted.rbegin(); rit != distance_sorted.rend(); ++rit)
-		{
-			rit->second->Draw(sData.texture_shader, &sData.quad);
-		}
-
-		// draw grid (blending will be enabled and disabled again)
-		sData.shader->SetUniformMat4f("u_Projection", cams[c].ProjectionMatrix());
-		sData.shader->SetUniformMat4f("u_View", cams[c].LookAtMatrix());
-		for (int i = 0; i < scene_graph->m_Grids.size(); i++)
-		{
-			scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);
-		}
+	// point lights
+	sData.light_source_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
+	sData.light_source_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
+	sData.model_shader->SetUniform3f("u_CameraPosition", cameras[0]->Position());
+	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
+	{
+		scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+		// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.model_shader, i);
 	}
 
-	// draw texture of other framebuffer onto a quad using the default frame buffer
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
+	{
+		// scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.lighting_shader);
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.model_shader);
+	}
 
-	// draw main camera image
-	sData.postprocessing_shader->Bind();
-	glActiveTexture(GL_TEXTURE0 + 5);
-	glBindTexture(GL_TEXTURE_2D, sData.fbo_tex[0]);
-	sData.postprocessing_shader->SetUniform1i("tex", 5);
-	glBindVertexArray(sData.screen_quad.va);
-	glDisable(GL_DEPTH_TEST);
-	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
+	for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
+	{
+		// as flash light
+		scene_graph->m_SpotLights[i].m_Direction = cameras[0]->LookDirection();
+		scene_graph->m_SpotLights[i].m_Instance.position = cameras[0]->Position();
 
-	// draw reverse camera image
-	sData.postprocessing_shader->Bind();
-	glActiveTexture(GL_TEXTURE0 + 6);
-	glBindTexture(GL_TEXTURE_2D, sData.fbo_tex[1]);
-	sData.postprocessing_shader->SetUniform1i("tex", 6);
-	glBindVertexArray(sData.rearview_quad.va);
-	glDrawElements(GL_TRIANGLES, 3 * sData.rearview_quad.TriCount, GL_UNSIGNED_INT, nullptr);
+		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+		// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
+	}
+
+	sData.model_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
+	sData.model_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
+
+	sData.clear_color_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
+	sData.clear_color_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
+
+	// draw all objects without outline
+	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+	{
+			scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
+	}
+
+	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	{
+		scene_graph->m_Backpacks[i].Draw(sData.model_shader, sData.backpack);
+	}
+
+	sData.texture_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
+	sData.texture_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
+
+	// draw grid (blending will be enabled and disabled again)
+	sData.shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
+	sData.shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
+	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
+	{
+		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);
+	}
 }
 
 void Renderer::Clear()
