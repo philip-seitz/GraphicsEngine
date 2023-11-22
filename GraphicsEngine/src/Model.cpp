@@ -87,7 +87,7 @@ void Model::LoadSimpleCube()
 	std::vector<Triangle> mesh;
 
 	glm::vec3 center = { 0.0f, 0.0f, 0.0f };
-	float side = 2.0f;
+	float side = 1.0f;
 
 	glm::vec3 front_center = center + glm::vec3(0.0f, 0.0f, side / 2.0f);
 	glm::vec3 back_center = center - glm::vec3(0.0f, 0.0f, side / 2.0f);

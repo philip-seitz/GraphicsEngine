@@ -10,7 +10,8 @@ uniform mat4 u_View;
 void main()
 {
 	TexCoords = a_Position.xyz;
-	gl_Position = u_Projection * u_View * u_Model * a_Position;
+	vec4 pos = u_Projection * u_View * u_Model * a_Position;
+	gl_Position = pos.xyww;			// set z to w -> depth will always be w/w = 1.0
 }
 
 #shader fragment

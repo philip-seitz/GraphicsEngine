@@ -23,7 +23,7 @@ Camera::Camera():
 	m_yFOV(45.0f),
 	m_zoom(1.0f),
 	m_aspectRatio(1080.0f/720.0f),
-	m_zNear(0.5f),
+	m_zNear(0.2f),
 	m_zFar(1000.0f),
 	m_perspective_proj(glm::perspectiveRH(glm::radians(m_yFOV), m_aspectRatio, m_zNear, m_zFar)),
 	m_orthographic_proj(glm::orthoRH(0.0f, 300.0f , 0.0f, 300.0f , m_zNear, m_zFar))
@@ -46,7 +46,7 @@ Camera::Camera(const bool& isPerspective):
 	m_yFOV(45.0f),
 	m_zoom(1.0f),
 	m_aspectRatio(1080.0f / 720.0f),
-	m_zNear(0.5f),
+	m_zNear(0.2f),
 	m_zFar(1000.0f),
 	m_perspective_proj(glm::perspectiveRH(glm::radians(m_yFOV), m_aspectRatio, m_zNear, m_zFar)),
 	m_orthographic_proj(glm::orthoRH(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f))

@@ -71,7 +71,7 @@ struct Cubemap
 
 	glm::vec3 angles = {0.0f, 0.0f, 0.0f};
 	glm::vec3 position = {0.0f, 0.0f, 0.0f};
-	glm::vec3 scale = {10.0f, 10.0f, 10.0f};
+	glm::vec3 scale = {1.0f, 1.0f, 1.0f};		// 1x1x1 cube
 	void Init()
 	{
 		// setup cube map (refactor into class later)
@@ -269,20 +269,6 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	cameras[0] = &scene_graph->m_Cameras[0];
 
-	// draw sky box 
-	// disable depth buffer before (enable after)
-	glDepthMask(GL_FALSE);
-	glDisable(GL_CULL_FACE);
-
-	
-	sData.cubemap_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
-	sData.cubemap_shader->SetUniformMat4f("u_View", glm::mat3(cameras[0]->LookAtMatrix()));
-	cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
-
-	// enable depth buffer
-	glDepthMask(GL_TRUE);
-	glEnable(GL_CULL_FACE);
-
 	// point lights
 	sData.light_source_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
 	sData.light_source_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
@@ -331,7 +317,21 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	sData.texture_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
 	sData.texture_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
 
-	// draw grid (blending will be enabled and disabled again)
+	
+
+	// draw sky box after drawing all models (as optimization)
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_CULL_FACE);
+
+	sData.cubemap_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
+	sData.cubemap_shader->SetUniformMat4f("u_View", glm::mat3(cameras[0]->LookAtMatrix()));
+	cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
+
+	// enable depth buffer
+	glDepthFunc(GL_LESS);
+	glEnable(GL_CULL_FACE);
+
+	// draw grid (after sky box to benefit from blending with skybox colors)
 	sData.shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
 	sData.shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
 	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
