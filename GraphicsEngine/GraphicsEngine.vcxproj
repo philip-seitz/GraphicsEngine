@@ -490,6 +490,7 @@
     <ClInclude Include="src\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\shader\cubemap_shader.glsl" />
     <None Include="res\shader\model_shader.glsl" />
     <None Include="res\shader\light_source_shader.glsl" />
     <None Include="res\shader\lighting_shader.glsl" />

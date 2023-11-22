@@ -37,15 +37,19 @@ void AdvancedOGLScene::Run()
     }
 
     // create point light
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 0; i++)
     {
         PointLight testLight;
         testLight.m_Instance.position = { i * 3.0f, 1.0f, 4.0f };
         m_SceneGraph.m_PointLights.push_back(testLight);
     }
 
-    // add 2 cubes 
-    for (int i = 0; i < 2; i++)
+    DirectionalLight dirLight;
+    dirLight.m_Direction = { -1.0f, -0.5f, 2.0f };
+    m_SceneGraph.m_DirectionalLights.push_back(dirLight);
+
+    // add cubes 
+    for (int i = 0; i < 1; i++)
     {
         Cube t_cube;
         t_cube.m_Instance.position = { 0.0f + i * 1.0f, 1.52f, -1.0f + 3.0f*i };
@@ -53,7 +57,7 @@ void AdvancedOGLScene::Run()
     }
 
     // add quads (vegetation or other textures)
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 0; i++)
     {
         Quad quad;
         quad.m_Instance.position = { -3.0f + i * 3.0f, 2.52f, -3.0f - i };

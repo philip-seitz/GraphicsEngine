@@ -40,11 +40,9 @@ Texture::Texture(const std::string& path, const unsigned short& slot, const unsi
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_mode);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_mode);
 
-	
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
 	// generate mipmap
 	glGenerateMipmap(GL_TEXTURE_2D);
-
 	// Unbind and free
 	glBindTexture(GL_TEXTURE_2D, 0);
 	if (m_LocalBuffer)  

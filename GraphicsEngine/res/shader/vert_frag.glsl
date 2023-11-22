@@ -31,7 +31,7 @@ in vec2 v_TexCoord;
 in vec4 v_EyeSpacePosition;
 
 // fog parameters
-vec4 fogColor = vec4( 0.1f, 0.1f, 0.1f, 1.0f );
+vec4 fogColor = vec4( 0.8f, 0.8f, 0.8f, 0.3f );
 float linearStart = 15.0f;
 float linearEnd = 60.0f;
 float density = 0.05f;

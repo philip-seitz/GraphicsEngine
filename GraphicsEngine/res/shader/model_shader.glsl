@@ -17,7 +17,7 @@ void main()
 {
 	gl_Position = u_Projection * u_View * u_Model * a_Position;
 	v_Normal = u_Normal_Matrix * a_Normal;
-	v_FragmentPosition = vec3(u_Model * a_Position);	// in world space
+	v_FragmentPosition = vec3(u_Model * a_Position);		// in world space
 	v_TexCoord = a_TexCoord;
 }
 
@@ -104,8 +104,6 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir);
 
 float LinearizeDepth(float depth);
 
-#define NR_POINTS_LIGHTS 1
-
 in vec3 v_Normal;
 in vec3 v_FragmentPosition;
 in vec3 v_LightPosition;
@@ -117,9 +115,11 @@ uniform vec3 u_Light_Color;
 uniform vec3 u_CameraPosition;
 uniform Material u_Material;
 uniform Light u_Light;
-uniform PointLight u_PointLight[NR_POINTS_LIGHTS];
+uniform PointLight u_PointLight[5];		// 5 point lights max
 uniform DirectionalLight u_DirLight;
 uniform SpotLight u_SpotLight;
+
+uniform int u_NumberPointLights;		// number of point lights (uniform)
 
 float near = 0.5f;
 float far = 1000.0f;
@@ -131,11 +131,13 @@ void main()
 	vec3 normal = normalize(v_Normal);
 	vec3 view_direction = -normalize(v_FragmentPosition - u_CameraPosition);
 
-	for (int i = 0; i < NR_POINTS_LIGHTS; i++)
+
+	// light source should exist, else the color might be substracted and is completely dark
+	for (int i = 0; i < u_NumberPointLights; i++)
 	{
 		color += CalcPointLight(u_PointLight[i], normal, view_direction);
 	}
-	// color += CalcDirectionalLight(u_DirLight, normal, view_direction);
+	color += CalcDirectionalLight(u_DirLight, normal, view_direction);
 	// color += CalcSpotLight(u_SpotLight, normal, view_direction); 
 	color.w = 1.0f;
 

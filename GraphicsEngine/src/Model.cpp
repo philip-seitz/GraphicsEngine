@@ -23,7 +23,6 @@ Model::Model():
 	TriBufferPointer(nullptr),
 	TriIndices(nullptr),
 	TriIndicesPointer(nullptr)
-
 {
 }
 
