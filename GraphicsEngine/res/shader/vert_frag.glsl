@@ -5,17 +5,21 @@ layout(location = 1) in vec4 a_Color;
 layout(location = 2) in vec2 a_TexCoord;
 out vec4 v_Color;
 out vec2 v_TexCoord;
+out vec3 v_CubemapDirectionToGrid;
 out vec4 v_EyeSpacePosition;
 
 uniform mat4 u_Model;
 uniform mat4 u_Projection;
 uniform mat4 u_View;
+uniform vec3 u_CameraPosition;
 
 void main()
 {
 	gl_Position = u_Projection * u_View * u_Model * a_Position;
 	v_TexCoord = a_TexCoord;
 	v_Color = a_Color;
+	vec4 pos = u_Model * a_Position;
+	v_CubemapDirectionToGrid = pos.xyz - u_CameraPosition;
 
 	// Disable perspective division (homogeneous cords to position)
 	// gl_Position /= gl_Position.w;
@@ -28,20 +32,23 @@ void main()
 layout(location = 0) out vec4 o_Color;
 in vec4 v_Color;
 in vec2 v_TexCoord;
+in vec3 v_CubemapDirectionToGrid;
 in vec4 v_EyeSpacePosition;
 
 // fog parameters
-vec4 fogColor = vec4( 0.6f, 0.6f, 0.6f, 0.1f);
-float linearStart = 20.0f;
-float linearEnd = 70.0f;
-float density = 0.1f;
+vec4 fogColor = vec4( 0.6f, 0.6f, 0.6f, 1.0f);
+float linearStart = 30.0f;
+float linearEnd = 60.0f;
+float density = 0.02f;
 bool fogEnabled = true;
+bool skyboxEnabled = true;
 float fogFactor = 1.0f;
 
 uniform bool u_Use_Texture;
 uniform float u_Texture_Mix;
 uniform sampler2D u_Texture_0;
 uniform sampler2D u_Texture_1;
+uniform samplerCube u_Skybox;
 
 void main()
 {
@@ -79,6 +86,29 @@ void main()
 	{
 		if (fogEnabled)
 		{
+			if (skyboxEnabled)
+			{
+				vec4 skybox_color = texture(u_Skybox, v_CubemapDirectionToGrid);
+				// vec4 skybox_color = texture(u_Skybox, v_CubemapDirectionToGrid);
+				skybox_color.a = 1.0f;
+				fogColor = skybox_color;
+			}
+			else
+			{
+
+			}
+			
+			// o_Color = mix(color, fogColor, fogFactor);
+			// vec4 temp = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+			// vec4 temp = mix(color, fogColor, fogFactor);
+		/*	if (fogColor.r > 0.0f)
+			{
+				temp = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+			}
+			else
+			{
+				temp = vec4(1.0f, 0.0f, 0.0f, 1.0f);
+			}*/
 			o_Color = mix(color, fogColor, fogFactor);
 		}
 		else

@@ -18,6 +18,7 @@ void GridInstance::Draw(const Grid& base_model, Shader* shader)
 	glEnable(GL_DEPTH_TEST);
 	glLineWidth(1.0f);
 
+	shader->SetUniform1i("u_Skybox", 10);
 	shader->SetUniformMat4f("u_Model", ModelMatrix());
 	glDrawElements(GL_LINES, 2 * base_model.m_LineCount, GL_UNSIGNED_INT, nullptr);
 

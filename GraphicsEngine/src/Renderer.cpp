@@ -76,7 +76,9 @@ struct Cubemap
 	{
 		// setup cube map (refactor into class later)
 		
+		// === those two lines are not needed somehow (works without them) ===
 		glGenTextures(1, &cubemapID);
+		glActiveTexture(GL_TEXTURE0 + 10);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
 
 		std::vector<std::string> texture_faces
@@ -91,7 +93,7 @@ struct Cubemap
 
 		for (int i = 0; i < texture_faces.size(); i++)
 		{
-			stbi_set_flip_vertically_on_load(0);		// set to 1 originally doesn't
+			stbi_set_flip_vertically_on_load(0);		// set to 1 originally. cubemap textures are not inverted (unlike other textures)
 			data = stbi_load(texture_faces[i].c_str(), &width, &height, &nrChannels, 0);
 			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 			stbi_image_free(data);
@@ -106,7 +108,8 @@ struct Cubemap
 	void Draw(const Model& base_model, Shader* shader)
 	{
 		glBindVertexArray(base_model.va);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+		// glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);		// not necessary for cubemap
+		shader->SetUniform1i("u_Skybox", 10);
 		shader->SetUniformMat4f("u_Model", ModelMatrix());
 		glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
 
@@ -161,40 +164,6 @@ void Renderer::Init(Window* window)
 
 	cube_map.Init();
 
-	for (int i = 0; i < 2; i++)
-	{
-		// code for framebuffer object 
-		glGenFramebuffers(1, &sData.fbo_id[i]);
-		glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[i]);
-
-		// texture attachment
-		glGenTextures(1, &sData.fbo_tex[i]);
-		glActiveTexture(GL_TEXTURE0 + 5 + i);
-		glBindTexture(GL_TEXTURE_2D, sData.fbo_tex[i]);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sData.window->m_Width, sData.window->m_Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glBindTexture(GL_TEXTURE_2D, 0);
-
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.fbo_tex[i], 0);
-
-		// renderbuffer attachment
-
-		glGenRenderbuffers(1, &sData.fbo_rbo_id[i]);
-		glBindRenderbuffer(GL_RENDERBUFFER, sData.fbo_rbo_id[i]);
-
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, sData.window->m_Width, sData.window->m_Height);
-		glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sData.fbo_rbo_id[i]);
-
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
-			std::cout << "FBO SUCCESSFUL" << std::endl;
-		else
-			std::cout << "FBO FAILED" << std::endl;
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
 }
 
 void Renderer::Shutdown()
@@ -317,8 +286,6 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	sData.texture_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
 	sData.texture_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
 
-	
-
 	// draw sky box after drawing all models (as optimization)
 	glDepthFunc(GL_LEQUAL);
 	glDisable(GL_CULL_FACE);
@@ -334,6 +301,10 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	// draw grid (after sky box to benefit from blending with skybox colors)
 	sData.shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
 	sData.shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
+	sData.shader->SetUniform3f("u_CameraPosition", cameras[0]->Position());
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map.cubemapID);
+
 	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
 	{
 		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);

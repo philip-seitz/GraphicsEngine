@@ -18,10 +18,10 @@ void main()
 #version 330 core
 layout(location = 0) out vec4 o_Color;
 in vec3 TexCoords;
-uniform samplerCube skybox;
+uniform samplerCube u_Skybox;
 
 void main()
 {
-	o_Color = texture(skybox, TexCoords);
+	o_Color = texture(u_Skybox, TexCoords);
 	// o_Color = vec4(0.8f, 0.3f, 0.3f, 1.0f);
 }

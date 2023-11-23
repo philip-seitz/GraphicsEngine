@@ -67,8 +67,8 @@ void Grid::LoadGridxz()
 	int limit = m_max_grid_lines - 2;		// minus inner x and z line plus outer lines
 	for (int i = 0; i < limit; i++)
 	{
-		m_LineBufferPointer->p0.color = { GREY };
-		m_LineBufferPointer->p1.color = { GREY };
+		m_LineBufferPointer->p0.color = { WHITE };
+		m_LineBufferPointer->p1.color = { WHITE };
 
 		if (i < limit * 1 / 4)
 		{
