@@ -101,6 +101,8 @@ struct Light
 vec4 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_dir);
 vec4 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir);
 vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir);
+vec4 CalcReflection(vec3 normal, vec3 view_direction);
+vec4 CalcRefraction(vec3 normal, vec3 view_direction);
 
 float LinearizeDepth(float depth);
 
@@ -121,6 +123,8 @@ uniform SpotLight u_SpotLight;
 
 uniform int u_NumberPointLights;		// number of point lights (uniform)
 
+uniform samplerCube u_Skybox;
+
 float near = 0.5f;
 float far = 1000.0f;
 
@@ -131,19 +135,38 @@ void main()
 	vec3 normal = normalize(v_Normal);
 	vec3 view_direction = -normalize(v_FragmentPosition - u_CameraPosition);
 
-
 	// light source should exist, else the color might be substracted and is completely dark
 	for (int i = 0; i < u_NumberPointLights; i++)
 	{
-		color += CalcPointLight(u_PointLight[i], normal, view_direction);
+		// color += CalcPointLight(u_PointLight[i], normal, view_direction);
 	}
-	color += CalcDirectionalLight(u_DirLight, normal, view_direction);
+	// color += CalcDirectionalLight(u_DirLight, normal, view_direction);
 	// color += CalcSpotLight(u_SpotLight, normal, view_direction); 
+
+	// color = CalcReflection(normal, view_direction);
+	color = CalcRefraction(normal, view_direction);
 	color.w = 1.0f;
 
 	// o_Color = vec4(vec3(LinearizeDepth(gl_FragCoord.z)/far), 1.0f);
 	o_Color = color;
 }
+
+vec4 CalcReflection(vec3 normal, vec3 view_direction)
+{
+	vec3 reflectedSampleVector = normalize(reflect(-view_direction, normal));		// view direction from fragment to camera
+	vec4 color = texture(u_Skybox, reflectedSampleVector);
+	return color;
+}
+
+vec4 CalcRefraction(vec3 normal, vec3 view_direction)
+{
+	float ratioAirGlass = 1.0f/1.52f;
+	// float ratioGlassAir = 1.52f/1.0f;
+	vec3 refractedSampleVector = normalize(refract(-view_direction, normal, ratioAirGlass));
+	vec4 color = texture(u_Skybox, refractedSampleVector);
+	return color;
+}
+
 
 vec4 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_dir)
 {

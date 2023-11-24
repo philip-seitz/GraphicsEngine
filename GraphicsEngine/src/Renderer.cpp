@@ -273,6 +273,8 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	sData.clear_color_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
 	sData.clear_color_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
 
+	sData.model_shader->SetUniform1i("u_Skybox", 10);
+
 	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
 	{
 		scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
