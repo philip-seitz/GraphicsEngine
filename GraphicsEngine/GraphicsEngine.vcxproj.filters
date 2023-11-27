@@ -93,6 +93,9 @@
     <ClCompile Include="src\Quad.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="src\Point.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Window.h">
@@ -1013,6 +1016,9 @@
     <ClInclude Include="src\Quad.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="src\Point.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\vendor\glm\detail\func_common.inl">
@@ -1429,6 +1435,7 @@
     <None Include="res\shader\model_shader.glsl" />
     <None Include="res\shader\postprocessing.glsl" />
     <None Include="res\shader\cubemap_shader.glsl" />
+    <None Include="res\shader\geometry.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="res\shader\texture_shader.glsl" />

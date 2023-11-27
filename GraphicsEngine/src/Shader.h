@@ -6,7 +6,7 @@
 
 struct ShaderProgramSource {
 
-	std::string vertex, fragment;
+	std::string vertex, fragment, geometry;
 };
 
 class Shader
@@ -35,7 +35,7 @@ private:
 	std::unordered_map <std::string, int> m_UniformLocationCache;
 
 	int GetUniformLocation(const std::string& name);
-	unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader);
+	unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader, const std::string& geometryShader);
 	unsigned int CompileShader(unsigned int type, const std::string& source);
 	ShaderProgramSource ParseShader(const std::string& filepath);
 };

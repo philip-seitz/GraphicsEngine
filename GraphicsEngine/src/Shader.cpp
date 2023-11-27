@@ -16,8 +16,8 @@ Shader::Shader()
 Shader::Shader(const std::string& filepath)
     : m_FilePath(filepath), m_RendererID(0)
 {
-    ShaderProgramSource source = ParseShader(filepath);                         // Parsing = string analysis / durchgehen
-    m_RendererID = CreateShader(source.vertex, source.fragment);                // shader erstellen compilen und linken. 
+    ShaderProgramSource source = ParseShader(filepath);                                             // Parsing = string analysis / durchgehen
+    m_RendererID = CreateShader(source.vertex, source.fragment, source.geometry);                   // shader erstellen compilen und linken. 
 }
 
 Shader::~Shader()
@@ -25,15 +25,22 @@ Shader::~Shader()
     GLCall(glDeleteProgram(m_RendererID));
 }
 
-unsigned int Shader::CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
+unsigned int Shader::CreateShader(const std::string& vertexShader, const std::string& fragmentShader, const std::string& geometryShader)
 {
     unsigned int program = glCreateProgram();
     // ähnlich wie genBuffer Funktion aber nicht konstant mit ID-Übergabe :(
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
     unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+    unsigned int gs = 0;
+    if (!geometryShader.empty())
+    {
+        gs = CompileShader(GL_GEOMETRY_SHADER, geometryShader);
+        GLCall(glAttachShader(program, gs));
+    }
 
     GLCall(glAttachShader(program, vs));
     GLCall(glAttachShader(program, fs));
+    
     GLCall(glLinkProgram(program));
     GLCall(glValidateProgram(program));         // Prüfen ob die Programme aktuell ausgeführt werden können
 
@@ -60,7 +67,14 @@ unsigned Shader::CompileShader(unsigned int type, const std::string& source)
         char* message = (char*)_malloca(length * sizeof(char));
         // alloca() lässt einen 'dynamisch' auf dem stack speicher anlegen (geht ohne nur auf dem heap)
         GLCall(glGetShaderInfoLog(id, length, &length, message));
-        std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader!" << std::endl;
+        if (type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER)
+        {
+            std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader!" << std::endl;
+        }
+        else if (type == GL_GEOMETRY_SHADER)
+        {
+            std::cout << "Failed to compile geometry shader!" << std::endl;
+        }
         std::cout << message << std::endl;
         GLCall(glDeleteShader(id));
         return 0;
@@ -71,11 +85,11 @@ unsigned Shader::CompileShader(unsigned int type, const std::string& source)
 ShaderProgramSource Shader::ParseShader(const std::string& filepath)
 {
     enum ShaderType {
-        NONE = -1, VERTEX = 0, FRAGMENT = 1
+        NONE = -1, VERTEX = 0, FRAGMENT = 1, GEOMETRY = 2
     };
     ShaderType type = NONE;
     ShaderProgramSource output;
-    std::stringstream ss[2];
+    std::stringstream ss[3];
     std::ifstream stream(filepath);
 
     std::string line;
@@ -91,6 +105,10 @@ ShaderProgramSource Shader::ParseShader(const std::string& filepath)
             {
                 type = FRAGMENT;
             }
+            else if (line.find("geometry") != std::string::npos)
+            {
+                type = GEOMETRY;
+            }
         }
         else
         {
@@ -103,6 +121,7 @@ ShaderProgramSource Shader::ParseShader(const std::string& filepath)
 
     output.vertex = ss[VERTEX].str();
     output.fragment = ss[FRAGMENT].str();
+    output.geometry = ss[GEOMETRY].str();
     return output;
 }
 

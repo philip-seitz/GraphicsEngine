@@ -9,6 +9,7 @@
 #include "Quad.h"
 #include "Camera.h"
 #include "GridInstance.h"
+#include "Point.h"
 
 class SceneGraph
 {
@@ -22,6 +23,7 @@ public:
 	std::vector<Quad> m_Quads;
 	std::vector<ModelSceneInstance> m_Backpacks;
 	std::vector<GridInstance> m_Grids;	
+	std::vector<Point> m_Points;
 	
 private:
 

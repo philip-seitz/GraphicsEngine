@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include "Camera.h"
 #include "ModelSceneInstance.h"
+#include "Point.h"
 
 AdvancedOGLScene::AdvancedOGLScene():
     m_window(1000, 500, "Advanced")
@@ -49,7 +50,7 @@ void AdvancedOGLScene::Run()
     m_SceneGraph.m_DirectionalLights.push_back(dirLight);
 
     // add cubes 
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 0; i++)
     {
         Cube t_cube;
         t_cube.m_Instance.position = { 0.0f + i * 1.0f, 1.52f, -1.0f + 3.0f*i };
@@ -65,22 +66,35 @@ void AdvancedOGLScene::Run()
     }
 
     GridInstance grid;
-    m_SceneGraph.m_Grids.push_back(grid);
+    // m_SceneGraph.m_Grids.push_back(grid);
 
     // create floor
     Cube floor;
     floor.m_Instance.position = { 0.0f, 0.0f, 0.0f };
     floor.m_Instance.scale = { 4.0f, 0.5f, 6.0f };
     floor.m_Instance.hasOutline = false;
-    m_SceneGraph.m_Cubes.push_back(floor);
+    // m_SceneGraph.m_Cubes.push_back(floor);
 
     // add a backback model
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 0; i++)
     {
         ModelSceneInstance backpack;
         backpack.m_position = { 0.0f + 4 * i, 7.0f, 0.0f };
         m_SceneGraph.m_Backpacks.push_back(backpack);
     }
+
+    for (int i = 0; i < 4; i++)
+    {
+        Point point;
+        if (i < 2)
+        {
+            point.m_position = { -0.5f + 1.0f * float(i), 0.5f, 0.0f };
+        }
+        else 
+            point.m_position = { -0.5f + 1.0f * float(i-2), -0.5f, 0.0f };
+        m_SceneGraph.m_Points.push_back(point);
+    }
+
 
     // render loop
     while (!glfwWindowShouldClose(m_window.GetWindow()))

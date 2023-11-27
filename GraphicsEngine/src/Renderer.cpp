@@ -37,6 +37,7 @@ struct RendererData
 	// Other objects
 	Model primitive_cube;
 	Model quad;
+	Model point;
 	Model screen_quad;
 	Model rearview_quad;
 
@@ -55,6 +56,7 @@ struct RendererData
 	Shader* clear_color_shader = nullptr;
 	Shader* postprocessing_shader = nullptr;
 	Shader* cubemap_shader = nullptr;
+	Shader* geometry_shader = nullptr;
 
 	Window* window = nullptr;
 
@@ -196,12 +198,14 @@ void Renderer::Init(Window* window)
 	sData.clear_color_shader = new Shader("res/shader/clear_color_shader.glsl");
 	sData.postprocessing_shader = new Shader("res/shader/postprocessing.glsl");
 	sData.cubemap_shader = new Shader("res/shader/cubemap_shader.glsl");
+	sData.geometry_shader = new Shader("res/shader/geometry.glsl");
 	//sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
 	// initialize models (send data to GPU)
 	sData.primitive_cube.InitSimpleCube();
 	sData.cube.InitCube();
 	sData.quad.InitQuad();
+	sData.point.InitPoint();
 	sData.screen_quad.InitQuad(2.0f, {0.0f, 0.0f, -0.7f});
 	sData.rearview_quad.InitQuad(0.5f, { 0.75f, 0.5f, -0.5f });
 
@@ -217,6 +221,7 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.clear_color_shader);
 	shader_list_matrices.push_back(sData.texture_shader);
 	shader_list_matrices.push_back(sData.shader);
+	shader_list_matrices.push_back(sData.geometry_shader);
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
 	// list of shaders that should be bound to binding point of u_CameraData Uniform Buffer
@@ -341,11 +346,16 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 		scene_graph->m_Backpacks[i].Draw(sData.model_shader, sData.backpack);
 	}
 
+	for (int i = 0; i < scene_graph->m_Points.size(); i++)
+	{
+		scene_graph->m_Points[i].Draw(sData.geometry_shader, &sData.point);
+	}
+
 	// draw sky box after drawing all models (as optimization)
 	glDepthFunc(GL_LEQUAL);
 	glDisable(GL_CULL_FACE);
 
-	cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
+	// cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
 
 	// enable depth buffer
 	glDepthFunc(GL_LESS);

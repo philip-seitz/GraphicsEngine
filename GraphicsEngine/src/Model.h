@@ -19,12 +19,15 @@ public:
 	void LoadTriangle();
 	void InitQuad(float side = 4.0f, glm::vec3 center = {0.0f, 0.0f, 0.0f});
 	void LoadQuad(float side = 4.0f, glm::vec3 center = { 0.0f, 0.0f, 0.0f });
+	void InitPoint();
+	void LoadPoint();
 
 	unsigned int TriCount;
 	Triangle* TriBuffer;
 	Triangle* TriBufferPointer;
 	TriangleIndices* TriIndices;
 	TriangleIndices* TriIndicesPointer;
+	Vertex* VertexBuffer;
 
 	unsigned int va;
 	unsigned int vb;
