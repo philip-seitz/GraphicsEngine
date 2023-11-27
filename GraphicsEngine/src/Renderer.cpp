@@ -11,6 +11,7 @@
 #include <map>
 
 #include "stb_image/stb_image.h"
+#include "vendor/glm/gtc/type_ptr.hpp"
 
 // constants for vertices and textures
 const unsigned int max_vertices = 4000000;
@@ -135,10 +136,55 @@ struct Cubemap
 	}
 };
 
+
+struct UniformBufferObject
+{
+	
+	unsigned int uboID = 0;
+
+	// size: total size corresponding to std140 
+	void InitBuffer(unsigned int size, const std::string& uniform_name, unsigned int bindingPointNumber, std::vector<Shader*> shader_list)
+	{
+		unsigned int uniformBlockID = 0;
+		// Binding Point
+		for (int i = 0; i < shader_list.size(); i++)
+		{
+			uniformBlockID = glGetUniformBlockIndex(shader_list[i]->GetRendererID(), uniform_name.c_str());
+			glUniformBlockBinding(shader_list[i]->GetRendererID(), uniformBlockID, bindingPointNumber);
+		}
+		
+		// Buffer
+		glGenBuffers(1, &uboID);
+		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
+		glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_STATIC_DRAW);		// might have to be dynamic draw
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);		// unbind
+
+		glBindBufferRange(GL_UNIFORM_BUFFER, bindingPointNumber, uboID, 0, size);		// use entire buffer memory and set to binding point number
+	}
+
+	void SetMat4f(unsigned int offset, glm::mat4 data)
+	{
+		// setup Uniform Buffer Object (each frame)
+		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
+		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(glm::mat4), glm::value_ptr(data));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
+
+	void SetVec3f(unsigned int offset, glm::vec3 data)
+	{
+		// setup Uniform Buffer Object (each frame)
+		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
+		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(glm::vec3), glm::value_ptr(data));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
+};
+
 // create vao for sky box
 
 static RendererData sData;
 Cubemap cube_map;
+UniformBufferObject uboMatrix;
+UniformBufferObject uboCamera;
 
 void Renderer::Init(Window* window)
 {
@@ -164,6 +210,20 @@ void Renderer::Init(Window* window)
 
 	cube_map.Init();
 
+	// list of shaders that should be bound to binding point of u_Matrices Uniform Buffer
+	std::vector<Shader*> shader_list_matrices;
+	shader_list_matrices.push_back(sData.cubemap_shader);
+	shader_list_matrices.push_back(sData.light_source_shader);
+	shader_list_matrices.push_back(sData.clear_color_shader);
+	shader_list_matrices.push_back(sData.texture_shader);
+	shader_list_matrices.push_back(sData.shader);
+	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
+
+	// list of shaders that should be bound to binding point of u_CameraData Uniform Buffer
+	std::vector<Shader*> shader_list_camera;
+	shader_list_camera.push_back(sData.shader);
+	shader_list_camera.push_back(sData.model_shader);
+	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 }
 
 void Renderer::Shutdown()
@@ -238,10 +298,12 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	cameras[0] = &scene_graph->m_Cameras[0];
 
+	uboMatrix.SetMat4f(0, cameras[0]->ProjectionMatrix());
+	uboMatrix.SetMat4f(sizeof(glm::mat4), cameras[0]->LookAtMatrix());
+
+	uboCamera.SetVec3f(0, cameras[0]->Position());
+
 	// point lights
-	sData.light_source_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
-	sData.light_source_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
-	sData.model_shader->SetUniform3f("u_CameraPosition", cameras[0]->Position());
 	sData.model_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
 	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
 	{
@@ -267,12 +329,6 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
 	}
 
-	sData.model_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
-	sData.model_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
-
-	sData.clear_color_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
-	sData.clear_color_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
-
 	sData.model_shader->SetUniform1i("u_Skybox", 10);
 
 	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
@@ -285,15 +341,10 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 		scene_graph->m_Backpacks[i].Draw(sData.model_shader, sData.backpack);
 	}
 
-	sData.texture_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
-	sData.texture_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
-
 	// draw sky box after drawing all models (as optimization)
 	glDepthFunc(GL_LEQUAL);
 	glDisable(GL_CULL_FACE);
 
-	sData.cubemap_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
-	sData.cubemap_shader->SetUniformMat4f("u_View", glm::mat3(cameras[0]->LookAtMatrix()));
 	cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
 
 	// enable depth buffer
@@ -301,9 +352,6 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	glEnable(GL_CULL_FACE);
 
 	// draw grid (after sky box to benefit from blending with skybox colors)
-	sData.shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
-	sData.shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
-	sData.shader->SetUniform3f("u_CameraPosition", cameras[0]->Position());
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map.cubemapID);
 

@@ -9,9 +9,15 @@ out vec3 v_FragmentPosition;		// what coordinates in world space does this each 
 out vec2 v_TexCoord;
 
 uniform mat4 u_Model;
-uniform mat4 u_Projection;
-uniform mat4 u_View;
+// uniform mat4 u_Projection;
+// uniform mat4 u_View;
 uniform mat3 u_Normal_Matrix;
+
+layout(std140) uniform u_Matrices
+{
+	mat4 u_Projection;
+	mat4 u_View;
+};
 
 void main()
 {

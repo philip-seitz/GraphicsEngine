@@ -3,8 +3,14 @@
 layout(location = 0) in vec4 a_Position;
 
 uniform mat4 u_Model;
-uniform mat4 u_Projection;
-uniform mat4 u_View;
+// uniform mat4 u_Projection;
+// uniform mat4 u_View;
+
+layout(std140) uniform u_Matrices
+{
+	mat4 u_Projection;
+	mat4 u_View;
+};
 
 void main()
 {

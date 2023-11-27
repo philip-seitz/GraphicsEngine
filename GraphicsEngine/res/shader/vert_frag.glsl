@@ -9,9 +9,20 @@ out vec3 v_CubemapDirectionToGrid;
 out vec4 v_EyeSpacePosition;
 
 uniform mat4 u_Model;
-uniform mat4 u_Projection;
-uniform mat4 u_View;
-uniform vec3 u_CameraPosition;
+// uniform mat4 u_Projection;
+// uniform mat4 u_View;
+// uniform vec3 u_CameraPosition;
+
+layout(std140) uniform u_Matrices
+{
+	mat4 u_Projection;
+	mat4 u_View;
+};
+
+layout(std140) uniform u_CameraData
+{
+	vec3 u_CameraPosition;
+};
 
 void main()
 {

@@ -9,9 +9,15 @@ out vec3 v_FragmentPosition;		// what coordinates in world space does this each 
 out vec2 v_TexCoord;
 
 uniform mat4 u_Model;
-uniform mat4 u_Projection;
-uniform mat4 u_View;
+// uniform mat4 u_Projection;
+// uniform mat4 u_View;
 uniform mat3 u_Normal_Matrix;
+
+layout(std140) uniform u_Matrices
+{
+	mat4 u_Projection;
+	mat4 u_View;
+};
 
 void main()
 {
@@ -114,7 +120,7 @@ in vec2 v_TexCoord;
 uniform mat4 u_View;
 uniform vec3 u_Object_Color;
 uniform vec3 u_Light_Color;
-uniform vec3 u_CameraPosition;
+// uniform vec3 u_CameraPosition;
 uniform Material u_Material;
 uniform Light u_Light;
 uniform PointLight u_PointLight[5];		// 5 point lights max
@@ -124,6 +130,12 @@ uniform SpotLight u_SpotLight;
 uniform int u_NumberPointLights;		// number of point lights (uniform)
 
 uniform samplerCube u_Skybox;
+
+
+layout(std140) uniform u_CameraData
+{
+	vec3 u_CameraPosition;
+};
 
 float near = 0.5f;
 float far = 1000.0f;
