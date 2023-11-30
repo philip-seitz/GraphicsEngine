@@ -344,6 +344,9 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
 	{
 		scene_graph->m_Backpacks[i].Draw(sData.model_shader, sData.backpack);
+		float time = glfwGetTime();
+		sData.geometry_shader->SetUniform1f("u_Time", time);
+		scene_graph->m_Backpacks[i].Draw(sData.geometry_shader, sData.backpack);
 	}
 
 	for (int i = 0; i < scene_graph->m_Points.size(); i++)
@@ -355,7 +358,7 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	glDepthFunc(GL_LEQUAL);
 	glDisable(GL_CULL_FACE);
 
-	// cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
+	cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
 
 	// enable depth buffer
 	glDepthFunc(GL_LESS);

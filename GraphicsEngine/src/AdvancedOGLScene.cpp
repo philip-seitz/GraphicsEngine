@@ -66,7 +66,7 @@ void AdvancedOGLScene::Run()
     }
 
     GridInstance grid;
-    // m_SceneGraph.m_Grids.push_back(grid);
+    m_SceneGraph.m_Grids.push_back(grid);
 
     // create floor
     Cube floor;
@@ -76,7 +76,7 @@ void AdvancedOGLScene::Run()
     // m_SceneGraph.m_Cubes.push_back(floor);
 
     // add a backback model
-    for (int i = 0; i < 0; i++)
+    for (int i = 0; i < 1; i++)
     {
         ModelSceneInstance backpack;
         backpack.m_position = { 0.0f + 4 * i, 7.0f, 0.0f };

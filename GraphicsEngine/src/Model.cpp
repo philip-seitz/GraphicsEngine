@@ -363,7 +363,6 @@ void Model::InitQuad(float side, glm::vec3 center)
 
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, texture_cords));
-
 }
 
 void Model::LoadQuad(float side, glm::vec3 center)
@@ -414,7 +413,6 @@ void Model::InitPoint()
 
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, color));
-
 }
 
 void Model::LoadPoint()

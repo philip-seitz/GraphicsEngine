@@ -226,7 +226,7 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 	vec4 diffuseMap = texture(u_Material.texture_diffuse1, v_TexCoord);
 	vec4 specularMap = texture(u_Material.texture_specular1, v_TexCoord);
 
-	vec3 light_direction = -normalize(v_FragmentPosition - light.position.xyz);	// from object to light source (easier calc)
+	vec3 light_direction = -normalize(v_FragmentPosition - light.position.xyz);			// from object to light source (easier calc)
 	float diffuseValue = max(dot(normal, light_direction), 0.0f);
 
 	// specular calculation
