@@ -158,7 +158,7 @@ struct UniformBufferObject
 		// Buffer
 		glGenBuffers(1, &uboID);
 		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
-		glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_STATIC_DRAW);		// might have to be dynamic draw
+		glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_STATIC_DRAW);					// might have to be dynamic draw
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);		// unbind
 
 		glBindBufferRange(GL_UNIFORM_BUFFER, bindingPointNumber, uboID, 0, size);		// use entire buffer memory and set to binding point number
@@ -179,10 +179,16 @@ struct UniformBufferObject
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(glm::vec3), glm::value_ptr(data));
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
+	void SetVec4f(unsigned int offset, glm::vec4 data)
+	{
+		// setup Uniform Buffer Object (each frame)
+		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
+		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(glm::vec4), glm::value_ptr(data));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
 };
 
 // create vao for sky box
-
 static RendererData sData;
 Cubemap cube_map;
 UniformBufferObject uboMatrix;
@@ -199,7 +205,7 @@ void Renderer::Init(Window* window)
 	sData.postprocessing_shader = new Shader("res/shader/postprocessing.glsl");
 	sData.cubemap_shader = new Shader("res/shader/cubemap_shader.glsl");
 	sData.geometry_shader = new Shader("res/shader/geometry.glsl");
-	//sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
+	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
 	// initialize models (send data to GPU)
 	sData.primitive_cube.InitSimpleCube();
@@ -222,6 +228,7 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.texture_shader);
 	shader_list_matrices.push_back(sData.shader);
 	shader_list_matrices.push_back(sData.geometry_shader);
+	shader_list_matrices.push_back(sData.model_shader);
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
 	// list of shaders that should be bound to binding point of u_CameraData Uniform Buffer
@@ -269,7 +276,6 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 	{
 		for (int j = 0; j < width; j++)
 		{
-			
 			int idx = j + width * i;
 			(*(inst)+idx)->position = glm::vec3{ pos.x + j * gap, pos.y, pos.z + i * gap };
 		}
@@ -338,7 +344,7 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
 	{
-		scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
+		scene_graph->m_Cubes[i].Draw(sData.clear_color_shader, &sData.cube);
 	}
 
 	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)

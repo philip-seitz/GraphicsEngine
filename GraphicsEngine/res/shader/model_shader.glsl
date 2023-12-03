@@ -1,23 +1,22 @@
 #shader vertex
-#version 330 core
+#version 460 core
 layout(location = 0) in vec4 a_Position;
+layout(location = 1) in vec4 a_Color;
 layout(location = 2) in vec2 a_TexCoord;
 layout(location = 3) in vec3 a_Normal;
-
-out vec3 v_Normal;
-out vec3 v_FragmentPosition;		// what coordinates in world space does this each fragment correspond to
-out vec2 v_TexCoord;
-
-uniform mat4 u_Model;
-// uniform mat4 u_Projection;
-// uniform mat4 u_View;
-uniform mat3 u_Normal_Matrix;
 
 layout(std140) uniform u_Matrices
 {
 	mat4 u_Projection;
 	mat4 u_View;
 };
+
+out vec3 v_Normal;
+out vec3 v_FragmentPosition;		// what coordinates in world space does this each fragment correspond to
+out vec2 v_TexCoord;
+
+uniform mat4 u_Model;
+uniform mat3 u_Normal_Matrix;
 
 void main()
 {
@@ -28,7 +27,7 @@ void main()
 }
 
 #shader fragment
-#version 330 core
+#version 460 core
 layout(location = 0) out vec4 o_Color;
 
 struct DirectionalLight
@@ -117,10 +116,13 @@ in vec3 v_FragmentPosition;
 in vec3 v_LightPosition;
 in vec2 v_TexCoord;
 
-uniform mat4 u_View;
+layout(std140) uniform u_CameraData
+{
+	vec3 u_CameraPosition;
+};
+
 uniform vec3 u_Object_Color;
 uniform vec3 u_Light_Color;
-// uniform vec3 u_CameraPosition;
 uniform Material u_Material;
 uniform Light u_Light;
 uniform PointLight u_PointLight[5];		// 5 point lights max
@@ -130,12 +132,6 @@ uniform SpotLight u_SpotLight;
 uniform int u_NumberPointLights;		// number of point lights (uniform)
 
 uniform samplerCube u_Skybox;
-
-
-layout(std140) uniform u_CameraData
-{
-	vec3 u_CameraPosition;
-};
 
 float near = 0.5f;
 float far = 1000.0f;

@@ -73,7 +73,7 @@ void AdvancedOGLScene::Run()
     floor.m_Instance.position = { 0.0f, 0.0f, 0.0f };
     floor.m_Instance.scale = { 4.0f, 0.5f, 6.0f };
     floor.m_Instance.hasOutline = false;
-    // m_SceneGraph.m_Cubes.push_back(floor);
+    m_SceneGraph.m_Cubes.push_back(floor);
 
     // add a backback model
     for (int i = 0; i < 1; i++)

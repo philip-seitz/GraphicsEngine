@@ -44,6 +44,15 @@ unsigned int Shader::CreateShader(const std::string& vertexShader, const std::st
     GLCall(glLinkProgram(program));
     GLCall(glValidateProgram(program));         // Prüfen ob die Programme aktuell ausgeführt werden können
 
+    GLint success;
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        std::cout << "Program Linking Error: " << infoLog << std::endl;
+    }
+
+
     GLCall(glDeleteShader(vs));                 // Shaderspeicherplatz freimachen, der durch CreateShader 
     GLCall(glDeleteShader(fs));                 // angelegt wurde. Wenn attached wird erst freigegeben, wenn detach gecalled
 
@@ -79,6 +88,16 @@ unsigned Shader::CompileShader(unsigned int type, const std::string& source)
         GLCall(glDeleteShader(id));
         return 0;
     }
+
+    GLint success;
+    glGetShaderiv(m_RendererID, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(m_RendererID, 512, NULL, infoLog);
+        std::cout << "Shader Compilation Error: " << infoLog << std::endl;
+    }
+
+
     return id;
 }
 

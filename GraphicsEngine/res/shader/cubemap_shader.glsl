@@ -1,5 +1,5 @@
 #shader vertex
-#version 330 core
+#version 460 core
 layout(location = 0) in vec4 a_Position;
 out vec3 TexCoords;
 
@@ -30,7 +30,7 @@ void main()
 }
 
 #shader fragment
-#version 330 core
+#version 460 core
 layout(location = 0) out vec4 o_Color;
 in vec3 TexCoords;
 uniform samplerCube u_Skybox;

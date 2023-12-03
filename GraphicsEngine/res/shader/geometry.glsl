@@ -1,11 +1,14 @@
 #shader vertex
-#version 330 core
+#version 460 core
 layout(location = 0) in vec4 a_Position;
 layout(location = 1) in vec4 a_Color;
 layout(location = 2) in vec2 a_TexCoords;
 layout(location = 3) in vec3 a_Normal;
 
 uniform mat4 u_Model;
+//uniform mat4 u_Projection;
+//uniform mat4 u_View;
+
 out VS_OUT
 {
 	vec2 texCoords;
@@ -112,7 +115,7 @@ void main()
 }
 
 #shader fragment
-#version 330 core
+#version 460 core
 layout(location = 0) out vec4 o_Color;
 in vec2 v_TexCoords;
 in vec4 g_Color;

@@ -29,8 +29,8 @@ public:
 			ScaleWindowSize(w, h);					// resolution based scaling
 			glfwWindowHint(GLFW_SAMPLES, 4);		// for multi sampling AA
 			// set OpenGL Version 3.3
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 			m_InstWindow = glfwCreateWindow(w, h, title, NULL, NULL);
 			// register window resize callback
 			glfwSetFramebufferSizeCallback(m_InstWindow, framebuffer_resize_callback);
@@ -69,6 +69,10 @@ public:
 					std::cout << "error" << std::endl;
 
 				std::cout << glGetString(GL_VERSION) << std::endl;
+				GLint maxUniformBufferBindings;
+				glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &maxUniformBufferBindings);
+				std::cout << "Max Uniform Buffer Bindings: " << maxUniformBufferBindings << std::endl;
+
 				m_AllRunning = true;
 			}
 		}

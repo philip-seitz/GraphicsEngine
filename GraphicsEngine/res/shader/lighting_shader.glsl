@@ -1,5 +1,5 @@
 #shader vertex
-#version 330 core
+#version 460 core
 layout(location = 0) in vec4 a_Position;
 layout(location = 2) in vec2 a_TexCoord;
 layout(location = 3) in vec3 a_Normal;
@@ -28,7 +28,7 @@ void main()
 }
 
 #shader fragment
-#version 330 core
+#version 460 core
 layout(location = 0) out vec4 o_Color;
 
 struct DirectionalLight
@@ -110,7 +110,6 @@ in vec3 v_FragmentPosition;
 in vec3 v_LightPosition;
 in vec2 v_TexCoord;
 
-uniform mat4 u_View;
 uniform vec3 u_Object_Color;
 uniform vec3 u_Light_Color;
 uniform vec3 u_CameraPosition;
