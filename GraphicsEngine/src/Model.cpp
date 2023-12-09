@@ -14,11 +14,12 @@
 #define GREY 0.3f, 0.3f, 0.3f, 0.1f 
 
 
-Model::Model():
+Model::Model() :
 	TriCount(0),
 	va(0),
 	vb(0),
 	ib(0),
+	ivb(0),
 	TriBuffer(nullptr),
 	TriBufferPointer(nullptr),
 	TriIndices(nullptr),
@@ -363,6 +364,26 @@ void Model::InitQuad(float side, glm::vec3 center)
 
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, texture_cords));
+
+
+}
+
+void Model::AddInstancedArray(glm::vec2* offsets)
+{
+	glBindVertexArray(va);
+	if (offsets != nullptr)
+	{
+		glCreateBuffers(1, &ivb);
+		glBindBuffer(GL_ARRAY_BUFFER, ivb);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &(*offsets)[0], GL_STATIC_DRAW);		// TODO: might not work like this
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glEnableVertexAttribArray(3);
+		glBindBuffer(GL_ARRAY_BUFFER, ivb);
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (void*)0);
+		glVertexAttribDivisor(3, 1);		// update attrib for every new instance (in vertex shader)
+	}
+
 }
 
 void Model::LoadQuad(float side, glm::vec3 center)

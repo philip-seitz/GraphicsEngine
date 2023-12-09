@@ -65,25 +65,27 @@ void AdvancedOGLScene::Run()
         m_SceneGraph.m_Quads.push_back(quad);
     }
 
+
+
     GridInstance grid;
-    m_SceneGraph.m_Grids.push_back(grid);
+    // m_SceneGraph.m_Grids.push_back(grid);
 
     // create floor
     Cube floor;
     floor.m_Instance.position = { 0.0f, 0.0f, 0.0f };
     floor.m_Instance.scale = { 4.0f, 0.5f, 6.0f };
     floor.m_Instance.hasOutline = false;
-    m_SceneGraph.m_Cubes.push_back(floor);
+    // m_SceneGraph.m_Cubes.push_back(floor);
 
     // add a backback model
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 0; i++)
     {
         ModelSceneInstance backpack;
         backpack.m_position = { 0.0f + 4 * i, 7.0f, 0.0f };
         m_SceneGraph.m_Backpacks.push_back(backpack);
     }
 
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 0; i++)
     {
         Point point;
         if (i < 2)
@@ -95,6 +97,10 @@ void AdvancedOGLScene::Run()
         m_SceneGraph.m_Points.push_back(point);
     }
 
+    // instancing stuff 
+    // could add multiple quads that would be instanced with how instancing should work etc
+    Quad quadInst;
+    m_SceneGraph.m_Quads.push_back(quadInst);
 
     // render loop
     while (!glfwWindowShouldClose(m_window.GetWindow()))

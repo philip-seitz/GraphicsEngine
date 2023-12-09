@@ -18,6 +18,7 @@ public:
 	void InitTriangle();
 	void LoadTriangle();
 	void InitQuad(float side = 4.0f, glm::vec3 center = {0.0f, 0.0f, 0.0f});
+	void AddInstancedArray(glm::vec2* offsets);
 	void LoadQuad(float side = 4.0f, glm::vec3 center = { 0.0f, 0.0f, 0.0f });
 	void InitPoint();
 	void LoadPoint();
@@ -32,7 +33,7 @@ public:
 	unsigned int va;
 	unsigned int vb;
 	unsigned int ib;
-
+	unsigned int ivb;	// ivb = instanced vertex buffer (for instanced array)
 private:
 
 };

@@ -12,6 +12,7 @@ public:
 
 	Quad();
 	void Draw(Shader* shader, Model* base_model);
+	void DrawInstanced(Shader* shader, Model* base_model, const int& instanceNumber);
 	// void DrawOutline(Shader* shader, Shader* outline, Model* base_model);
 	void SetLightingUniforms(Shader* shader, const int& idx);
 

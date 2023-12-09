@@ -1440,5 +1440,6 @@
   <ItemGroup>
     <Text Include="res\shader\texture_shader.glsl" />
     <Text Include="res\shader\clear_color_shader.glsl" />
+    <Text Include="res\shader\instancing_shader.glsl" />
   </ItemGroup>
 </Project>

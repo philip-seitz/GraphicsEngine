@@ -47,6 +47,15 @@ void ModelInstance::Draw(const Model& base_model, Shader* shader)
 	// glDrawArrays(GL_POINTS, 0, 3 * sData.TriToRenderCount);
 }
 
+void ModelInstance::DrawInstanced(const Model& base_model, Shader* shader, const int& numberInst)
+{
+	glBindVertexArray(base_model.va);
+	shader->SetUniformMat4f("u_Model", ModelMatrix());
+	// draw all vertices (instanced)
+	glDrawElementsInstanced(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr, numberInst);
+}
+
+
 void ModelInstance::DrawOutline(const Model& base_model, Shader* shader, Shader* outline)
 {
 	glBindVertexArray(base_model.va);

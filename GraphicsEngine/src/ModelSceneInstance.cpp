@@ -18,6 +18,7 @@ void ModelSceneInstance::Draw(Shader* shader, ModelScene& base_model)
 
 }
 
+
 glm::mat4x4 ModelSceneInstance::ModelMatrix()
 {
 	glm::mat4x4 combinedRotation(0);

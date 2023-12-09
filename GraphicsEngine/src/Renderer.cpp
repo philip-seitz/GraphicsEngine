@@ -32,7 +32,6 @@ struct RendererData
 	Model mclaren;
 	Model cube;
 	// Model triangle;				// TODO: implement pyramid which can be used as triangle in orthographic
-	// Model quad;
 
 	// Other objects
 	Model primitive_cube;
@@ -41,11 +40,23 @@ struct RendererData
 	Model screen_quad;
 	Model rearview_quad;
 
+	// for instancing quad
+
+	Model quad_inst;
+	/*unsigned int inst_quad_va;
+	unsigned int inst_quad_vb;
+	unsigned int inst_quad_ib;
+	Triangle* inst_quad_buffer;
+	TriangleIndices* inst_quad_idx;*/
+
 	// assimp models
 	ModelScene backpack;
 
 	// Grid
 	Grid grid_xz;
+
+	// offset vectors for instanced rendering
+	glm::vec2 offsets[100];
 
 	// shaders
 	Shader* shader = nullptr;
@@ -57,6 +68,7 @@ struct RendererData
 	Shader* postprocessing_shader = nullptr;
 	Shader* cubemap_shader = nullptr;
 	Shader* geometry_shader = nullptr;
+	Shader* instancing_shader = nullptr;
 
 	Window* window = nullptr;
 
@@ -108,6 +120,8 @@ struct Cubemap
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	}
+
+	
 	void Draw(const Model& base_model, Shader* shader)
 	{
 		glBindVertexArray(base_model.va);
@@ -194,6 +208,11 @@ Cubemap cube_map;
 UniformBufferObject uboMatrix;
 UniformBufferObject uboCamera;
 
+// setup quad va for instancing (def refactor needed)
+std::vector<Triangle> quad_vertices;
+
+std::vector<TriangleIndices> quad_indices;
+
 void Renderer::Init(Window* window)
 {
 	sData.window = window;
@@ -205,12 +224,14 @@ void Renderer::Init(Window* window)
 	sData.postprocessing_shader = new Shader("res/shader/postprocessing.glsl");
 	sData.cubemap_shader = new Shader("res/shader/cubemap_shader.glsl");
 	sData.geometry_shader = new Shader("res/shader/geometry.glsl");
+	sData.instancing_shader = new Shader("res/shader/instancing_shader.glsl");
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
 	// initialize models (send data to GPU)
 	sData.primitive_cube.InitSimpleCube();
 	sData.cube.InitCube();
-	sData.quad.InitQuad();
+	sData.quad.InitQuad();		
+	sData.quad_inst.InitQuad(0.1f, glm::vec3(-0.9f, 0.9f, 0.0f));	// for instanced rendering (usually with default values
 	sData.point.InitPoint();
 	sData.screen_quad.InitQuad(2.0f, {0.0f, 0.0f, -0.7f});
 	sData.rearview_quad.InitQuad(0.5f, { 0.75f, 0.5f, -0.5f });
@@ -236,7 +257,53 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.shader);
 	shader_list_camera.push_back(sData.model_shader);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
+
+
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			sData.offsets[10 * i + j] = { 0.0f + 0.2f * float(j), 0.0f - 0.2f * float(i) };
+		}
+	}
+
+	sData.quad_inst.AddInstancedArray(sData.offsets);
+
+	/*quad_vertices.push_back({ {{  -1.0f, 0.95f, 0.0f}, {RED}, {0.0f, 0.0f}}, {{-0.95f, 0.95f, 0.0f}, {BLUE}, {1.0f, 0.0f}}, {{-0.95f, 1.0f, 0.0f}, {WHITE}, {1.0f, 1.0f}} });
+	quad_vertices.push_back({ {{  -0.95f, 1.0f, 0.0f}, {WHITE}, {1.0f, 1.0f}}, {{-1.0f, 1.0f, 0.0f}, {PURPLE}, {0.0f, 1.0f}}, {{-1.0f, 0.95f, 0.0f}, {RED}, {0.0f, 0.0f}} });
+
+	sData.inst_quad_buffer = new Triangle[2];
+	sData.inst_quad_buffer[0] = quad_vertices[0];
+	sData.inst_quad_buffer[1] = quad_vertices[1];
+
+	quad_indices.push_back({ { 0, 1, 2} });
+	quad_indices.push_back({ { 3, 4, 5} });
+	sData.inst_quad_idx = new TriangleIndices[2];
+	sData.inst_quad_idx[0] = quad_indices[0];
+	sData.inst_quad_idx[1] = quad_indices[1];
+
+	glCreateVertexArrays(1, &sData.inst_quad_va);
+	glBindVertexArray(sData.inst_quad_va);
+
+	glCreateBuffers(1, &sData.inst_quad_vb);
+	glBindBuffer(GL_ARRAY_BUFFER, sData.inst_quad_vb);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Triangle) * 2, sData.inst_quad_buffer, GL_STATIC_DRAW);
+
+	glCreateBuffers(1, &sData.inst_quad_ib);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sData.inst_quad_ib);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 2 * 3, sData.inst_quad_buffer, GL_STATIC_DRAW);
+
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, position));
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, color));
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, texture_cords));*/
 }
+
 
 void Renderer::Shutdown()
 {
@@ -364,7 +431,7 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	glDepthFunc(GL_LEQUAL);
 	glDisable(GL_CULL_FACE);
 
-	cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
+	// cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
 
 	// enable depth buffer
 	glDepthFunc(GL_LESS);
@@ -374,6 +441,24 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cube_map.cubemapID);
 
+	// send offset uniform(s)
+
+	for (int i = 0; i < 100; i++)
+	{
+		sData.instancing_shader->SetUniform2f("offsets[" + std::to_string(i) + "]", sData.offsets[i]);
+	}
+
+	sData.instancing_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
+	sData.instancing_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
+
+	// draw instanced stuff
+	// glBindVertexArray(sData.inst_quad_va);
+	// glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
+	// glDrawElementsInstanced(GL_TRIANGLES, 3 * 2, GL_UNSIGNED_INT, nullptr, 100);
+
+
+	scene_graph->m_Quads[0].DrawInstanced(sData.instancing_shader, &sData.quad_inst, 100);	// idx 0 -> "quad inst" in this case
+	// scene_graph->m_Quads[0].Draw(sData.clear_color_shader, &sData.quad);
 	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
 	{
 		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);

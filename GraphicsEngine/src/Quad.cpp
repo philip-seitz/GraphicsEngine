@@ -9,8 +9,8 @@ Quad::Quad()
 
 	// diffuse texture
 	unsigned int id_diff = 0;
-	TextureFromFile(diffusePath, id_diff);		// texture settings here 
-	Texture tex_diff(diffusePath, diffType, id_diff);	// storage of ids etc
+	TextureFromFile(diffusePath, id_diff);					// texture settings here 
+	Texture tex_diff(diffusePath, diffType, id_diff);		// storage of ids etc
 	m_Textures.push_back(tex_diff);
 	// specular texture
 	unsigned int id_spec = 0;
@@ -38,6 +38,11 @@ void Quad::Draw(Shader* shader, Model* base_model)
 		shader->SetUniform1i(("u_Material." + type + "1").c_str(), i);
 	}
 	m_Instance.Draw(*base_model, shader);
+}
+
+void Quad::DrawInstanced(Shader* shader, Model* base_model, const int& instanceNumber)
+{
+	m_Instance.DrawInstanced(*base_model, shader, instanceNumber);
 }
 
 void Quad::SetLightingUniforms(Shader* shader, const int& idx)
