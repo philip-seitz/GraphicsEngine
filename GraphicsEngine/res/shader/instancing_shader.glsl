@@ -14,9 +14,9 @@ uniform mat4 u_View;
 
 void main()
 {
-	// vec4 pos = a_Position + vec4(offsets[gl_InstanceID], 0.0, 0.0);
-	vec4 pos = a_Position + vec4(a_Offset, 0.0, 0.0);
-	gl_Position = pos;
+	vec4 pos = vec4((vec4(a_Position + vec4(0.9, -0.9, 0.0, 0.0)).xyz)*(gl_InstanceID / 100.0), 1.0);					// move to center and 'scale'
+	pos = pos + vec4(-0.9, 0.9, 0.0, 0.0);								// move back
+	gl_Position = pos + vec4(a_Offset, 0.0, 0.0);						// offset
 	v_Color = a_Color;
 }
 
