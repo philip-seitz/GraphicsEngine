@@ -1437,10 +1437,25 @@
     <None Include="res\shader\cubemap_shader.glsl" />
     <None Include="res\shader\geometry.glsl" />
     <None Include="res\shader\asteroids_instanced.glsl" />
+    <None Include="res\models\rocky\rocky.mtl" />
+    <None Include="res\models\planet\planet.mtl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="res\shader\texture_shader.glsl" />
     <Text Include="res\shader\clear_color_shader.glsl" />
     <Text Include="res\shader\instancing_shader.glsl" />
+    <Text Include="res\models\planet\source.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\models\rocky\rock.png">
+      <Filter>Ressourcendateien</Filter>
+    </Image>
+    <Image Include="res\models\planet\mars.png">
+      <Filter>Ressourcendateien</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="res\models\rocky\rocky.obj" />
+    <Object Include="res\models\planet\planet.obj" />
   </ItemGroup>
 </Project>

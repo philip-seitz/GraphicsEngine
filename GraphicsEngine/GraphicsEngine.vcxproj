@@ -492,6 +492,8 @@
     <ClInclude Include="src\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\models\planet\planet.mtl" />
+    <None Include="res\models\rocky\rocky.mtl" />
     <None Include="res\shader\asteroids_instanced.glsl" />
     <None Include="res\shader\cubemap_shader.glsl" />
     <None Include="res\shader\geometry.glsl" />
@@ -638,9 +640,18 @@
     <None Include="src\vendor\glm\gtx\wrap.inl" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="res\models\planet\source.txt" />
     <Text Include="res\shader\clear_color_shader.glsl" />
     <Text Include="res\shader\instancing_shader.glsl" />
     <Text Include="res\shader\texture_shader.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\models\planet\mars.png" />
+    <Image Include="res\models\rocky\rock.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="res\models\planet\planet.obj" />
+    <Object Include="res\models\rocky\rocky.obj" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
