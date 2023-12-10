@@ -24,6 +24,45 @@ void ModelScene::Draw(Shader* shader)
 	}
 }
 
+void ModelScene::DrawInstanced(Shader* shader, unsigned int& numberInst)
+{
+	for (int i = 0; i < m_Meshes.size(); i++)
+	{
+		m_Meshes[i].DrawInstanced(shader, numberInst);
+	}
+}
+
+void ModelScene::AddInstArrayAttribMat4(glm::mat4* matrices, unsigned int& numberMatrices)
+{
+	glGenBuffers(1, &ivb);
+	glBindBuffer(GL_ARRAY_BUFFER, ivb);
+	glBufferData(GL_ARRAY_BUFFER, numberMatrices * sizeof(glm::mat4), matrices, GL_STATIC_DRAW);		// TODO: might not work like this...
+
+	for (int i = 0; i < m_Meshes.size(); i++)
+	{
+		glBindVertexArray(m_Meshes[i].m_va);
+		std::size_t size_vec4 = sizeof(glm::vec4);
+
+		// add 4x4 matrix as 4 different vec4 attribs
+		glEnableVertexAttribArray(4);		// mesh has 4 other attribs (pos, color, tex_coords, normal)
+		glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, 4*size_vec4, (const void*)0);
+		glEnableVertexAttribArray(5);		
+		glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, 4*size_vec4, (const void*)(size_vec4));
+		glEnableVertexAttribArray(6);
+		glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, 4 * size_vec4, (const void*)(2*size_vec4));
+		glEnableVertexAttribArray(7);
+		glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, 4 * size_vec4, (const void*)(3 * size_vec4));
+
+		glVertexAttribDivisor(4, 1);		// update for every new instance
+		glVertexAttribDivisor(5, 1);
+		glVertexAttribDivisor(6, 1);
+		glVertexAttribDivisor(7, 1);
+
+		glBindVertexArray(0);
+	}
+
+}
+
 void ModelScene::LoadModel(std::string path)
 {
 	Assimp::Importer import;

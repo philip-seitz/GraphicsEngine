@@ -24,6 +24,9 @@ public:
 	std::vector<ModelSceneInstance> m_Backpacks;
 	std::vector<GridInstance> m_Grids;	
 	std::vector<Point> m_Points;
+	std::vector<ModelSceneInstance> m_Planets;
+	std::vector<ModelSceneInstance> m_Rocks;
+
 	
 private:
 

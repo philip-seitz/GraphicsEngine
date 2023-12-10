@@ -46,12 +46,19 @@ struct RendererData
 
 	// assimp models
 	ModelScene backpack;
+	ModelScene rock;
+	ModelScene planet;
 
 	// Grid
 	Grid grid_xz;
 
 	// offset vectors for instanced rendering
 	glm::vec2 offsets[100];
+
+
+	// asteroid model matrices
+	glm::mat4* matrices = nullptr;
+
 
 	// shaders
 	Shader* shader = nullptr;
@@ -64,6 +71,7 @@ struct RendererData
 	Shader* cubemap_shader = nullptr;
 	Shader* geometry_shader = nullptr;
 	Shader* instancing_shader = nullptr;
+	Shader* asteroids_instanced = nullptr;
 
 	Window* window = nullptr;
 
@@ -168,7 +176,7 @@ struct UniformBufferObject
 		glGenBuffers(1, &uboID);
 		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
 		glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_STATIC_DRAW);					// might have to be dynamic draw
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);		// unbind
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);												// unbind
 
 		glBindBufferRange(GL_UNIFORM_BUFFER, bindingPointNumber, uboID, 0, size);		// use entire buffer memory and set to binding point number
 	}
@@ -207,6 +215,7 @@ UniformBufferObject uboCamera;
 std::vector<Triangle> quad_vertices;
 
 std::vector<TriangleIndices> quad_indices;
+unsigned int number_asteroids = 100000;
 
 void Renderer::Init(Window* window)
 {
@@ -220,6 +229,7 @@ void Renderer::Init(Window* window)
 	sData.cubemap_shader = new Shader("res/shader/cubemap_shader.glsl");
 	sData.geometry_shader = new Shader("res/shader/geometry.glsl");
 	sData.instancing_shader = new Shader("res/shader/instancing_shader.glsl");
+	sData.asteroids_instanced = new Shader("res/shader/asteroids_instanced.glsl");
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
 	// initialize models (send data to GPU)
@@ -232,8 +242,9 @@ void Renderer::Init(Window* window)
 	sData.rearview_quad.InitQuad(0.5f, { 0.75f, 0.5f, -0.5f });
 
 	sData.grid_xz.InitGridxz();
-	sData.backpack = ModelScene("res/models/backpack/backpack.obj");
-
+	// sData.backpack = ModelScene("res/models/backpack/backpack.obj");
+	sData.rock = ModelScene("res/models/rocky/rocky.obj");
+	sData.planet = ModelScene("res/models/planet/planet.obj");
 	cube_map.Init();
 
 	// list of shaders that should be bound to binding point of u_Matrices Uniform Buffer
@@ -245,15 +256,17 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.shader);
 	shader_list_matrices.push_back(sData.geometry_shader);
 	shader_list_matrices.push_back(sData.model_shader);
+	shader_list_matrices.push_back(sData.asteroids_instanced);
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
 	// list of shaders that should be bound to binding point of u_CameraData Uniform Buffer
 	std::vector<Shader*> shader_list_camera;
 	shader_list_camera.push_back(sData.shader);
 	shader_list_camera.push_back(sData.model_shader);
+	shader_list_camera.push_back(sData.asteroids_instanced);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 
-
+	// set offsets for quads
 	for (int i = 0; i < 10; i++)
 	{
 		for (int j = 0; j < 10; j++)
@@ -261,9 +274,44 @@ void Renderer::Init(Window* window)
 			sData.offsets[10 * i + j] = { 0.0f + 0.2f * float(j), 0.0f - 0.2f * float(i) };
 		}
 	}
-
 	sData.quad_inst.AddInstancedArray(sData.offsets);
 
+	// set model matrices for asteroids (asteroid ring)
+	
+	float radius = 150.0f;
+	float offset = 25.0f;
+	sData.matrices = new glm::mat4[number_asteroids];
+	srand(glfwGetTime());		// random seed
+
+	for (int i = 0; i < number_asteroids; i++)
+	{
+		glm::mat4 model(1.0f);
+		float angle = float(i) / float(number_asteroids) * 360.0f;
+
+		// translate
+		float displacement = rand() % (int(2 * offset)) - offset;
+		float x = radius * cos(angle) + displacement;
+
+		displacement = rand() % (int(2 * offset)) - offset;
+		float y = 0.2f * displacement;
+
+		displacement = rand() % (int(2 * offset)) - offset;
+		float z = radius * sin(angle) + displacement;
+
+		model = glm::translate(model, glm::vec3(x, y, z));
+
+		// scale (between 0.05 and 0.25)
+		float scale = (rand() % 20) / 100.0f + 0.05;
+		model = glm::scale(model, glm::vec3(scale));
+
+		// rotate (around axis)
+		float rot_angle = rand() % 360;
+		model = glm::rotate(model, rot_angle, glm::vec3(0.5f, 0.6f, 0.2f));
+		
+		sData.matrices[i] = model;
+	}
+
+	sData.rock.AddInstArrayAttribMat4(sData.matrices, number_asteroids);
 }
 
 
@@ -272,6 +320,8 @@ void Renderer::Shutdown()
 	delete sData.shader;
 	delete sData.light_source_shader;
 	delete sData.lighting_shader;
+	
+	delete[] sData.matrices;
 }
 
 // For Batch Rendering (implement when needed -> dynamic draw)
@@ -350,12 +400,14 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 		scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
 		// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
 		scene_graph->m_PointLights[i].SetLightingUniforms(sData.model_shader, i);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.asteroids_instanced, i);
 	}
 
 	for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
 	{
 		// scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.lighting_shader);
 		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.model_shader);
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.asteroids_instanced);
 	}
 
 	for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
@@ -367,6 +419,7 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
 		// scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_shader, i);
 		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.asteroids_instanced);
 	}
 
 	sData.model_shader->SetUniform1i("u_Skybox", 10);
@@ -381,7 +434,7 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 		scene_graph->m_Backpacks[i].Draw(sData.model_shader, sData.backpack);
 		float time = glfwGetTime();
 		sData.geometry_shader->SetUniform1f("u_Time", time);
-		scene_graph->m_Backpacks[i].Draw(sData.geometry_shader, sData.backpack);
+		// scene_graph->m_Backpacks[i].Draw(sData.geometry_shader, sData.backpack);
 	}
 
 	for (int i = 0; i < scene_graph->m_Points.size(); i++)
@@ -407,14 +460,22 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	for (int i = 0; i < 100; i++)
 	{
-		sData.instancing_shader->SetUniform2f("offsets[" + std::to_string(i) + "]", sData.offsets[i]);
+		// sData.instancing_shader->SetUniform2f("offsets[" + std::to_string(i) + "]", sData.offsets[i]);
 	}
 
 	sData.instancing_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
 	sData.instancing_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
 
-	scene_graph->m_Quads[0].DrawInstanced(sData.instancing_shader, &sData.quad_inst, 100);	// idx 0 -> "quad inst" in this case
+	// scene_graph->m_Quads[0].DrawInstanced(sData.instancing_shader, &sData.quad_inst, 100);	// idx 0 -> "quad inst" in this case
 	// scene_graph->m_Quads[0].Draw(sData.clear_color_shader, &sData.quad);
+
+	for (int i = 0; i < scene_graph->m_Planets.size(); i++)
+	{
+		scene_graph->m_Planets[i].Draw(sData.model_shader, sData.planet);
+	}
+	
+	scene_graph->m_Rocks[0].DrawInstanced(sData.asteroids_instanced, sData.rock, sData.matrices, number_asteroids);
+
 	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
 	{
 		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);

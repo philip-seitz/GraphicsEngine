@@ -10,7 +10,7 @@ public:
 	glm::mat4x4 ModelMatrix();
 	glm::mat3x3 NormalMatrix();
 	void Draw(const Model& base_model, Shader* shader);
-	void DrawInstanced(const Model& base_model, Shader* shader, const int& numberInst);
+	void DrawInstanced(const Model& base_model, Shader* shader, unsigned int& numberInst);
 	void DrawOutline(const Model& base_model, Shader* shader, Shader* outline);
 
 	bool hasOutline;

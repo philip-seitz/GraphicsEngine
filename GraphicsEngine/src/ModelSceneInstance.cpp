@@ -15,9 +15,15 @@ void ModelSceneInstance::Draw(Shader* shader, ModelScene& base_model)
 	shader->SetUniformMat3f("u_Normal_Matrix", NormalMatrix());
 
 	base_model.Draw(shader);
-
 }
 
+void ModelSceneInstance::DrawInstanced(Shader* shader, ModelScene& base_model, glm::mat4* matrix, unsigned int& numberInst)
+{
+	// model matrix supplied by attribs
+	// shader->SetUniformMat4f("u_Model", *matrix);
+	shader->SetUniformMat3f("u_Normal_Matrix", NormalMatrix());
+	base_model.DrawInstanced(shader, numberInst);
+}
 
 glm::mat4x4 ModelSceneInstance::ModelMatrix()
 {

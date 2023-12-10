@@ -7,6 +7,8 @@ SceneGraph::SceneGraph() :
 	m_Backpacks(),
 	m_Cameras(),
 	m_Grids(),
-	m_Points()
+	m_Points(),
+	m_Planets(),
+	m_Rocks()
 {
 }

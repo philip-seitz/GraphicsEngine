@@ -102,6 +102,18 @@ void AdvancedOGLScene::Run()
     Quad quadInst;
     m_SceneGraph.m_Quads.push_back(quadInst);
 
+    // planets 
+    ModelSceneInstance planet;
+    planet.m_position = { 0.0f, 3.0f, 0.0f };
+    planet.m_scale = { 4.0f, 4.0f, 4.0f };
+    m_SceneGraph.m_Planets.push_back(planet);
+
+
+    // used for instancing rocks (at some point)
+    ModelSceneInstance rock;
+    m_SceneGraph.m_Rocks.push_back(rock);
+
+
     // render loop
     while (!glfwWindowShouldClose(m_window.GetWindow()))
     {

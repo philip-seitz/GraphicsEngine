@@ -40,7 +40,7 @@ void Quad::Draw(Shader* shader, Model* base_model)
 	m_Instance.Draw(*base_model, shader);
 }
 
-void Quad::DrawInstanced(Shader* shader, Model* base_model, const int& instanceNumber)
+void Quad::DrawInstanced(Shader* shader, Model* base_model, unsigned int& instanceNumber)
 {
 	m_Instance.DrawInstanced(*base_model, shader, instanceNumber);
 }

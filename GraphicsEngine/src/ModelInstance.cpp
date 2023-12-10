@@ -32,6 +32,8 @@ glm::mat3x3 ModelInstance::NormalMatrix()
 	return glm::transpose(glm::inverse(ModelMatrix()));
 }
 
+
+
 void ModelInstance::Draw(const Model& base_model, Shader* shader)
 {
 	glBindVertexArray(base_model.va);
@@ -47,7 +49,7 @@ void ModelInstance::Draw(const Model& base_model, Shader* shader)
 	// glDrawArrays(GL_POINTS, 0, 3 * sData.TriToRenderCount);
 }
 
-void ModelInstance::DrawInstanced(const Model& base_model, Shader* shader, const int& numberInst)
+void ModelInstance::DrawInstanced(const Model& base_model, Shader* shader, unsigned int& numberInst)
 {
 	glBindVertexArray(base_model.va);
 	shader->SetUniformMat4f("u_Model", ModelMatrix());

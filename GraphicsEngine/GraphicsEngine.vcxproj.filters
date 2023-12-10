@@ -1436,6 +1436,7 @@
     <None Include="res\shader\postprocessing.glsl" />
     <None Include="res\shader\cubemap_shader.glsl" />
     <None Include="res\shader\geometry.glsl" />
+    <None Include="res\shader\asteroids_instanced.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="res\shader\texture_shader.glsl" />

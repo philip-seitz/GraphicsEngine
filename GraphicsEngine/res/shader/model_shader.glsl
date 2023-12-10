@@ -148,11 +148,11 @@ void main()
 	{
 		// color += CalcPointLight(u_PointLight[i], normal, view_direction);
 	}
-	// color += CalcDirectionalLight(u_DirLight, normal, view_direction);
+	color += CalcDirectionalLight(u_DirLight, normal, view_direction);
 	// color += CalcSpotLight(u_SpotLight, normal, view_direction); 
 
 	// color = CalcReflection(normal, view_direction);
-	color = CalcRefraction(normal, view_direction);
+	// color = CalcRefraction(normal, view_direction);
 	color.w = 1.0f;
 
 	// o_Color = vec4(vec3(LinearizeDepth(gl_FragCoord.z)/far), 1.0f);

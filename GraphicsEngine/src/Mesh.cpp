@@ -42,6 +42,37 @@ void Mesh::Draw(Shader* shader)
 	glDrawElements(GL_TRIANGLES, m_Indices.size(), GL_UNSIGNED_INT, nullptr);
 }
 
+void Mesh::DrawInstanced(Shader* shader, unsigned int& numberInstances)
+{
+	unsigned int diffuseNumber = 1;
+	unsigned int specularNumber = 1;
+
+	for (int i = 0; i < m_Textures.size(); i++)
+	{
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, m_Textures[i].GetID());
+		std::string name = m_Textures[i].GetType();
+		std::string number;
+		if (name == "texture_diffuse")
+		{
+			number = std::to_string(diffuseNumber);
+			diffuseNumber++;
+		}
+		else if (name == "texture_specular")
+		{
+			number = std::to_string(specularNumber);
+			specularNumber++;
+		}
+		// sampler for texture corresponding to diff or spec slot
+		shader->SetUniform1i(("u_Material." + name + number).c_str(), i);
+	}
+
+	// draw
+	glBindVertexArray(m_va);
+	glDrawElementsInstanced(GL_TRIANGLES, m_Indices.size(), GL_UNSIGNED_INT, nullptr, numberInstances);
+
+}
+
 void Mesh::SetupMesh()
 {
 	// vertex array object setup

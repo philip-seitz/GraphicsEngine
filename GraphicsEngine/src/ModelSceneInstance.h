@@ -8,6 +8,7 @@ class ModelSceneInstance
 public:
 	ModelSceneInstance();
 	void Draw(Shader* shader, ModelScene& base_model);
+	void DrawInstanced(Shader* shader, ModelScene& base_model, glm::mat4* matrix, unsigned int& numberInst);
 	glm::mat4x4 ModelMatrix();
 	glm::mat3x3 NormalMatrix();
 	void DrawOutline(ModelScene& base_model, Shader* shader, Shader* outline);

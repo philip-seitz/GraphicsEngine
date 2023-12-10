@@ -492,6 +492,7 @@
     <ClInclude Include="src\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="res\shader\asteroids_instanced.glsl" />
     <None Include="res\shader\cubemap_shader.glsl" />
     <None Include="res\shader\geometry.glsl" />
     <None Include="res\shader\model_shader.glsl" />
