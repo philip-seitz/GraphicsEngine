@@ -8,7 +8,7 @@ float pi = 3.14159f;
 glm::mat4x4 myLookAt(const glm::vec3 pos, const glm::vec3 trgt, const glm::vec3 up);
 
 Camera::Camera():
-	m_position(-200.0f, 20.0f, 11.0f),
+	m_position(-2.0f, 20.0f, 11.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
 	m_look_at(glm::lookAtRH(m_position, m_target, m_up)),
@@ -31,7 +31,7 @@ Camera::Camera():
 }
 
 Camera::Camera(const bool& isPerspective):
-	m_position(-200.0f, 20.0f, 11.0f),
+	m_position(-2.0f, 20.0f, 11.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
 	m_look_at(glm::lookAt(m_position, m_target, m_up)),

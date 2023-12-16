@@ -2,7 +2,7 @@
 #include "Util.h"
 Cube::Cube()
 {
-	const std::string diffusePath = "res/textures/placeholder.png";
+	const std::string diffusePath = "res/textures/mc_stone.png";
 	std::string specularPath = "res/textures/placeholder_spec.png";
 	std::string diffType = "texture_diffuse";
 	std::string specType = "texture_specular";

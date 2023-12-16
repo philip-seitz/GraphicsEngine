@@ -128,6 +128,7 @@ uniform Light u_Light;
 uniform PointLight u_PointLight[5];		// 5 point lights max
 uniform DirectionalLight u_DirLight;
 uniform SpotLight u_SpotLight;
+uniform bool u_Blinn;
 
 uniform int u_NumberPointLights;		// number of point lights (uniform)
 
@@ -146,7 +147,7 @@ void main()
 	// light source should exist, else the color might be substracted and is completely dark
 	for (int i = 0; i < u_NumberPointLights; i++)
 	{
-		// color += CalcPointLight(u_PointLight[i], normal, view_direction);
+		color += CalcPointLight(u_PointLight[i], normal, view_direction);
 	}
 	color += CalcDirectionalLight(u_DirLight, normal, view_direction);
 	// color += CalcSpotLight(u_SpotLight, normal, view_direction); 
@@ -186,9 +187,18 @@ vec4 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_dir)
 	float diffuseValue = max(dot(normal, light_direction), 0.0f);
 
 	// specular calculation
+	vec3 halfWay = view_dir + light_direction;
+	halfWay = normalize(halfWay);
 	vec3 reflection_direction = reflect(-light_direction, normal);
-	float specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), 32.0f);
-
+	float specularValue;
+	if (u_Blinn)
+	{
+	specularValue = pow(max(dot(normal, halfWay), 0.0f), 16.0f);
+	}
+	else
+	{
+	specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), 8.0f);
+	}
 	vec4 ambient = vec4(light.ambient, 1.0f) * diffuseMap;
 	vec4 diffuse = vec4(light.diffuse, 1.0f) * (diffuseValue * diffuseMap);
 	vec4 specular = vec4(light.specular, 1.0f) * (specularValue * specularMap);
@@ -208,8 +218,18 @@ vec4 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir)
 	float attenuation_factor = 1.0f / (light.constant + light.linear * d + light.quadratic * d * d);
 
 	// specular calculation
+	vec3 halfWay = view_dir + light_direction;
 	vec3 reflection_direction = reflect(-light_direction, normal);
-	float specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), 32.0f);
+	halfWay = normalize(halfWay);
+	float specularValue;
+	if (u_Blinn)
+	{
+	specularValue = pow(max(dot(normal, halfWay), 0.0f), 16.0f);
+	}
+	else
+	{
+	specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), 8.0f);
+	}
 
 	vec4 ambient = vec4(light.ambient, 1.0f) * attenuation_factor * diffuseMap;
 	vec4 diffuse = vec4(light.diffuse, 1.0f) * attenuation_factor * (diffuseValue * diffuseMap);
@@ -226,8 +246,18 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 	float diffuseValue = max(dot(normal, light_direction), 0.0f);
 
 	// specular calculation
+	vec3 halfWay = view_dir + light_direction;
 	vec3 reflection_direction = reflect(-light_direction, normal);
-	float specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), 32.0f);
+	halfWay = normalize(halfWay);
+	float specularValue;
+	if (u_Blinn)
+	{
+	specularValue = pow(max(dot(normal, halfWay), 0.0f), 16.0f);
+	}
+	else
+	{
+	specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), 8.0f);
+	}
 
 	// light attenuation
 	float d = distance(light.position.xyz, v_FragmentPosition);

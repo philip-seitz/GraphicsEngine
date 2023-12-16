@@ -38,16 +38,16 @@ void AdvancedOGLScene::Run()
     }
 
     // create point light
-    for (int i = 0; i < 0; i++)
+    for (int i = 0; i < 1; i++)
     {
         PointLight testLight;
-        testLight.m_Instance.position = { i * 3.0f, 1.0f, 4.0f };
+        testLight.m_Instance.position = { i * 3.0f, 4.0f, 4.0f };
         m_SceneGraph.m_PointLights.push_back(testLight);
     }
 
     DirectionalLight dirLight;
     dirLight.m_Direction = { -1.0f, -0.5f, 2.0f };
-    m_SceneGraph.m_DirectionalLights.push_back(dirLight);
+    // m_SceneGraph.m_DirectionalLights.push_back(dirLight);
 
     // add cubes 
     for (int i = 0; i < 0; i++)
@@ -65,17 +65,15 @@ void AdvancedOGLScene::Run()
         m_SceneGraph.m_Quads.push_back(quad);
     }
 
-
-
     GridInstance grid;
     // m_SceneGraph.m_Grids.push_back(grid);
 
     // create floor
     Cube floor;
     floor.m_Instance.position = { 0.0f, 0.0f, 0.0f };
-    floor.m_Instance.scale = { 4.0f, 0.5f, 6.0f };
+    floor.m_Instance.scale = { 20.0f, 0.5f, 15.0f };
     floor.m_Instance.hasOutline = false;
-    // m_SceneGraph.m_Cubes.push_back(floor);
+    m_SceneGraph.m_Cubes.push_back(floor);
 
     // add a backback model
     for (int i = 0; i < 0; i++)
@@ -107,7 +105,6 @@ void AdvancedOGLScene::Run()
     planet.m_position = { 0.0f, 3.0f, 0.0f };
     planet.m_scale = { 4.0f, 4.0f, 4.0f };
     m_SceneGraph.m_Planets.push_back(planet);
-
 
     // used for instancing rocks (at some point)
     ModelSceneInstance rock;
@@ -147,6 +144,11 @@ void AdvancedOGLScene::OnEvent(float& dt)
     if (glfwGetKey(m_window.GetWindow(), GLFW_KEY_ESCAPE) == GLFW_PRESS)
     {
         glfwSetWindowShouldClose(m_window.GetWindow(), true);
+    }
+
+    if (glfwGetKey(m_window.GetWindow(), GLFW_KEY_B) == GLFW_PRESS)
+    {
+        m_SceneGraph.m_Blinn = !m_SceneGraph.m_Blinn;       // toggle setting in shader
     }
 
     m_SceneGraph.m_Cameras[0].ManageInputs(m_window, dt);

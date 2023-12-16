@@ -27,6 +27,11 @@ public:
 	std::vector<ModelSceneInstance> m_Planets;
 	std::vector<ModelSceneInstance> m_Rocks;
 
+	// shader settings for different features
+	// maybe not the right place...
+
+	bool m_Blinn;
+
 	
 private:
 

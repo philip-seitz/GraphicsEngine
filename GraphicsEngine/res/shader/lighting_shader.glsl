@@ -104,6 +104,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir);
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir);
 
 #define NR_POINTS_LIGHTS 4
+uniform bool u_Blinn;
 
 in vec3 v_Normal;
 in vec3 v_FragmentPosition;
@@ -147,8 +148,18 @@ vec3 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_dir)
 	float diffuseValue = max(dot(normal, light_direction), 0.0f);
 
 	// specular calculation
+	vec3 halfWay = view_dir + light_direction;
+	halfWay = normalize(halfWay);
 	vec3 reflection_direction = reflect(-light_direction, normal);
-	float specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), u_Material.shininess);
+	float specularValue;
+	if (u_Blinn)
+	{
+	specularValue = pow(max(dot(normal, halfWay), 0.0f), u_Material.shininess*2.0);
+	}
+	else
+	{
+	specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), u_Material.shininess);
+	}
 
 	vec3 ambient = light.ambient * diffuseMap;
 	vec3 diffuse = light.diffuse * (diffuseValue * diffuseMap);
@@ -171,8 +182,18 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir)
 	float attenuation_factor = 1.0f/(light.constant + light.linear*d + light.quadratic*d*d);
 	
 	// specular calculation
+	vec3 halfWay = view_dir + light_direction;
+	halfWay = normalize(halfWay);
 	vec3 reflection_direction = reflect(-light_direction, normal);
-	float specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), u_Material.shininess);
+	float specularValue;
+	if (u_Blinn)
+	{
+	specularValue = pow(max(dot(normal, halfWay), 0.0f), u_Material.shininess*2.0);
+	}
+	else
+	{
+	specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), u_Material.shininess);
+	}
 	
 	
 	vec3 ambient = light.ambient * attenuation_factor * diffuseMap;
@@ -192,8 +213,18 @@ vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 	float diffuseValue = max(dot(normal, light_direction), 0.0f);
 
 	// specular calculation
+	vec3 halfWay = view_dir + light_direction;
+	halfWay = normalize(halfWay);
 	vec3 reflection_direction = reflect(-light_direction, normal);
-	float specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), u_Material.shininess);
+	float specularValue;
+	if (u_Blinn)
+	{
+	specularValue = pow(max(dot(normal, halfWay), 0.0f), u_Material.shininess*2.0);
+	}
+	else
+	{
+	specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), u_Material.shininess);
+	}
 
 	// light attenuation
 	float d = distance(light.position.xyz, v_FragmentPosition);

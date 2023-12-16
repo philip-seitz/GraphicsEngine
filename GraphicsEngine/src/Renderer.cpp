@@ -265,6 +265,11 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.model_shader);
 	shader_list_camera.push_back(sData.asteroids_instanced);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
+	shader_list_camera.push_back(sData.model_shader);
+
+	// for user settings of different shader features
+	// 
+
 
 	// set offsets for quads
 	for (int i = 0; i < 10; i++)
@@ -394,6 +399,8 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	uboCamera.SetVec3f(0, cameras[0]->Position());
 
 	// point lights
+	sData.model_shader->SetUniform1i("u_Blinn", scene_graph->m_Blinn);
+	// sData.lighting_shader->SetUniform1i("u_Blinn", scene_graph->m_Blinn);
 	sData.model_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
 	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
 	{
@@ -426,7 +433,7 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
 	{
-		scene_graph->m_Cubes[i].Draw(sData.clear_color_shader, &sData.cube);
+		scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
 	}
 
 	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
@@ -471,10 +478,10 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	for (int i = 0; i < scene_graph->m_Planets.size(); i++)
 	{
-		scene_graph->m_Planets[i].Draw(sData.model_shader, sData.planet);
+		// scene_graph->m_Planets[i].Draw(sData.model_shader, sData.planet);
 	}
 	
-	scene_graph->m_Rocks[0].DrawInstanced(sData.asteroids_instanced, sData.rock, sData.matrices, number_asteroids);
+	// scene_graph->m_Rocks[0].DrawInstanced(sData.asteroids_instanced, sData.rock, sData.matrices, number_asteroids);
 
 	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
 	{
