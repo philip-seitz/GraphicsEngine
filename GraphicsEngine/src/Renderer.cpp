@@ -369,8 +369,10 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 
 void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 {
+	glDisable(GL_FRAMEBUFFER_SRGB);				// gamma correction disabled for setting clear color (so that background color stays the same)
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glEnable(GL_FRAMEBUFFER_SRGB);				// gamma correction 
 
 	// enable backface culling
 	glEnable(GL_CULL_FACE);

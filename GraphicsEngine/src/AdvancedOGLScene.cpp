@@ -41,7 +41,7 @@ void AdvancedOGLScene::Run()
     for (int i = 0; i < 1; i++)
     {
         PointLight testLight;
-        testLight.m_Instance.position = { i * 3.0f, 4.0f, 4.0f };
+        testLight.m_Instance.position = { i * 3.0f, 2.0f, 4.0f };
         m_SceneGraph.m_PointLights.push_back(testLight);
     }
 

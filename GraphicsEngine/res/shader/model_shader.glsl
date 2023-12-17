@@ -215,7 +215,9 @@ vec4 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir)
 	float diffuseValue = max(dot(normal, light_direction), 0.0f);
 	// light attenuation
 	float d = distance(light.position.xyz, v_FragmentPosition);
-	float attenuation_factor = 1.0f / (light.constant + light.linear * d + light.quadratic * d * d);
+	// more complex att func -> params would have to be adjusted to non gamma correction
+	// float attenuation_factor = 1.0f / (light.constant + light.linear * d + light.quadratic * d * d);		
+	float attenuation_factor = 1.0f / (d * d);
 
 	// specular calculation
 	vec3 halfWay = view_dir + light_direction;
@@ -261,7 +263,9 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 
 	// light attenuation
 	float d = distance(light.position.xyz, v_FragmentPosition);
-	float attenuation_factor = 1.0f / (light.constant + light.linear * d + light.quadratic * d * d);
+	// more complex att func -> params would have to be adjusted to non gamma correction
+	// float attenuation_factor = 1.0f / (light.constant + light.linear * d + light.quadratic * d * d);		
+	float attenuation_factor = 1.0f / (d * d);
 
 	vec3 spotDirection = -light.direction;
 	float theta = dot(light_direction, spotDirection);
