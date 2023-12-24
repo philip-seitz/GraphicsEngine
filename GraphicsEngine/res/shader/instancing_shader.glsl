@@ -10,8 +10,6 @@ uniform mat4 u_Model;
 uniform mat4 u_Projection;
 uniform mat4 u_View;
 
-// uniform vec2 offsets[100];
-
 void main()
 {
 	vec4 pos = vec4((vec4(a_Position + vec4(0.9, -0.9, 0.0, 0.0)).xyz)*(gl_InstanceID / 100.0), 1.0);					// move to center and 'scale'

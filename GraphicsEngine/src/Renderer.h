@@ -20,6 +20,8 @@ public:
 	static void Flush();
 	static int	ModelGridLayout(ModelInstance** inst, const int& number, const glm::vec3& pos);
 	static void RenderSceneGraph(SceneGraph* scene_graph);
+	static void RenderToDepthMap(SceneGraph* scene_graph);
+	static void RenderSceneWithDepthMap(SceneGraph* scene_graph);
 	static void Clear();
 
 private:

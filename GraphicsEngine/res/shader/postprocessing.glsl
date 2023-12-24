@@ -91,6 +91,9 @@ void main()
 	o_Color = vec4(sum, 1.0f);*/
 
 	// no preprocessing
-	o_Color = texture(tex, v_TexCoord);
-
+	//o_Color = texture(tex, v_TexCoord);
+	
+	// depth map stuff
+	float depth = texture(tex, v_TexCoord).r;
+	o_Color = vec4(vec3(depth), 1.0f);
 }

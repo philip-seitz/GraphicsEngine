@@ -52,7 +52,7 @@ float linearStart = 30.0f;
 float linearEnd = 60.0f;
 float density = 0.02f;
 bool fogEnabled = true;
-bool skyboxEnabled = true;
+bool skyboxEnabled = false;
 float fogFactor = 1.0f;
 
 uniform bool u_Use_Texture;
@@ -106,9 +106,11 @@ void main()
 			}
 			else
 			{
-
+				// gamma correcting to get the same fogcolor as the background color which is not gamma corrected 
+				// since the automatic gamma correction is used (for everything except clear color) the gamma is guessed here -> not ideal!
+				fogColor = pow(vec4(0.1, 0.1, 0.1, 1.0), vec4(vec3(2.02), 1.0));		// clear color in monitor space -> ^gamma; not ^(1/gamma)	
 			}
-			
+
 			// o_Color = mix(color, fogColor, fogFactor);
 			// vec4 temp = vec4(1.0f, 0.0f, 0.0f, 1.0f);
 			// vec4 temp = mix(color, fogColor, fogFactor);

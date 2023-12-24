@@ -38,7 +38,7 @@ void AdvancedOGLScene::Run()
     }
 
     // create point light
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 0; i++)
     {
         PointLight testLight;
         testLight.m_Instance.position = { i * 3.0f, 2.0f, 4.0f };
@@ -46,14 +46,14 @@ void AdvancedOGLScene::Run()
     }
 
     DirectionalLight dirLight;
-    dirLight.m_Direction = { -1.0f, -0.5f, 2.0f };
-    // m_SceneGraph.m_DirectionalLights.push_back(dirLight);
+    dirLight.m_Direction = { -1.0f, -3.0f, 2.0f };
+    m_SceneGraph.m_DirectionalLights.push_back(dirLight);
 
     // add cubes 
-    for (int i = 0; i < 0; i++)
+    for (int i = 0; i < 3; i++)
     {
         Cube t_cube;
-        t_cube.m_Instance.position = { 0.0f + i * 1.0f, 1.52f, -1.0f + 3.0f*i };
+        t_cube.m_Instance.position = { 0.0f + i * 1.0f, 1.52f * (i + 1), -1.0f + 3.0f*i };
         m_SceneGraph.m_Cubes.push_back(t_cube);
     }
 
@@ -104,7 +104,7 @@ void AdvancedOGLScene::Run()
     ModelSceneInstance planet;
     planet.m_position = { 0.0f, 3.0f, 0.0f };
     planet.m_scale = { 4.0f, 4.0f, 4.0f };
-    m_SceneGraph.m_Planets.push_back(planet);
+    // m_SceneGraph.m_Planets.push_back(planet);
 
     // used for instancing rocks (at some point)
     ModelSceneInstance rock;
