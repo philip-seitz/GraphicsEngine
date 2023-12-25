@@ -54,7 +54,7 @@ struct Material
 	// float shininess;
 };
 
-float ShadowCalculation();
+float ShadowCalculation(vec3 normal, vec3 lightDir);
 
 uniform Material u_Material;
 uniform vec3 u_LightPosition;
@@ -95,7 +95,7 @@ void main()
 	float diffuseValue = max(dot(normal, light_direction), 0.0f);
 
 	// shadow calculation 
-	float shadow = ShadowCalculation();
+	float shadow = ShadowCalculation(normal, light_direction);
 	vec4 ambient = 0.15 * diffuseMap;
 	vec4 diffuse = (diffuseValue * diffuseMap) * (1.0 - shadow);
 	vec4 specular = (specularValue * specularMap) * (1.0 - shadow);
@@ -103,16 +103,18 @@ void main()
 }
 
 
-float ShadowCalculation()
+float ShadowCalculation(vec3 normal, vec3 lightDir)
 {
 	float shadow;
 
+	// varying bias depending on light angle to normal
+	float bias = max(0.05*(1.0 - dot(normal, lightDir)), 0.005);
+
 	// get projected depth values from light position 
 	vec3 projLightPos = fs_in.v_FragmentPositionLightSpace.xyz / fs_in.v_FragmentPositionLightSpace.w;		// manual perspective divide (not gl_Pos)
-	projLightPos = projLightPos * 0.5 + 0.5;															// values {0...1}
+	projLightPos = projLightPos * 0.5 + 0.5;																// values {0...1}
 	float closestDepth = texture(u_DepthMap, projLightPos.xy).r;
 	float currentDepth = projLightPos.z;
-	shadow = currentDepth > closestDepth ? 1 : 0;
-
+	shadow = currentDepth > (closestDepth + bias) ? 1 : 0;
 	return shadow;
 }
