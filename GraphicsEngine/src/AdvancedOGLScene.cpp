@@ -53,7 +53,7 @@ void AdvancedOGLScene::Run()
     for (int i = 0; i < 3; i++)
     {
         Cube t_cube;
-        t_cube.m_Instance.position = { 0.0f + i * 1.0f, 1.52f * (i + 1), -1.0f + 3.0f*i };
+        t_cube.m_Instance.position = { -3.0f + i * 1.0f, 1.52f * (i + 1), -8.0f + 3.0f*i };
         m_SceneGraph.m_Cubes.push_back(t_cube);
     }
 
@@ -71,7 +71,7 @@ void AdvancedOGLScene::Run()
     // create floor
     Cube floor;
     floor.m_Instance.position = { 0.0f, 0.0f, 0.0f };
-    floor.m_Instance.scale = { 20.0f, 0.5f, 15.0f };
+    floor.m_Instance.scale = { 40.0f, 0.5f, 30.0f };
     floor.m_Instance.hasOutline = false;
     m_SceneGraph.m_Cubes.push_back(floor);
 

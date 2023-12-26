@@ -339,8 +339,11 @@ void Renderer::Init(Window* window)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set wrapping to clamp, outside of range use border color (set depth to 1.0)...
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float textureBorderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, textureBorderColor);		
 
 	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[0]);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sData.shadow_map_id, 0);
@@ -414,7 +417,8 @@ void Renderer::RenderToDepthMap(SceneGraph* scene_graph)
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// 2. setup matrices from light source position
-	uboLightSpaceMatrix.SetMat4f(0, glm::orthoRH(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f));
+	// uboLightSpaceMatrix.SetMat4f(0, glm::perspectiveRH(glm::radians(45.0f), 1080.0f / 720.0f, 1.0f, 100.0f));
+	uboLightSpaceMatrix.SetMat4f(0, glm::orthoRH(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f));
 	uboLightSpaceMatrix.SetMat4f(sizeof(glm::mat4), glm::lookAt(glm::vec3(2.0f, 6.0f, -4.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
 
 	// 3. render models to depth map 
@@ -459,6 +463,7 @@ void Renderer::RenderSceneWithDepthMap(SceneGraph* scene_graph)
 
 	// enable backface culling
 	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
 	// Depth Test
 	glEnable(GL_DEPTH_TEST);

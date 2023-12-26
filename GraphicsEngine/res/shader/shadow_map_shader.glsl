@@ -55,6 +55,10 @@ struct Material
 };
 
 float ShadowCalculation(vec3 normal, vec3 lightDir);
+float LinearizeDepth(float depth);
+
+float near = 10.0f;
+float far = 100.0f;
 
 uniform Material u_Material;
 uniform vec3 u_LightPosition;
@@ -96,25 +100,55 @@ void main()
 
 	// shadow calculation 
 	float shadow = ShadowCalculation(normal, light_direction);
-	vec4 ambient = 0.15 * diffuseMap;
+	vec4 ambient = 0.1 * diffuseMap;
 	vec4 diffuse = (diffuseValue * diffuseMap) * (1.0 - shadow);
 	vec4 specular = (specularValue * specularMap) * (1.0 - shadow);
-	o_Color = lightColor * (ambient + diffuse + specular);
-}
+	o_Color = vec4((lightColor * ambient + diffuse + specular).xyz, 1.0);
 
+	// === show depth map using perspective projection matrix
+	// vec3 temp = fs_in.v_FragmentPositionLightSpace.xyz / fs_in.v_FragmentPositionLightSpace.w;		// manual perspective divide (not gl_Pos)
+	// o_Color = vec4(vec3(LinearizeDepth(temp.z)/far), 1.0);
+}
 
 float ShadowCalculation(vec3 normal, vec3 lightDir)
 {
-	float shadow;
+	float shadow = 0.0;
 
 	// varying bias depending on light angle to normal
 	float bias = max(0.05*(1.0 - dot(normal, lightDir)), 0.005);
+	// size vector (x, y) of one texel in range of 0 to 1
+	vec2 texelSize = 1.0 / textureSize(u_DepthMap, 0);
 
 	// get projected depth values from light position 
 	vec3 projLightPos = fs_in.v_FragmentPositionLightSpace.xyz / fs_in.v_FragmentPositionLightSpace.w;		// manual perspective divide (not gl_Pos)
 	projLightPos = projLightPos * 0.5 + 0.5;																// values {0...1}
-	float closestDepth = texture(u_DepthMap, projLightPos.xy).r;
+	
 	float currentDepth = projLightPos.z;
-	shadow = currentDepth > (closestDepth + bias) ? 1 : 0;
-	return shadow;
+
+	for (int x = -1; x <= 1; x++)
+	{
+		for (int y = -1; y <= 1; y++)
+		{
+			vec2 pos = projLightPos.xy;
+			pos.x += texelSize.x * x; 
+			pos.y += texelSize.y * y; 
+			float closestDepth = texture(u_DepthMap, pos).r;
+			if (projLightPos.z <= 1.0)
+			{
+				shadow += currentDepth > (closestDepth + bias) ? 1.0 : 0.0;
+			}
+		}
+	}
+
+	/*if (projLightPos.z > 1.0)
+	{
+		shadow = 0.0;
+	}*/
+	return shadow/9.0;
+}
+
+float LinearizeDepth(float depth)
+{
+	float z = depth * 2.0f - 1.0f;
+	return (2.0f * near * far) / (far + near - z * (far - near));
 }
