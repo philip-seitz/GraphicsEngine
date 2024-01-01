@@ -6,6 +6,7 @@
 #include "ModelScene.h"
 #include "Util.h"
 #include "ModelInstance.h"
+#include "Cubemap.h"
 #include <iostream> 
 #include <GL/glew.h>
 #include <map>
@@ -74,6 +75,8 @@ struct RendererData
 	Shader* asteroids_instanced = nullptr;
 	Shader* depth_shader = nullptr;
 	Shader* shadow_map_shader = nullptr;
+	Shader* depth_cubemap_shader = nullptr;
+	Shader* shadow_cubemap_shader = nullptr;
 
 	Window* window = nullptr;
 
@@ -86,79 +89,79 @@ struct RendererData
 	unsigned int shadow_map_id;
 };
 
-struct Cubemap
-{
-	unsigned int cubemapID;
-	int width, height, nrChannels;
-	unsigned char* data;
-
-	glm::vec3 angles = {0.0f, 0.0f, 0.0f};
-	glm::vec3 position = {0.0f, 0.0f, 0.0f};
-	glm::vec3 scale = {1.0f, 1.0f, 1.0f};		// 1x1x1 cube
-	void Init()
-	{
-		// setup cube map (refactor into class later)
-		
-		// === those two lines are not needed somehow (works without them) ===
-		glGenTextures(1, &cubemapID);
-		glActiveTexture(GL_TEXTURE0 + 10);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
-
-		std::vector<std::string> texture_faces
-		{
-			"res/textures/skybox/right.jpg",
-			"res/textures/skybox/left.jpg",
-			"res/textures/skybox/top.jpg",
-			"res/textures/skybox/bottom.jpg",
-			"res/textures/skybox/front.jpg",
-			"res/textures/skybox/back.jpg"
-		};
-
-		for (int i = 0; i < texture_faces.size(); i++)
-		{
-			stbi_set_flip_vertically_on_load(0);		// set to 1 originally. cubemap textures are not inverted (unlike other textures)
-			data = stbi_load(texture_faces[i].c_str(), &width, &height, &nrChannels, 0);
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-			stbi_image_free(data);
-		}
-
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	}
-
-	
-	void Draw(const Model& base_model, Shader* shader)
-	{
-		glBindVertexArray(base_model.va);
-		// glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);		// not necessary for cubemap (not switching between cubemaps yet)
-		shader->SetUniform1i("u_Skybox", 10);
-		shader->SetUniformMat4f("u_Model", ModelMatrix());
-		glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
-
-		glBindVertexArray(base_model.va);
-		// draw all vertices 
-		glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
-	}
-
-	glm::mat4x4 ModelMatrix()
-	{
-		glm::mat4x4 combinedRotation(0);
-		glm::mat4x4 translation(0);
-		glm::mat4x4 scaling(0);
-
-		combinedRotation = glm::rotate(glm::mat4(1.0f), glm::radians(angles.x),
-			glm::vec3(1.0, 0.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
-				glm::radians(angles.y), glm::vec3(0.0, 1.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
-					glm::radians(angles.z), glm::vec3(0.0, 0.0, 1.0));
-		translation = glm::translate(glm::mat4(1.0f), position);
-		scaling = glm::scale(glm::mat4(1.0f), scale);
-
-		return translation * combinedRotation * scaling;
-	}
-};
+//struct Cubemap
+//{
+//	unsigned int cubemapID;
+//	int width, height, nrChannels;
+//	unsigned char* data;
+//
+//	glm::vec3 angles = {0.0f, 0.0f, 0.0f};
+//	glm::vec3 position = {0.0f, 0.0f, 0.0f};
+//	glm::vec3 scale = {1.0f, 1.0f, 1.0f};		// 1x1x1 cube
+//	void Init()
+//	{
+//		// setup cube map (refactor into class later)
+//		
+//		// === those two lines are not needed somehow (works without them) ===
+//		glGenTextures(1, &cubemapID);
+//		glActiveTexture(GL_TEXTURE0 + 10);
+//		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
+//
+//		std::vector<std::string> texture_faces
+//		{
+//			"res/textures/skybox/right.jpg",
+//			"res/textures/skybox/left.jpg",
+//			"res/textures/skybox/top.jpg",
+//			"res/textures/skybox/bottom.jpg",
+//			"res/textures/skybox/front.jpg",
+//			"res/textures/skybox/back.jpg"
+//		};
+//
+//		for (int i = 0; i < texture_faces.size(); i++)
+//		{
+//			stbi_set_flip_vertically_on_load(0);		// set to 1 originally. cubemap textures are not inverted (unlike other textures)
+//			data = stbi_load(texture_faces[i].c_str(), &width, &height, &nrChannels, 0);
+//			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+//			stbi_image_free(data);
+//		}
+//
+//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+//	}
+//
+//	
+//	void Draw(const Model& base_model, Shader* shader)
+//	{
+//		glBindVertexArray(base_model.va);
+//		// glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);		// not necessary for cubemap (not switching between cubemaps yet)
+//		shader->SetUniform1i("u_Skybox", 10);
+//		shader->SetUniformMat4f("u_Model", ModelMatrix());
+//		glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
+//
+//		glBindVertexArray(base_model.va);
+//		// draw all vertices 
+//		glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
+//	}
+//
+//	glm::mat4x4 ModelMatrix()
+//	{
+//		glm::mat4x4 combinedRotation(0);
+//		glm::mat4x4 translation(0);
+//		glm::mat4x4 scaling(0);
+//
+//		combinedRotation = glm::rotate(glm::mat4(1.0f), glm::radians(angles.x),
+//			glm::vec3(1.0, 0.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
+//				glm::radians(angles.y), glm::vec3(0.0, 1.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
+//					glm::radians(angles.z), glm::vec3(0.0, 0.0, 1.0));
+//		translation = glm::translate(glm::mat4(1.0f), position);
+//		scaling = glm::scale(glm::mat4(1.0f), scale);
+//
+//		return translation * combinedRotation * scaling;
+//	}
+//};
 
 
 struct UniformBufferObject
@@ -213,6 +216,7 @@ struct UniformBufferObject
 // create vao for sky box
 static RendererData sData;
 Cubemap cube_map;
+Cubemap depth_cubemap;
 UniformBufferObject uboMatrix;
 UniformBufferObject uboCamera;
 UniformBufferObject uboLightSpaceMatrix;
@@ -238,6 +242,9 @@ void Renderer::Init(Window* window)
 	sData.asteroids_instanced = new Shader("res/shader/asteroids_instanced.glsl");
 	sData.depth_shader = new Shader("res/shader/depth_shader.glsl");
 	sData.shadow_map_shader = new Shader("res/shader/shadow_map_shader.glsl");
+	sData.depth_cubemap_shader = new Shader("res/shader/depth_cubemap_shader.glsl");
+	sData.shadow_cubemap_shader = new Shader("res/shader/shadow_cubemap_shader.glsl");
+	
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
 	// initialize models (send data to GPU)
@@ -266,6 +273,7 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.model_shader);
 	shader_list_matrices.push_back(sData.asteroids_instanced);
 	shader_list_matrices.push_back(sData.shadow_map_shader);
+	shader_list_matrices.push_back(sData.shadow_cubemap_shader);
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
 	// list of shaders that should be bound to binding point of u_CameraData Uniform Buffer
@@ -275,6 +283,7 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.asteroids_instanced);
 	shader_list_camera.push_back(sData.model_shader);
 	shader_list_camera.push_back(sData.shadow_map_shader);
+	shader_list_camera.push_back(sData.shadow_cubemap_shader);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 	
 	std::vector<Shader*> shader_list_light_space_matrix;
@@ -330,7 +339,7 @@ void Renderer::Init(Window* window)
 
 	sData.rock.AddInstArrayAttribMat4(sData.matrices, number_asteroids);
 
-	// init framebuffer for shadow mapping; TODO: refactor into seperate struct or class
+	// ==== init framebuffer for shadow mapping; TODO: refactor into seperate struct or class
 	glGenFramebuffers(1, &sData.fbo_id[0]);
 
 	glGenTextures(1, &sData.shadow_map_id);
@@ -339,16 +348,28 @@ void Renderer::Init(Window* window)
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 	// set wrapping to clamp, outside of range use border color (set depth to 1.0)...
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	float textureBorderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, textureBorderColor);		
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, textureBorderColor);	
 
 	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[0]);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, sData.shadow_map_id, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
+
+	// === setup cubemap stuff for point light shadow mapping
+	glGenFramebuffers(1, &sData.fbo_id[1]);
+
+	depth_cubemap.InitDepthCubemap();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[1]);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_cubemap.cubemapID, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);		// standard framebuffer		
 
 }
@@ -403,8 +424,13 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 {
 	cameras[0] = &scene_graph->m_Cameras[0];
-	RenderToDepthMap(scene_graph);
-	RenderSceneWithDepthMap(scene_graph);
+	// RenderToDepthMap(scene_graph);
+	// RenderSceneWithDepthMap(scene_graph);
+
+	// TODO: refactor setting uniforms into function (for uniform buffer objects especially)
+
+	RenderToDepthCubemap(scene_graph);
+	RenderSceneWithDepthCubemap(scene_graph);
 }
 
 void Renderer::RenderToDepthMap(SceneGraph* scene_graph)
@@ -417,9 +443,9 @@ void Renderer::RenderToDepthMap(SceneGraph* scene_graph)
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// 2. setup matrices from light source position
-	// uboLightSpaceMatrix.SetMat4f(0, glm::perspectiveRH(glm::radians(45.0f), 1080.0f / 720.0f, 1.0f, 100.0f));
+	// uboLightSpaceMatrix.SetMat4f(0, glm::perspectiveRH(glm::radians(90.0f), 1.0f, 1.0f, 25.0f));
 	uboLightSpaceMatrix.SetMat4f(0, glm::orthoRH(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 100.0f));
-	uboLightSpaceMatrix.SetMat4f(sizeof(glm::mat4), glm::lookAt(glm::vec3(2.0f, 6.0f, -4.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
+	uboLightSpaceMatrix.SetMat4f(sizeof(glm::mat4), glm::lookAt(glm::vec3(-6.0f, 0.0f, -4.0f), glm::vec3(-5.0f, 0.0f, -4.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
 
 	// 3. render models to depth map 
 	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
@@ -450,8 +476,72 @@ void Renderer::RenderToDepthMap(SceneGraph* scene_graph)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void Renderer::RenderToDepthCubemap(SceneGraph* scene_graph)
+{
+	// settings
+	float near_plane = 1.0f;
+	float far_plane = 25.0f;
+
+
+	// 1. bind framebuffer (shadow map)
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[1]);
+	glViewport(0, 0, 1024, 1024);
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	// 2. setup matrices from light source position
+
+	glm::mat4 perspective = glm::perspectiveRH(glm::radians(90.0f), 1024.0f/1024.0f, near_plane, far_plane);
+	std::vector<glm::mat4> light_view; 
+
+	glm::vec3 lightPosition = glm::vec3(-6.0f, 0.0f, -4.0f);
+	// TODO: check if up vectors are correctly setup
+	light_view.push_back(perspective * glm::lookAt(lightPosition, lightPosition + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));				// right
+	light_view.push_back(perspective * glm::lookAt(lightPosition, lightPosition + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));				// left
+	light_view.push_back(perspective * glm::lookAt(lightPosition, lightPosition + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));				// top
+	light_view.push_back(perspective * glm::lookAt(lightPosition, lightPosition + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));				// bottom
+	light_view.push_back(perspective * glm::lookAt(lightPosition, lightPosition + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));				// near
+	light_view.push_back(perspective * glm::lookAt(lightPosition, lightPosition + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));				// far
+
+	// send to shader/GPU
+	for (int i = 0; i < light_view.size(); i++)
+	{
+		sData.depth_cubemap_shader->SetUniformMat4f("u_LightView[" + std::to_string(i) + "]", light_view[i]);
+	}
+
+	sData.depth_cubemap_shader->SetUniform3f("u_LightPosition", lightPosition);
+	sData.depth_cubemap_shader->SetUniform1f("u_FarPlane", far_plane);
+
+	// 3. render models to depth map 
+	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
+	{
+		scene_graph->m_PointLights[i].Draw(sData.depth_cubemap_shader, &sData.primitive_cube);
+	}
+
+	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+	{
+		scene_graph->m_Cubes[i].Draw(sData.depth_cubemap_shader, &sData.cube);
+	}
+
+	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	{
+		scene_graph->m_Backpacks[i].Draw(sData.depth_cubemap_shader, sData.backpack);
+	}
+
+	for (int i = 0; i < scene_graph->m_Points.size(); i++)
+	{
+		scene_graph->m_Points[i].Draw(sData.depth_cubemap_shader, &sData.point);
+	}
+
+	// instancing stuff left out for now... TODO: add later once the rest is working
+}
+
+
 void Renderer::RenderSceneWithDepthMap(SceneGraph* scene_graph)
 {
+	// TODO: use shadow_cubemap_shader/point light shader
+
 	// ===================================== start of frame setup ==================================
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0.0f, 0.0f, sData.window->m_Width, sData.window->m_Height);
@@ -484,11 +574,11 @@ void Renderer::RenderSceneWithDepthMap(SceneGraph* scene_graph)
 	uboMatrix.SetMat4f(0, cameras[0]->ProjectionMatrix());
 	uboMatrix.SetMat4f(sizeof(glm::mat4), cameras[0]->LookAtMatrix());
 	uboCamera.SetVec3f(0, cameras[0]->Position());
-	glActiveTexture(GL_TEXTURE0 + 5);
-	glBindTexture(GL_TEXTURE_2D, sData.shadow_map_id);
-	sData.shadow_map_shader->SetUniform1i("u_DepthMap", 5);
+	glActiveTexture(GL_TEXTURE0 + 10);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.shadow_map_id);
+	sData.shadow_map_shader->SetUniform1i("u_DepthMap", 10);
 
-	sData.shadow_map_shader->SetUniform3f("u_LightPosition", glm::vec3(2.0f, 6.0f, -4.0f));		// hardcoded not ideal TODO
+	sData.shadow_map_shader->SetUniform3f("u_LightPosition", glm::vec3(-6.0f, 0.0f, -4.0f));		// hardcoded not ideal TODO
 
 	// point lights
 	sData.model_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
@@ -558,6 +648,132 @@ void Renderer::RenderSceneWithDepthMap(SceneGraph* scene_graph)
 
 	// enable depth buffer
 	glDepthFunc(GL_LESS); 
+	glEnable(GL_CULL_FACE);
+
+	// draw grid (after sky box to benefit from blending with skybox colors)
+	glBindTexture(GL_TEXTURE_2D, cube_map.cubemapID);
+
+	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
+	{
+		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);
+	}
+}
+
+void Renderer::RenderSceneWithDepthCubemap(SceneGraph* scene_graph) 
+{
+	// settings
+	float near_plane = 1.0f;
+	float far_plane = 25.0f;
+
+	// ===================================== start of frame setup ==================================
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0.0f, 0.0f, sData.window->m_Width, sData.window->m_Height);
+
+	glDisable(GL_FRAMEBUFFER_SRGB);				// gamma correction disabled for setting clear color (so that background color stays the same)
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glEnable(GL_FRAMEBUFFER_SRGB);				// gamma correction 
+
+	// enable backface culling
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	// Depth Test
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	// Blending 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	// enable stencil 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);			// if stencil and depth pass
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);								// enable writing to stencil buffer
+
+	uboMatrix.SetMat4f(0, cameras[0]->ProjectionMatrix());
+	uboMatrix.SetMat4f(sizeof(glm::mat4), cameras[0]->LookAtMatrix());
+	uboCamera.SetVec3f(0, cameras[0]->Position());
+
+	// bind cubemap
+	glActiveTexture(GL_TEXTURE0 + 11);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cubemap.cubemapID);
+	sData.shadow_cubemap_shader->SetUniform1i("u_DepthMap", 11);
+
+	sData.shadow_cubemap_shader->SetUniform3f("u_LightPosition", glm::vec3(-6.0f, 0.0f, -4.0f));		// hardcoded not ideal TODO
+	sData.shadow_cubemap_shader->SetUniform1f("u_FarPlane", far_plane);
+
+	// point lights
+	sData.model_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
+	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
+	{
+		scene_graph->m_PointLights[i].Draw(sData.shadow_cubemap_shader, &sData.primitive_cube);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.model_shader, i);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.asteroids_instanced, i);
+	}
+
+	for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
+	{
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.model_shader);
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.asteroids_instanced);
+	}
+
+	for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
+	{
+		// as flash light
+		scene_graph->m_SpotLights[i].m_Direction = cameras[0]->LookDirection();
+		scene_graph->m_SpotLights[i].m_Instance.position = cameras[0]->Position();
+
+		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.asteroids_instanced);
+	}
+
+	sData.model_shader->SetUniform1i("u_Skybox", 10);
+
+	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+	{
+		scene_graph->m_Cubes[i].Draw(sData.shadow_cubemap_shader, &sData.cube);
+	}
+
+	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	{
+		scene_graph->m_Backpacks[i].Draw(sData.shadow_cubemap_shader, sData.backpack);
+		float time = glfwGetTime();
+		sData.geometry_shader->SetUniform1f("u_Time", time);
+		// scene_graph->m_Backpacks[i].Draw(sData.geometry_shader, sData.backpack);				// for displaying normal etc.
+	}
+
+	for (int i = 0; i < scene_graph->m_Points.size(); i++)
+	{
+		scene_graph->m_Points[i].Draw(sData.shadow_cubemap_shader, &sData.point);
+	}
+
+	// instanced rendering of asteroid etc.
+	sData.instancing_shader->SetUniformMat4f("u_Projection", cameras[0]->ProjectionMatrix());
+	sData.instancing_shader->SetUniformMat4f("u_View", cameras[0]->LookAtMatrix());
+
+	for (int i = 0; i < scene_graph->m_Planets.size(); i++)
+	{
+		scene_graph->m_Planets[i].Draw(sData.model_shader, sData.planet);
+	}
+
+	if (number_asteroids > 0)
+	{
+		scene_graph->m_Rocks[0].DrawInstanced(sData.asteroids_instanced, sData.rock, sData.matrices, number_asteroids);
+	}
+
+	// draw sky box after drawing all models (as optimization)
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_CULL_FACE);
+
+	// cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
+
+	// enable depth buffer
+	glDepthFunc(GL_LESS);
 	glEnable(GL_CULL_FACE);
 
 	// draw grid (after sky box to benefit from blending with skybox colors)

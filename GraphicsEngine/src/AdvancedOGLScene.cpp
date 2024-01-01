@@ -47,13 +47,19 @@ void AdvancedOGLScene::Run()
 
     DirectionalLight dirLight;
     dirLight.m_Direction = { -1.0f, -3.0f, 2.0f };
-    m_SceneGraph.m_DirectionalLights.push_back(dirLight);
+    // m_SceneGraph.m_DirectionalLights.push_back(dirLight);
 
     // add cubes 
+
+    Cube big_box;
+    big_box.m_Instance.position = { 0.0f, 0.0f, 0.0f};
+    big_box.m_Instance.scale = { 10.0f, 10.0f, 10.0f };
+    // m_SceneGraph.m_Cubes.push_back(big_box);
+
     for (int i = 0; i < 3; i++)
     {
         Cube t_cube;
-        t_cube.m_Instance.position = { -3.0f + i * 1.0f, 1.52f * (i + 1), -8.0f + 3.0f*i };
+        t_cube.m_Instance.position = { -3.0f + i * 1.0f, -1.0f * (i + 1), -8.0f + 3.0f*i };
         m_SceneGraph.m_Cubes.push_back(t_cube);
     }
 
@@ -73,7 +79,23 @@ void AdvancedOGLScene::Run()
     floor.m_Instance.position = { 0.0f, 0.0f, 0.0f };
     floor.m_Instance.scale = { 40.0f, 0.5f, 30.0f };
     floor.m_Instance.hasOutline = false;
+    // m_SceneGraph.m_Cubes.push_back(floor);
+
+    Cube wall;
+    floor.m_Instance.position = { 7.0f, 0.0f, 0.0f };
+    floor.m_Instance.scale = { 1.0f, 20.0f, 10.0f };
     m_SceneGraph.m_Cubes.push_back(floor);
+
+    Cube roof;
+    floor.m_Instance.position = { 0.0f, 20.0f, 0.0f };
+    floor.m_Instance.scale = { 20.0f, 0.5f, 10.0f };
+    m_SceneGraph.m_Cubes.push_back(floor);
+
+    Cube light_cube;        // as visualization 
+    light_cube.m_Instance.position = { -7.0f, 0.0f, -4.0f};
+    light_cube.m_Instance.scale = { 0.1f, 0.1f, 0.1f };
+    m_SceneGraph.m_Cubes.push_back(light_cube);
+
 
     // add a backback model
     for (int i = 0; i < 0; i++)
