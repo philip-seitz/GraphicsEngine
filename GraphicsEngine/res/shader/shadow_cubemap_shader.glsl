@@ -54,6 +54,16 @@ struct Material
 	// float shininess;
 };
 
+
+vec3 sampleDirections[20] = vec3[]
+(
+	vec3(1, 1, 1), vec3(-1, 1, 1), vec3(1, -1, 1), vec3(1, 1, -1),
+	vec3(-1, -1, 1), vec3(-1, 1, -1), vec3(1, -1, -1), vec3(-1, -1, -1),
+	vec3(0, 1, 1), vec3(1, 0, 1), vec3(1, 1, 0), vec3(-1, 0, 1),
+	vec3(-1, 1, 0), vec3(0, 1, -1), vec3(0, -1, 1), vec3(1, 0, -1),
+	vec3(1, -1, 0), vec3(-1, -1, 0), vec3(-1, 0, -1), vec3(0, -1, -1)
+	);
+
 float ShadowCalculation(vec3 normal, vec3 lightDir);
 float LinearizeDepth(float depth);
 
@@ -117,35 +127,20 @@ float ShadowCalculation(vec3 normal, vec3 lightDir)
 	vec3 lightToFragment = fs_in.v_FragmentPositionWorldSpace - u_LightPosition;
 
 	// varying bias depending on light angle to normal
-	//float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-	float bias = 0.05;
-	// size vector (x, y) of one texel in range of 0 to 1
-	vec2 texelSize = 1.0 / textureSize(u_DepthMap, 0);
-
-	// cubemaps are used so direction vector is sufficient
+	float bias = max(0.25 * (1.0 - dot(normal, lightDir)), 0.15);
+	float viewDistance = length(fs_in.v_FragmentPositionWorldSpace - u_CameraPosition);
+	float filterRadius = 0.05;
 	float currentDepth = length(lightToFragment);
-	float closestDepth = texture(u_DepthMap, lightToFragment).r * u_FarPlane;
-	shadow = currentDepth > (closestDepth + bias) ? 1.0 : 0.0;
 
 	// for filtering =====
-
-	/*for (int x = -1; x <= 1; x++)
+	for (int i = 0; i < 20; i++)
 	{
-		for (int y = -1; y <= 1; y++)
-		{
-			vec2 pos = projLightPos.xy;
-			pos.x += texelSize.x * x;
-			pos.y += texelSize.y * y;
-			float closestDepth = texture(u_DepthMap, lightToFragment).r;
-			if (projLightPos.z <= 1.0)
-			{
-				shadow += currentDepth > (closestDepth + bias) ? 1.0 : 0.0;
-			}
-		}
-	}*/
+		float closestDepth = texture(u_DepthMap, lightToFragment + sampleDirections[i] * filterRadius).r * u_FarPlane;
+		shadow += currentDepth > (closestDepth + bias) ? 1.0 : 0.0;
+	}
 
-	// o_Color = vec4(vec3(closestDepth / u_FarPlane), 1.0);
-	return shadow;
+	// o_Color = vec4(vec3(closestDepth / u_FarPlane), 1.0);			// display depth cubemap
+	return shadow/20.0;
 }
 
 float LinearizeDepth(float depth)
