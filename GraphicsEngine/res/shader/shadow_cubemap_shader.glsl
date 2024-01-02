@@ -129,7 +129,7 @@ float ShadowCalculation(vec3 normal, vec3 lightDir)
 	// varying bias depending on light angle to normal
 	float bias = max(0.25 * (1.0 - dot(normal, lightDir)), 0.15);
 	float viewDistance = length(fs_in.v_FragmentPositionWorldSpace - u_CameraPosition);
-	float filterRadius = 0.05;
+	float filterRadius =	(1.0 + (viewDistance / u_FarPlane))/25.0;		//{0.04... 0.08}
 	float currentDepth = length(lightToFragment);
 
 	// for filtering =====

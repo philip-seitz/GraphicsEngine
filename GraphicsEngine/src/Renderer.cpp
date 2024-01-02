@@ -7,6 +7,7 @@
 #include "Util.h"
 #include "ModelInstance.h"
 #include "Cubemap.h"
+#include "UniformBufferObject.h"
 #include <iostream> 
 #include <GL/glew.h>
 #include <map>
@@ -87,130 +88,6 @@ struct RendererData
 
 	// for shadow map TODO: refactor
 	unsigned int shadow_map_id;
-};
-
-//struct Cubemap
-//{
-//	unsigned int cubemapID;
-//	int width, height, nrChannels;
-//	unsigned char* data;
-//
-//	glm::vec3 angles = {0.0f, 0.0f, 0.0f};
-//	glm::vec3 position = {0.0f, 0.0f, 0.0f};
-//	glm::vec3 scale = {1.0f, 1.0f, 1.0f};		// 1x1x1 cube
-//	void Init()
-//	{
-//		// setup cube map (refactor into class later)
-//		
-//		// === those two lines are not needed somehow (works without them) ===
-//		glGenTextures(1, &cubemapID);
-//		glActiveTexture(GL_TEXTURE0 + 10);
-//		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);
-//
-//		std::vector<std::string> texture_faces
-//		{
-//			"res/textures/skybox/right.jpg",
-//			"res/textures/skybox/left.jpg",
-//			"res/textures/skybox/top.jpg",
-//			"res/textures/skybox/bottom.jpg",
-//			"res/textures/skybox/front.jpg",
-//			"res/textures/skybox/back.jpg"
-//		};
-//
-//		for (int i = 0; i < texture_faces.size(); i++)
-//		{
-//			stbi_set_flip_vertically_on_load(0);		// set to 1 originally. cubemap textures are not inverted (unlike other textures)
-//			data = stbi_load(texture_faces[i].c_str(), &width, &height, &nrChannels, 0);
-//			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-//			stbi_image_free(data);
-//		}
-//
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-//	}
-//
-//	
-//	void Draw(const Model& base_model, Shader* shader)
-//	{
-//		glBindVertexArray(base_model.va);
-//		// glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapID);		// not necessary for cubemap (not switching between cubemaps yet)
-//		shader->SetUniform1i("u_Skybox", 10);
-//		shader->SetUniformMat4f("u_Model", ModelMatrix());
-//		glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
-//
-//		glBindVertexArray(base_model.va);
-//		// draw all vertices 
-//		glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
-//	}
-//
-//	glm::mat4x4 ModelMatrix()
-//	{
-//		glm::mat4x4 combinedRotation(0);
-//		glm::mat4x4 translation(0);
-//		glm::mat4x4 scaling(0);
-//
-//		combinedRotation = glm::rotate(glm::mat4(1.0f), glm::radians(angles.x),
-//			glm::vec3(1.0, 0.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
-//				glm::radians(angles.y), glm::vec3(0.0, 1.0, 0.0)) * glm::rotate(glm::mat4(1.0f),
-//					glm::radians(angles.z), glm::vec3(0.0, 0.0, 1.0));
-//		translation = glm::translate(glm::mat4(1.0f), position);
-//		scaling = glm::scale(glm::mat4(1.0f), scale);
-//
-//		return translation * combinedRotation * scaling;
-//	}
-//};
-
-
-struct UniformBufferObject
-{
-	
-	unsigned int uboID = 0;
-
-	// size: total size corresponding to std140 
-	void InitBuffer(unsigned int size, const std::string& uniform_name, unsigned int bindingPointNumber, std::vector<Shader*> shader_list)
-	{
-		unsigned int uniformBlockID = 0;
-		// Binding Point
-		for (int i = 0; i < shader_list.size(); i++)
-		{
-			uniformBlockID = glGetUniformBlockIndex(shader_list[i]->GetRendererID(), uniform_name.c_str());
-			glUniformBlockBinding(shader_list[i]->GetRendererID(), uniformBlockID, bindingPointNumber);
-		}
-		
-		// Buffer
-		glGenBuffers(1, &uboID);
-		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
-		glBufferData(GL_UNIFORM_BUFFER, size, NULL, GL_STATIC_DRAW);					// might have to be dynamic draw
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);												// unbind
-
-		glBindBufferRange(GL_UNIFORM_BUFFER, bindingPointNumber, uboID, 0, size);		// use entire buffer memory and set to binding point number
-	}
-
-	void SetMat4f(unsigned int offset, glm::mat4 data)
-	{
-		// setup Uniform Buffer Object (each frame)
-		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
-		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(glm::mat4), glm::value_ptr(data));
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	}
-
-	void SetVec3f(unsigned int offset, glm::vec3 data)
-	{
-		// setup Uniform Buffer Object (each frame)
-		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
-		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(glm::vec3), glm::value_ptr(data));
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	}
-	void SetVec4f(unsigned int offset, glm::vec4 data)
-	{
-		// setup Uniform Buffer Object (each frame)
-		glBindBuffer(GL_UNIFORM_BUFFER, uboID);
-		glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(glm::vec4), glm::value_ptr(data));
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	}
 };
 
 // create vao for sky box
