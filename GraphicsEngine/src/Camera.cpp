@@ -31,7 +31,7 @@ Camera::Camera():
 }
 
 Camera::Camera(const bool& isPerspective):
-	m_position(-2.0f, 20.0f, 11.0f),
+	m_position(0.0f, 0.0f, 5.0f),
 	m_target(0.0f, 0.0f, 0.0f),
 	m_up(0.0f, 1.0f, 0.0f),
 	m_look_at(glm::lookAt(m_position, m_target, m_up)),

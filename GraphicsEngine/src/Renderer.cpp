@@ -78,6 +78,7 @@ struct RendererData
 	Shader* shadow_map_shader = nullptr;
 	Shader* depth_cubemap_shader = nullptr;
 	Shader* shadow_cubemap_shader = nullptr;
+	Shader* normalmap_shader = nullptr;
 
 	Window* window = nullptr;
 
@@ -121,6 +122,7 @@ void Renderer::Init(Window* window)
 	sData.shadow_map_shader = new Shader("res/shader/shadow_map_shader.glsl");
 	sData.depth_cubemap_shader = new Shader("res/shader/depth_cubemap_shader.glsl");
 	sData.shadow_cubemap_shader = new Shader("res/shader/shadow_cubemap_shader.glsl");
+	sData.normalmap_shader = new Shader("res/shader/normalmap_shader.glsl");
 	
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
@@ -151,6 +153,7 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.asteroids_instanced);
 	shader_list_matrices.push_back(sData.shadow_map_shader);
 	shader_list_matrices.push_back(sData.shadow_cubemap_shader);
+	shader_list_matrices.push_back(sData.normalmap_shader);
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
 	// list of shaders that should be bound to binding point of u_CameraData Uniform Buffer
@@ -161,6 +164,7 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.model_shader);
 	shader_list_camera.push_back(sData.shadow_map_shader);
 	shader_list_camera.push_back(sData.shadow_cubemap_shader);
+	shader_list_camera.push_back(sData.normalmap_shader);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 	
 	std::vector<Shader*> shader_list_light_space_matrix;
@@ -306,8 +310,114 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	// TODO: refactor setting uniforms into function (for uniform buffer objects especially)
 
-	RenderToDepthCubemap(scene_graph);
-	RenderSceneWithDepthCubemap(scene_graph);
+	// RenderToDepthCubemap(scene_graph);
+	// RenderSceneWithDepthCubemap(scene_graph);
+
+	RenderNormalMapScene(scene_graph);
+}
+
+void Renderer::RenderNormalMapScene(SceneGraph* scene_graph)
+{
+	// ===================================== start of frame setup ==================================
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0.0f, 0.0f, sData.window->m_Width, sData.window->m_Height);
+
+	glDisable(GL_FRAMEBUFFER_SRGB);				// gamma correction disabled for setting clear color (so that background color stays the same)
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	glEnable(GL_FRAMEBUFFER_SRGB);				// gamma correction 
+
+	// enable backface culling
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	// Depth Test
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	// Blending 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	// enable stencil 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);			// if stencil and depth pass
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);								// enable writing to stencil buffer
+
+	uboMatrix.SetMat4f(0, cameras[0]->ProjectionMatrix());
+	uboMatrix.SetMat4f(sizeof(glm::mat4), cameras[0]->LookAtMatrix());
+	uboCamera.SetVec3f(0, cameras[0]->Position());
+
+	// point lights
+	sData.normalmap_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
+	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
+	{
+		scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.normalmap_shader, i);
+	}
+
+	for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
+	{
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.normalmap_shader);
+	}
+
+	for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
+	{
+		// as flash light
+		scene_graph->m_SpotLights[i].m_Direction = cameras[0]->LookDirection();
+		scene_graph->m_SpotLights[i].m_Instance.position = cameras[0]->Position();
+
+		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.normalmap_shader);
+	}
+
+	sData.normalmap_shader->SetUniform1i("u_Skybox", 10);
+
+	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+	{
+		scene_graph->m_Cubes[i].Draw(sData.normalmap_shader, &sData.cube);
+	}
+
+	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	{
+		scene_graph->m_Backpacks[i].Draw(sData.normalmap_shader, sData.backpack);
+		float time = glfwGetTime();
+		sData.geometry_shader->SetUniform1f("u_Time", time);
+		// scene_graph->m_Backpacks[i].Draw(sData.geometry_shader, sData.backpack);				// for displaying normal etc.
+	}
+
+	for (int i = 0; i < scene_graph->m_Points.size(); i++)
+	{
+		scene_graph->m_Points[i].Draw(sData.normalmap_shader, &sData.point);
+	}
+
+	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
+	{
+		scene_graph->m_Quads[i].Draw(sData.normalmap_shader, &sData.quad);
+	}
+
+	// no instanced rendering here for now
+
+	// draw sky box after drawing all models (as optimization)
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_CULL_FACE);
+
+	// cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
+
+	// enable depth buffer
+	glDepthFunc(GL_LESS);
+	glEnable(GL_CULL_FACE);
+
+	// draw grid (after sky box to benefit from blending with skybox colors)
+	glBindTexture(GL_TEXTURE_2D, cube_map.cubemapID);
+
+	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
+	{
+		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);
+	}
 }
 
 void Renderer::RenderToDepthMap(SceneGraph* scene_graph)
@@ -343,6 +453,11 @@ void Renderer::RenderToDepthMap(SceneGraph* scene_graph)
 	for (int i = 0; i < scene_graph->m_Points.size(); i++)
 	{
 		scene_graph->m_Points[i].Draw(sData.depth_shader, &sData.point);
+	}
+
+	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
+	{
+		scene_graph->m_Quads[i].Draw(sData.depth_shader, &sData.quad);
 	}
 
 	// instancing stuff left out for now... TODO: add later once the rest is working
@@ -411,14 +526,17 @@ void Renderer::RenderToDepthCubemap(SceneGraph* scene_graph)
 		scene_graph->m_Points[i].Draw(sData.depth_cubemap_shader, &sData.point);
 	}
 
+	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
+	{
+		scene_graph->m_Quads[i].Draw(sData.depth_cubemap_shader, &sData.quad);
+	}
+
 	// instancing stuff left out for now... TODO: add later once the rest is working
 }
 
 
 void Renderer::RenderSceneWithDepthMap(SceneGraph* scene_graph)
 {
-	// TODO: use shadow_cubemap_shader/point light shader
-
 	// ===================================== start of frame setup ==================================
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0.0f, 0.0f, sData.window->m_Width, sData.window->m_Height);
@@ -501,6 +619,11 @@ void Renderer::RenderSceneWithDepthMap(SceneGraph* scene_graph)
 	for (int i = 0; i < scene_graph->m_Points.size(); i++)
 	{
 		scene_graph->m_Points[i].Draw(sData.shadow_map_shader, &sData.point);
+	}
+
+	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
+	{
+		scene_graph->m_Quads[i].Draw(sData.shadow_map_shader, &sData.quad);
 	}
 
 	// instanced rendering of asteroid etc.
@@ -627,6 +750,11 @@ void Renderer::RenderSceneWithDepthCubemap(SceneGraph* scene_graph)
 	for (int i = 0; i < scene_graph->m_Points.size(); i++)
 	{
 		scene_graph->m_Points[i].Draw(sData.shadow_cubemap_shader, &sData.point);
+	}
+
+	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
+	{
+		scene_graph->m_Quads[i].Draw(sData.shadow_cubemap_shader, &sData.quad);
 	}
 
 	// instanced rendering of asteroid etc.

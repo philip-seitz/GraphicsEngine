@@ -2,10 +2,13 @@
 
 Quad::Quad()
 {
-	const std::string diffusePath = "res/textures/red_window.png";
+	std::string diffusePath = "res/textures/wall/brickwall.jpg";
 	std::string specularPath = "res/textures/placeholder_spec.png";
+	std::string normalPath = "res/textures/wall/brickwall_normal.jpg";
+
 	std::string diffType = "texture_diffuse";
 	std::string specType = "texture_specular";
+	std::string normType = "texture_normal";
 
 	// diffuse texture
 	unsigned int id_diff = 0;
@@ -17,6 +20,11 @@ Quad::Quad()
 	TextureFromFile(diffusePath, id_spec);
 	Texture tex_spec(diffusePath, specType, id_spec);
 	m_Textures.push_back(tex_spec);
+	// normal map
+	unsigned int id_normal = 0;
+	TextureFromFile(normalPath, id_normal);
+	Texture tex_normal(normalPath, normType, id_normal);
+	m_Textures.push_back(tex_normal);
 }
 
 void Quad::Draw(Shader* shader, Model* base_model)
@@ -33,6 +41,10 @@ void Quad::Draw(Shader* shader, Model* base_model)
 		else if (m_Textures[i].GetType() == "texture_specular")
 		{
 			type = "texture_specular";
+		}
+		else if (m_Textures[i].GetType() == "texture_normal")
+		{
+			type = "texture_normal";
 		}
 		// shader->SetUniformMat3f("u_Normal_Matrix", m_Instance.NormalMatrix());
 		shader->SetUniform1i(("u_Material." + type + "1").c_str(), i);

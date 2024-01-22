@@ -24,6 +24,7 @@ public:
 	static void RenderToDepthCubemap(SceneGraph* scene_graph);
 	static void RenderSceneWithDepthMap(SceneGraph* scene_graph);
 	static void RenderSceneWithDepthCubemap(SceneGraph* scene_graph);
+	static void RenderNormalMapScene(SceneGraph* scene_graph);
 	static void Clear();
 
 private:

@@ -97,6 +97,10 @@ void Texture::Init()
 	{
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
 	}
+	else if (m_Type == "texture_normal")
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_Width, m_Height, 0, GL_RGB, GL_UNSIGNED_BYTE, m_LocalBuffer);
+	}
 
 	// generate mipmap
 	glGenerateMipmap(GL_TEXTURE_2D);
