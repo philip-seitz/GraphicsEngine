@@ -4,6 +4,8 @@ layout(location = 0) in vec4 a_Position;
 layout(location = 1) in vec4 a_Color;
 layout(location = 2) in vec2 a_TexCoord;
 layout(location = 3) in vec3 a_Normal;
+layout(location = 4) in vec3 a_Tangent;
+layout(location = 5) in vec3 a_Bitangent;
 
 layout(std140) uniform u_Matrices
 {
@@ -14,6 +16,7 @@ layout(std140) uniform u_Matrices
 out vec3 v_Normal;
 out vec3 v_FragmentPosition;		// what coordinates in world space does this each fragment correspond to
 out vec2 v_TexCoord;
+out mat3 v_TBN;
 
 uniform mat4 u_Model;
 uniform mat3 u_Normal_Matrix;
@@ -24,6 +27,13 @@ void main()
 	v_Normal = u_Normal_Matrix * a_Normal;
 	v_FragmentPosition = vec3(u_Model * a_Position);		// in world space
 	v_TexCoord = a_TexCoord;
+
+	// construct TBN matrix
+	vec3 T = normalize(vec3(u_Model * vec4(a_Tangent, 0.0)));
+	vec3 B = normalize(vec3(u_Model * vec4(a_Bitangent, 0.0)));
+	vec3 N = normalize(vec3(u_Model * vec4(a_Normal, 0.0)));
+
+	v_TBN = mat3(T, B, N);
 }
 
 #shader fragment
@@ -119,6 +129,7 @@ in vec3 v_Normal;
 in vec3 v_FragmentPosition;
 in vec3 v_LightPosition;
 in vec2 v_TexCoord;
+in mat3 v_TBN;
 
 layout(std140) uniform u_CameraData
 {
@@ -149,6 +160,7 @@ void main()
 
 	vec3 normal = texture(u_Material.texture_normal1, v_TexCoord).xyz;
 	normal = normalize(normal * 2.0 - 1.0);
+	normal = v_TBN * normal;
 	// vec3 normal = normalize(v_Normal);
 	vec3 view_direction = -normalize(v_FragmentPosition - u_CameraPosition);
 
@@ -157,8 +169,8 @@ void main()
 	{
 		color += CalcPointLight(u_PointLight[i], normal, view_direction);
 	}
-	color += CalcDirectionalLight(u_DirLight, normal, view_direction);
-	color += CalcSpotLight(u_SpotLight, normal, view_direction); 
+	// color += CalcDirectionalLight(u_DirLight, normal, view_direction);
+	// color += CalcSpotLight(u_SpotLight, normal, view_direction); 
 
 	// color = CalcReflection(normal, view_direction);
 	// color = CalcRefraction(normal, view_direction);

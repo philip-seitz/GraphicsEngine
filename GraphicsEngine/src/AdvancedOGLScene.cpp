@@ -38,10 +38,10 @@ void AdvancedOGLScene::Run()
     }
 
     // create point light
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 1; i++)
     {
         PointLight testLight;
-        testLight.m_Instance.position = { i * 3.0f , 1.0f, 0.6f };
+        testLight.m_Instance.position = { i * 3.0f -1.0f, 0.3f, 1.1f };
         m_SceneGraph.m_PointLights.push_back(testLight);
     }
 
@@ -50,7 +50,7 @@ void AdvancedOGLScene::Run()
     // m_SceneGraph.m_DirectionalLights.push_back(dirLight);
 
     SpotLight spotLight;
-    m_SceneGraph.m_SpotLights.push_back(spotLight);
+    // m_SceneGraph.m_SpotLights.push_back(spotLight);
     // add cubes 
 
     Cube big_box;
@@ -122,6 +122,8 @@ void AdvancedOGLScene::Run()
     // instancing stuff 
     // could add multiple quads that would be instanced with how instancing should work etc
     Quad quadInst;
+    quadInst.m_Instance.scale = { 3.0f, 3.0f, 3.0f };
+    quadInst.m_Instance.angles = { -40.0f, 0.0f, 0.0f };
     m_SceneGraph.m_Quads.push_back(quadInst);
 
     // planets 

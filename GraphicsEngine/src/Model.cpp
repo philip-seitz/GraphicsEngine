@@ -340,6 +340,27 @@ void Model::LoadTriangle()
 	}
 }
 
+
+
+void Model::AddInstancedArray(glm::vec2* offsets)
+{
+	glBindVertexArray(va);
+	if (offsets != nullptr)
+	{
+		glCreateBuffers(1, &ivb);
+		glBindBuffer(GL_ARRAY_BUFFER, ivb);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &(*offsets)[0], GL_STATIC_DRAW);		// TODO: might not work like this
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glEnableVertexAttribArray(3);
+		glBindBuffer(GL_ARRAY_BUFFER, ivb);
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (void*)0);
+		glVertexAttribDivisor(3, 1);		// update attrib for every new instance (in vertex shader)
+	}
+
+}
+
+
 void Model::InitQuad(float side, glm::vec3 center)
 {
 	LoadQuad(side, center);
@@ -365,24 +386,14 @@ void Model::InitQuad(float side, glm::vec3 center)
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, texture_cords));
 
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, normal));
 
-}
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, tangent));
 
-void Model::AddInstancedArray(glm::vec2* offsets)
-{
-	glBindVertexArray(va);
-	if (offsets != nullptr)
-	{
-		glCreateBuffers(1, &ivb);
-		glBindBuffer(GL_ARRAY_BUFFER, ivb);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &(*offsets)[0], GL_STATIC_DRAW);		// TODO: might not work like this
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		glEnableVertexAttribArray(3);
-		glBindBuffer(GL_ARRAY_BUFFER, ivb);
-		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (void*)0);
-		glVertexAttribDivisor(3, 1);		// update attrib for every new instance (in vertex shader)
-	}
+	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, bitangent));
 
 }
 
@@ -394,6 +405,45 @@ void Model::LoadQuad(float side, glm::vec3 center)
 	// two triangles = 1 quad
 	mesh.push_back({ {{  center.x - side / 2, center.y - side / 2, center.z}, {WHITE}, {0.0f, 0.0f}}, {{center.x + side / 2, center.y - side / 2, center.z}, {WHITE}, {1.0f, 0.0f}}, {{center.x + side / 2, center.y + side / 2, center.z}, {WHITE}, {1.0f, 1.0f}} });
 	mesh.push_back({ {{  center.x + side / 2, center.y + side / 2, center.z}, {WHITE}, {1.0f, 1.0f}}, {{center.x - side / 2, center.y + side / 2, center.z}, {WHITE}, {0.0f, 1.0f}}, {{center.x - side / 2, center.y - side / 2, center.z}, {WHITE}, {0.0f, 0.0f}} });
+
+	// indices to match notation in book
+	
+	// calculate tangent and bitangent for normal mapping
+	for (int i = 0; i < 2; i++)
+	{
+		glm::vec3 p1 = mesh[i].p0.position;
+		glm::vec3 p2 = mesh[i].p1.position;
+		glm::vec3 p3 = mesh[i].p2.position;
+
+		glm::vec2 uv1 = mesh[i].p0.texture_cords;
+		glm::vec2 uv2 = mesh[i].p1.texture_cords;
+		glm::vec2 uv3 = mesh[i].p2.texture_cords;
+
+		glm::vec3 e1 = p2 - p1;
+		glm::vec3 e2 = p3 - p1;
+		float du1 = uv2.x - uv1.x;
+		float dv1 = uv2.y - uv1.y;
+		float du2 = uv3.x - uv1.x;
+		float dv2 = uv3.y - uv1.y;
+
+		float f = 1.0 / (du1 * dv2 - du2 * dv1);
+		glm::vec3 t = { 0.0f, 0.0f, 0.0f };
+		t.x = f * (dv2 * e1.x - dv1 * e2.x);
+		t.y = f * (dv2 * e1.y - dv1 * e2.y);
+		t.z = f * (dv2 * e1.z - dv1 * e2.z);
+		glm::vec3 bt = { 0.0f, 0.0f, 0.0f };
+		bt.x = f * (-du2 * e1.x + du1 * e2.x);
+		bt.y = f * (-du2 * e1.y + du1 * e2.y);
+		bt.z = f * (-du2 * e1.y + du1 * e2.z);
+		
+		mesh[i].p0.tangent = t;
+		mesh[i].p1.tangent = t;
+		mesh[i].p2.tangent = t;
+
+		mesh[i].p0.bitangent = bt;
+		mesh[i].p1.bitangent = bt;
+		mesh[i].p2.bitangent = bt;
+	}
 
 	// allocating buffers
 	int triNumber = mesh.size();

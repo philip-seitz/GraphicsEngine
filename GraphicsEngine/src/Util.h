@@ -29,6 +29,8 @@ struct Vertex
 	glm::vec4 color;
 	glm::vec2 texture_cords;
 	glm::vec3 normal;
+	glm::vec3 tangent;
+	glm::vec3 bitangent;
 };
 
 struct Triangle
