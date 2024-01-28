@@ -41,7 +41,7 @@ void AdvancedOGLScene::Run()
     for (int i = 0; i < 1; i++)
     {
         PointLight testLight;
-        testLight.m_Instance.position = { i * 3.0f -1.0f, 0.3f, 1.1f };
+        testLight.m_Instance.position = { -2.0f, 0.3f, 1.0 + 4.1f * i };
         m_SceneGraph.m_PointLights.push_back(testLight);
     }
 
@@ -100,10 +100,11 @@ void AdvancedOGLScene::Run()
 
 
     // add a backback model
-    for (int i = 0; i < 0; i++)
+    for (int i = 0; i < 1; i++)
     {
         ModelSceneInstance backpack;
-        backpack.m_position = { 0.0f + 4 * i, 7.0f, 0.0f };
+        backpack.m_position = { 0.3f + 4 * i, 1.0f, 4.0f };
+        backpack.m_angles = { 0, -90.0f, 0.0f };
         m_SceneGraph.m_Backpacks.push_back(backpack);
     }
 

@@ -66,7 +66,10 @@ void ModelScene::AddInstArrayAttribMat4(glm::mat4* matrices, unsigned int& numbe
 void ModelScene::LoadModel(std::string path)
 {
 	Assimp::Importer import;
-	const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate|aiProcess_FlipUVs);	// triangulate mesh and flip textures on load
+	const aiScene* scene = import.ReadFile(	path, 
+											aiProcess_Triangulate |	
+											aiProcess_FlipUVs |				// triangulate mesh and flip textures on load
+											aiProcess_CalcTangentSpace);	// calculate smooth/averaged tangent and bitangent vecotors per vertex
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 	{
@@ -102,13 +105,14 @@ Mesh ModelScene::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
 	for (int i = 0; i < mesh->mNumVertices; i++)
 	{
-		// vertex positions
+		// ===== vertex positions (loc 0) ====
 		Vertex vertex;
 		vertex.position.x = mesh->mVertices[i].x;
 		vertex.position.y = mesh->mVertices[i].y;
 		vertex.position.z = mesh->mVertices[i].z;
 
-		// vertex colors
+		// ==== vertex colors	(loc 1) ====
+		
 		// check if vertex has vertex colors
 		// if(mesh->HasVertexColors(i))				// TODO: check if this works!
 		/*{
@@ -119,12 +123,8 @@ Mesh ModelScene::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 		}*/
 		vertex.color = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-		// normals
-		vertex.normal.x = mesh->mNormals[i].x;
-		vertex.normal.y = mesh->mNormals[i].y;
-		vertex.normal.z = mesh->mNormals[i].z;
-
-		// texture coordinates
+		
+		// ==== texture coordinates	(loc 2) ====
 		if (mesh->mTextureCoords[0])			// TODO: might not work -> use mesh->mTextureCoords[0] instead!
 		{
 			vertex.texture_cords.x = mesh->mTextureCoords[0][i].x;
@@ -132,6 +132,22 @@ Mesh ModelScene::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 		}
 		else
 			vertex.texture_cords = { 0.0f, 0.0f };
+
+		// ==== normals (loc 3) ====
+		vertex.normal.x = mesh->mNormals[i].x;
+		vertex.normal.y = mesh->mNormals[i].y;
+		vertex.normal.z = mesh->mNormals[i].z;
+
+		// ==== tangents (loc 4) ====
+		vertex.tangent.x = mesh->mTangents[i].x;
+		vertex.tangent.y = mesh->mTangents[i].y;
+		vertex.tangent.z = mesh->mTangents[i].z;
+
+		// ==== bitangents (loc 5) ==== 
+		// normal and tangent might suffice to calc bitangent...
+		vertex.bitangent.x = mesh->mBitangents[i].x;
+		vertex.bitangent.y = mesh->mBitangents[i].y;
+		vertex.bitangent.z = mesh->mBitangents[i].z;
 
 		vertices.push_back(vertex);
 	}
@@ -154,7 +170,10 @@ Mesh ModelScene::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());		// insert at the end 
 
 		std::vector<Texture> specularMaps = loadMaterialTextures(mat, aiTextureType_SPECULAR, "texture_specular");
-		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());	
+		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+		std::vector<Texture> normalMaps = loadMaterialTextures(mat, aiTextureType_HEIGHT, "texture_normal");
+		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 	}
 
 	return Mesh(vertices, indices, textures);
@@ -186,8 +205,8 @@ std::vector<Texture> ModelScene::loadMaterialTextures(aiMaterial* material, aiTe
 		if (!textureLoaded)
 		{
 			unsigned int id = 0;
-			TextureFromFile(texPath, id);
 			Texture tex(texPath, typeName, id);
+			tex.Init();
 			textures.push_back(tex);
 			m_TexturesLoaded.push_back(tex);
 		}

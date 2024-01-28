@@ -15,6 +15,7 @@ void Mesh::Draw(Shader* shader)
 {
 	unsigned int diffuseNumber = 1;
 	unsigned int specularNumber = 1;
+	unsigned int normalNumber = 1;
 
 	for (int i = 0; i < m_Textures.size(); i++)
 	{
@@ -31,6 +32,11 @@ void Mesh::Draw(Shader* shader)
 		{
 			number = std::to_string(specularNumber);
 			specularNumber++;
+		}
+		else if (name == "texture_normal")
+		{
+			number = std::to_string(normalNumber);
+			normalNumber++;
 		}
 		// sampler for texture corresponding to diff or spec slot
 		shader->SetUniform1i(("u_Material." + name + number).c_str(), i);
@@ -98,4 +104,13 @@ void Mesh::SetupMesh()
 
 	glEnableVertexAttribArray(3);
 	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, normal));
+
+
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, tangent));
+
+	glEnableVertexAttribArray(5);
+	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void*)offsetof(Vertex, bitangent));
+
+
 }

@@ -5,7 +5,7 @@ layout(location = 1) in vec4 a_Color;
 layout(location = 2) in vec2 a_TexCoord;
 layout(location = 3) in vec3 a_Normal;
 layout(location = 4) in vec3 a_Tangent;
-layout(location = 5) in vec3 a_Bitangent;
+layout(location = 5) in vec3 a_Bitangent;	// technically not necessary
 
 layout(std140) uniform u_Matrices
 {
@@ -33,6 +33,9 @@ void main()
 	vec3 B = normalize(vec3(u_Model * vec4(a_Bitangent, 0.0)));
 	vec3 N = normalize(vec3(u_Model * vec4(a_Normal, 0.0)));
 
+	// reorthogonize tangent vectors
+	T = normalize(T - dot(T, N) * N);
+	B = cross(N, T);
 	v_TBN = mat3(T, B, N);
 }
 
@@ -136,8 +139,6 @@ layout(std140) uniform u_CameraData
 	vec3 u_CameraPosition;
 };
 
-uniform mat3 u_Normal_Matrix;
-
 uniform vec3 u_Object_Color;
 uniform vec3 u_Light_Color;
 uniform Material u_Material;
@@ -145,23 +146,23 @@ uniform Light u_Light;
 uniform PointLight u_PointLight[5];		// 5 point lights max
 uniform DirectionalLight u_DirLight;
 uniform SpotLight u_SpotLight;
-uniform bool u_Blinn;
+
 
 uniform int u_NumberPointLights;		// number of point lights (uniform)
 
 uniform samplerCube u_Skybox;
 
+bool is_Blinn = true;
 float near = 0.5f;
 float far = 1000.0f;
 
 void main()
 {
 	vec4 color = vec4(0.0f);
-
-	vec3 normal = texture(u_Material.texture_normal1, v_TexCoord).xyz;
-	normal = normalize(normal * 2.0 - 1.0);
-	normal = v_TBN * normal;
 	// vec3 normal = normalize(v_Normal);
+	vec3 normal = texture(u_Material.texture_normal1, v_TexCoord).xyz;
+	normal = normal * 2.0 - 1.0;
+	normal = normalize(v_TBN * normal);
 	vec3 view_direction = -normalize(v_FragmentPosition - u_CameraPosition);
 
 	// light source should exist, else the color might be substracted and is completely dark
@@ -177,6 +178,8 @@ void main()
 	color.w = 1.0f;
 
 	// o_Color = vec4(vec3(LinearizeDepth(gl_FragCoord.z)/far), 1.0f);
+	// normal = (normal + 1) / 2.0;
+	// o_Color = vec4(normal, 1.0);
 	o_Color = color;
 }
 
@@ -211,7 +214,7 @@ vec4 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_dir)
 	halfWay = normalize(halfWay);
 	vec3 reflection_direction = reflect(-light_direction, normal);
 	float specularValue;
-	if (u_Blinn)
+	if (is_Blinn)
 	{
 		specularValue = pow(max(dot(normal, halfWay), 0.0f), 16.0f);
 	}
@@ -244,13 +247,13 @@ vec4 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir)
 	vec3 reflection_direction = reflect(-light_direction, normal);
 	halfWay = normalize(halfWay);
 	float specularValue;
-	if (u_Blinn)
+	if (is_Blinn)
 	{
-		specularValue = pow(max(dot(normal, halfWay), 0.0f), 16.0f);
+		specularValue = pow(max(dot(normal, halfWay), 0.0f), 32.0f);
 	}
 	else
 	{
-		specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), 8.0f);
+		specularValue = pow(max(dot(view_dir, reflection_direction), 0.0f), 16.0f);
 	}
 
 	vec4 ambient = vec4(light.ambient, 1.0f) * attenuation_factor * diffuseMap;
@@ -272,7 +275,7 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 	vec3 reflection_direction = reflect(-light_direction, normal);
 	halfWay = normalize(halfWay);
 	float specularValue;
-	if (u_Blinn)
+	if (is_Blinn)
 	{
 		specularValue = pow(max(dot(normal, halfWay), 0.0f), 16.0f);
 	}
@@ -284,8 +287,8 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 	// light attenuation
 	float d = distance(light.position.xyz, v_FragmentPosition);
 	// more complex att func -> params would have to be adjusted to non gamma correction
-	// float attenuation_factor = 1.0f / (light.constant + light.linear * d + light.quadratic * d * d);		
-	float attenuation_factor = 1.0f / (d * d);
+	float attenuation_factor = 1.0f / (light.constant + light.linear * d + light.quadratic * d * d);		
+	// float attenuation_factor = 1.0f / (d * d);
 
 	vec3 spotDirection = -light.direction;
 	float theta = dot(light_direction, spotDirection);
@@ -294,6 +297,7 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 
 	vec4 diffuse = vec4(light.diffuse, 1.0f) * attenuation_factor * intensity * (diffuseValue * diffuseMap);
 	vec4 specular = vec4(light.specular, 1.0f) * attenuation_factor * intensity * (specularValue * specularMap);
+	// vec4 specular = vec4(0.0);
 	vec4 ambient = vec4(light.ambient, 1.0f) * attenuation_factor * intensity * diffuseMap;
 
 	return ambient + diffuse + specular;

@@ -73,6 +73,7 @@ void Texture::Init()
 	static int slot = 0;
 	// TODO: implement when ready
 	short texture_slot = GL_TEXTURE0 + slot;
+	
 	stbi_set_flip_vertically_on_load(1);
 
 	m_LocalBuffer = stbi_load(m_FilePath.c_str(), &m_Width, &m_Height, &m_BPP, 4);
@@ -99,7 +100,7 @@ void Texture::Init()
 	}
 	else if (m_Type == "texture_normal")
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_Width, m_Height, 0, GL_RGB, GL_UNSIGNED_BYTE, m_LocalBuffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
 	}
 
 	// generate mipmap

@@ -136,7 +136,7 @@ void Renderer::Init(Window* window)
 	sData.rearview_quad.InitQuad(0.5f, { 0.75f, 0.5f, -0.5f });
 
 	sData.grid_xz.InitGridxz();
-	// sData.backpack = ModelScene("res/models/backpack/backpack.obj");
+	sData.backpack = ModelScene("res/models/backpack/backpack.obj");
 	sData.rock = ModelScene("res/models/rocky/rocky.obj");
 	sData.planet = ModelScene("res/models/planet/planet.obj");
 	cube_map.Init();
@@ -353,15 +353,21 @@ void Renderer::RenderNormalMapScene(SceneGraph* scene_graph)
 
 	// point lights
 	sData.normalmap_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
+	sData.model_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
 	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
 	{
+		// scene_graph->m_PointLights[i].m_Instance.position.x = glm::sin(glfwGetTime()) * 5.0f;
+		// scene_graph->m_PointLights[i].m_Instance.position.z = glm::cos(glfwGetTime()) * 5.0f;
+		// scene_graph->m_PointLights[i].m_Instance.position.y = glm::sin(glfwGetTime()) * 6.0f;
 		scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
 		scene_graph->m_PointLights[i].SetLightingUniforms(sData.normalmap_shader, i);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.model_shader, i);
 	}
 
 	for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
 	{
 		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.normalmap_shader);
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.model_shader);
 	}
 
 	for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
@@ -372,6 +378,7 @@ void Renderer::RenderNormalMapScene(SceneGraph* scene_graph)
 
 		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
 		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.normalmap_shader);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
 	}
 
 	sData.normalmap_shader->SetUniform1i("u_Skybox", 10);

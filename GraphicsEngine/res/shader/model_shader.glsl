@@ -128,7 +128,7 @@ uniform Light u_Light;
 uniform PointLight u_PointLight[5];		// 5 point lights max
 uniform DirectionalLight u_DirLight;
 uniform SpotLight u_SpotLight;
-uniform bool u_Blinn;
+bool is_Blinn = false;
 
 uniform int u_NumberPointLights;		// number of point lights (uniform)
 
@@ -149,7 +149,7 @@ void main()
 	{
 		color += CalcPointLight(u_PointLight[i], normal, view_direction);
 	}
-	color += CalcDirectionalLight(u_DirLight, normal, view_direction);
+	// color += CalcDirectionalLight(u_DirLight, normal, view_direction);
 	// color += CalcSpotLight(u_SpotLight, normal, view_direction); 
 
 	// color = CalcReflection(normal, view_direction);
@@ -191,7 +191,7 @@ vec4 CalcDirectionalLight(DirectionalLight light, vec3 normal, vec3 view_dir)
 	halfWay = normalize(halfWay);
 	vec3 reflection_direction = reflect(-light_direction, normal);
 	float specularValue;
-	if (u_Blinn)
+	if (is_Blinn)
 	{
 	specularValue = pow(max(dot(normal, halfWay), 0.0f), 16.0f);
 	}
@@ -224,7 +224,7 @@ vec4 CalcPointLight(PointLight light, vec3 normal, vec3 view_dir)
 	vec3 reflection_direction = reflect(-light_direction, normal);
 	halfWay = normalize(halfWay);
 	float specularValue;
-	if (u_Blinn)
+	if (is_Blinn)
 	{
 	specularValue = pow(max(dot(normal, halfWay), 0.0f), 16.0f);
 	}
@@ -252,7 +252,7 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 	vec3 reflection_direction = reflect(-light_direction, normal);
 	halfWay = normalize(halfWay);
 	float specularValue;
-	if (u_Blinn)
+	if (is_Blinn)
 	{
 	specularValue = pow(max(dot(normal, halfWay), 0.0f), 16.0f);
 	}

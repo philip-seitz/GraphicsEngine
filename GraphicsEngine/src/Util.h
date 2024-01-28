@@ -20,6 +20,8 @@
 
 void ReadVertexData(const std::string& filepath, std::vector <float>& vert, std::vector<unsigned int>& ind);
 glm::vec4 GetColorShade(float dot, glm::vec4 baseColor);
+
+// kind of deprecated in terms of materials. Use Texture.Init() instead
 int CalculateNumberOfLines(float size, float distance);
 void TextureFromFile(const std::string& path, unsigned int& id);
 
