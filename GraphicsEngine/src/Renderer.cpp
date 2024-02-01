@@ -79,6 +79,7 @@ struct RendererData
 	Shader* depth_cubemap_shader = nullptr;
 	Shader* shadow_cubemap_shader = nullptr;
 	Shader* normalmap_shader = nullptr;
+	Shader* parallax_shader = nullptr;
 
 	Window* window = nullptr;
 
@@ -123,6 +124,7 @@ void Renderer::Init(Window* window)
 	sData.depth_cubemap_shader = new Shader("res/shader/depth_cubemap_shader.glsl");
 	sData.shadow_cubemap_shader = new Shader("res/shader/shadow_cubemap_shader.glsl");
 	sData.normalmap_shader = new Shader("res/shader/normalmap_shader.glsl");
+	sData.parallax_shader = new Shader("res/shader/parallax_shader.glsl");
 	
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
@@ -154,6 +156,7 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.shadow_map_shader);
 	shader_list_matrices.push_back(sData.shadow_cubemap_shader);
 	shader_list_matrices.push_back(sData.normalmap_shader);
+	shader_list_matrices.push_back(sData.parallax_shader);
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
 	// list of shaders that should be bound to binding point of u_CameraData Uniform Buffer
@@ -165,6 +168,7 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.shadow_map_shader);
 	shader_list_camera.push_back(sData.shadow_cubemap_shader);
 	shader_list_camera.push_back(sData.normalmap_shader);
+	shader_list_camera.push_back(sData.parallax_shader);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 	
 	std::vector<Shader*> shader_list_light_space_matrix;
@@ -354,6 +358,7 @@ void Renderer::RenderNormalMapScene(SceneGraph* scene_graph)
 	// point lights
 	sData.normalmap_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
 	sData.model_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
+	sData.parallax_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
 	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
 	{
 		// scene_graph->m_PointLights[i].m_Instance.position.x = glm::sin(glfwGetTime()) * 5.0f;
@@ -362,12 +367,14 @@ void Renderer::RenderNormalMapScene(SceneGraph* scene_graph)
 		scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
 		scene_graph->m_PointLights[i].SetLightingUniforms(sData.normalmap_shader, i);
 		scene_graph->m_PointLights[i].SetLightingUniforms(sData.model_shader, i);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.parallax_shader, i);
 	}
 
 	for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
 	{
 		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.normalmap_shader);
 		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.model_shader);
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.parallax_shader);
 	}
 
 	for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
@@ -379,6 +386,7 @@ void Renderer::RenderNormalMapScene(SceneGraph* scene_graph)
 		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
 		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.normalmap_shader);
 		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.parallax_shader);
 	}
 
 	sData.normalmap_shader->SetUniform1i("u_Skybox", 10);
@@ -403,7 +411,7 @@ void Renderer::RenderNormalMapScene(SceneGraph* scene_graph)
 
 	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
 	{
-		scene_graph->m_Quads[i].Draw(sData.normalmap_shader, &sData.quad);
+		scene_graph->m_Quads[i].Draw(sData.parallax_shader, &sData.quad);
 	}
 
 	// no instanced rendering here for now

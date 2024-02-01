@@ -99,6 +99,9 @@
     <ClCompile Include="src\Cubemap.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="src\UniformBufferObject.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Window.h">
@@ -1025,6 +1028,9 @@
     <ClInclude Include="src\Cubemap.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="src\UniformBufferObject.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\vendor\glm\detail\func_common.inl">
@@ -1446,6 +1452,8 @@
     <None Include="res\shader\depth_shader.glsl" />
     <None Include="res\shader\shadow_map_shader.glsl" />
     <None Include="res\shader\shadow_cubemap_shader.glsl" />
+    <None Include="res\shader\normalmap_shader.glsl" />
+    <None Include="res\shader\parallax_shader.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="res\shader\texture_shader.glsl" />
