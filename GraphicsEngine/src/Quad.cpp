@@ -2,6 +2,11 @@
 
 Quad::Quad()
 {
+	/*std::string diffusePath = "res/textures/toybox/wood.png";
+	std::string specularPath = "res/textures/placeholder_spec.png";
+	std::string normalPath = "res/textures/toybox/toy_box_normal.png";
+	std::string heightPath = "res/textures/toybox/toy_box_disp.png";*/
+
 	std::string diffusePath = "res/textures/brick/bricks2.jpg";
 	std::string specularPath = "res/textures/placeholder_spec.png";
 	std::string normalPath = "res/textures/brick/bricks2_normal.jpg";

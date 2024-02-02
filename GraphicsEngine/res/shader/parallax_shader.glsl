@@ -331,10 +331,34 @@ float LinearizeDepth(float depth)
 
 vec2 ParallaxMapping(vec2 tCoord, vec3 viewDirTangent)
 {
+	const float minLayers = 8.0;
+	const float maxLayers = 32.0;
+	const float numberLayers = mix(maxLayers, minLayers, dot(viewDirTangent, vec3(0.0, 0.0, 1.0)));		// in tangent space that's why normal is on z axis
+	float layerDepth = 1.0 / numberLayers;
+	float currentLayerDepth = 0.0;
+
 	float heightScaler = 0.1f;
-	float height = texture(u_Material.texture_height1, tCoord).x;
-	vec2 P = viewDirTangent.xy / viewDirTangent.z * (height * heightScaler);
-	return tCoord - P;	// new tex coords
+	vec2 P = viewDirTangent.xy * heightScaler;
+	vec2 deltaTexCoord = P / numberLayers;
 
+	// initial values
+	vec2 currentTexCoord = tCoord;
+	float currentDepthMapValue = texture(u_Material.texture_height1, currentTexCoord).x;
 
+	while (currentLayerDepth < currentDepthMapValue)
+	{
+		currentTexCoord -= deltaTexCoord;
+		currentDepthMapValue = texture(u_Material.texture_height1, currentTexCoord).x;
+		currentLayerDepth += layerDepth;
+	}
+
+	vec2 prevTexCoord = currentTexCoord + deltaTexCoord;
+
+	float afterDepth = currentDepthMapValue - currentLayerDepth;
+	float beforeDepth = texture(u_Material.texture_height1, prevTexCoord).x - currentLayerDepth + layerDepth;
+
+	// interpolation depending on how the height values are from their corresponding depth layers
+	float weight = afterDepth / (afterDepth - beforeDepth);		// weight towards previous Tex Coord 
+	vec2 finalTexCoord = prevTexCoord * weight + currentTexCoord * (1.0 - weight);
+	return finalTexCoord;		// new tex coords
 }

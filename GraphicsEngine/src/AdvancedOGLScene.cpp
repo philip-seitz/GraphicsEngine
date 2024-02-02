@@ -103,7 +103,7 @@ void AdvancedOGLScene::Run()
     for (int i = 0; i < 1; i++)
     {
         ModelSceneInstance backpack;
-        backpack.m_position = { 0.3f + 4 * i, 1.0f, 8.0f };
+        backpack.m_position = { 0.3f + 4 * i, 1.0f, 10.0f };
         backpack.m_angles = { 0, -90.0f, 0.0f }; 
         m_SceneGraph.m_Backpacks.push_back(backpack);
     }
