@@ -38,12 +38,21 @@ void AdvancedOGLScene::Run()
     }
 
     // create point light
-    for (int i = 0; i < 1; i++)
-    {
-        PointLight testLight;
-        testLight.m_Instance.position = { -2.0f, 0.3f, 3.0 + 4.1f * i };
-        m_SceneGraph.m_PointLights.push_back(testLight);
-    }
+   
+    PointLight testLight(glm::vec3(200.0f, 200.0f, 200.0f));
+    testLight.m_Instance.position = { 0.0f, 0.7f, -8.0f};
+    m_SceneGraph.m_PointLights.push_back(testLight);
+
+
+    PointLight redLight(glm::vec3(0.2f, 0.0f, 0.0f));
+    redLight.m_Instance.position = { -0.4f, 0.5f, 17.0f };
+    m_SceneGraph.m_PointLights.push_back(redLight);
+
+    PointLight blueLight(glm::vec3(0.01f, 0.0f, 0.4f));
+    blueLight.m_Instance.position = { 0.4f, 0.6f, 22.0f };
+    m_SceneGraph.m_PointLights.push_back(blueLight);
+
+
 
     DirectionalLight dirLight;
     dirLight.m_Direction = { -1.0f, -3.0f, 2.0f };
@@ -54,10 +63,12 @@ void AdvancedOGLScene::Run()
     // add cubes 
 
     Cube big_box;
-    big_box.m_Instance.position = { 0.0f, 0.0f, 0.0f};
-    big_box.m_Instance.scale = { 10.0f, 10.0f, 10.0f };
-    // m_SceneGraph.m_Cubes.push_back(big_box);
+    big_box.m_Instance.position = { -20.0f, 0.0f, 0.0f};
+    big_box.m_Instance.scale = { 4.0f, 4.0f, 4.0f };
+    m_SceneGraph.m_Cubes.push_back(big_box);
 
+
+  
     for (int i = 0; i < 0; i++)
     {
         Cube t_cube;
@@ -79,19 +90,36 @@ void AdvancedOGLScene::Run()
     // create floor
     Cube floor;
     floor.m_Instance.position = { 0.0f, 0.0f, 0.0f };
-    floor.m_Instance.scale = { 40.0f, 0.5f, 30.0f };
+    floor.m_Instance.scale = { 1.0f, 0.2f, 100.0f };
     floor.m_Instance.hasOutline = false;
-    // m_SceneGraph.m_Cubes.push_back(floor);
+    m_SceneGraph.m_Cubes.push_back(floor);
 
     Cube wall;
-    floor.m_Instance.position = { 7.0f, 0.0f, 0.0f };
-    floor.m_Instance.scale = { 1.0f, 20.0f, 10.0f };
-    // m_SceneGraph.m_Cubes.push_back(floor);
+    // wall right side
+    wall.m_Instance.position = { 1.1f, 1.0f, 0.0f };
+    wall.m_Instance.scale = { 0.2f, 1.0f, 100.0f };
+    m_SceneGraph.m_Cubes.push_back(wall);
+
+    // wall left side
+    wall.m_Instance.position = { -1.1f, 1.0f, 0.0f };
+    wall.m_Instance.scale = { 0.2f, 1.0f, 100.0f };
+    m_SceneGraph.m_Cubes.push_back(wall);
+
+    // wall front 
+    wall.m_Instance.position = { 0.0f, 1.0f, 10.1f };
+    wall.m_Instance.scale = { 1.0f, 1.0f, 0.2f };
+    // m_SceneGraph.m_Cubes.push_back(wall);
+
+    // wall back
+    wall.m_Instance.position = { 0.0f, 1.0f, -10.1f };
+    wall.m_Instance.scale = { 1.0f, 1.0f, 0.2f };
+    m_SceneGraph.m_Cubes.push_back(wall);
+
 
     Cube roof;
-    floor.m_Instance.position = { 0.0f, 20.0f, 0.0f };
-    floor.m_Instance.scale = { 20.0f, 0.5f, 10.0f };
-    // m_SceneGraph.m_Cubes.push_back(floor);
+    roof.m_Instance.position = { 0.0f, 2.0f, 0.0f };
+    roof.m_Instance.scale = { 1.0f, 0.2f, 100.0f };
+    m_SceneGraph.m_Cubes.push_back(roof);
 
     Cube light_cube;        // as visualization 
     light_cube.m_Instance.position = { -7.0f, 0.0f, -4.0f};
@@ -100,7 +128,7 @@ void AdvancedOGLScene::Run()
 
 
     // add a backback model
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < 0; i++)
     {
         ModelSceneInstance backpack;
         backpack.m_position = { 0.3f + 4 * i, 1.0f, 10.0f };
@@ -123,9 +151,10 @@ void AdvancedOGLScene::Run()
     // instancing stuff 
     // could add multiple quads that would be instanced with how instancing should work etc
     Quad quadInst;
-    quadInst.m_Instance.scale = { 3.0f, 3.0f, 3.0f };
-    quadInst.m_Instance.angles = { 0.0f, 30.0f, 0.0f };
-    m_SceneGraph.m_Quads.push_back(quadInst);
+    quadInst.m_Instance.position = { 0.0f, 0.0f, -0.5f };
+    quadInst.m_Instance.scale = { 1.0f, 1.0f, 1.0f };
+    quadInst.m_Instance.angles = { 0.0f, 0.0f, 0.0f };
+    // m_SceneGraph.m_Quads.push_back(quadInst);
 
     // planets 
     ModelSceneInstance planet;

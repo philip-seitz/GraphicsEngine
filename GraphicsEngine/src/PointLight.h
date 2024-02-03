@@ -10,9 +10,12 @@ class PointLight
 public:
 
 	PointLight();
+	PointLight(glm::vec3 lightColor);
 	void Draw(Shader* shader, Model* base_model);
 	void SetLightingUniforms(Shader* shader, const int& idx);
 	
+
+	glm::vec3 m_Color;
 	// color values
 	glm::vec3 m_Ambient;
 	glm::vec3 m_Diffuse;

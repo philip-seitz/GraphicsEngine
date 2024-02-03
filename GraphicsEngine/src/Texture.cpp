@@ -92,6 +92,7 @@ void Texture::Init()
 	// based on the assumption that different maps or textures come as sRGB or not 
 	if (m_Type == "texture_diffuse")				// sRGB space
 	{
+		// put SRGB textures to linear
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB_ALPHA, m_Width, m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, m_LocalBuffer);
 	}
 	else if (m_Type == "texture_specular")			// linear space

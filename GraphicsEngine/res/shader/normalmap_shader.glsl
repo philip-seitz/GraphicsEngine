@@ -296,6 +296,7 @@ vec4 CalcSpotLight(SpotLight light, vec3 normal, vec3 view_dir)
 	intensity = clamp(intensity, 0.0f, 1.0f);
 
 	vec4 diffuse = vec4(light.diffuse, 1.0f) * attenuation_factor * intensity * (diffuseValue * diffuseMap);
+	// vec4 diffuse = vec4(0.0);
 	vec4 specular = vec4(light.specular, 1.0f) * attenuation_factor * intensity * (specularValue * specularMap);
 	// vec4 specular = vec4(0.0);
 	vec4 ambient = vec4(light.ambient, 1.0f) * attenuation_factor * intensity * diffuseMap;

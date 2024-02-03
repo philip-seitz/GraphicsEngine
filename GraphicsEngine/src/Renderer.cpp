@@ -80,16 +80,19 @@ struct RendererData
 	Shader* shadow_cubemap_shader = nullptr;
 	Shader* normalmap_shader = nullptr;
 	Shader* parallax_shader = nullptr;
+	Shader* hdr_shader = nullptr;
 
 	Window* window = nullptr;
 
 	// frame buffer oject
-	unsigned int fbo_id[2];
-	unsigned int fbo_tex[2];
-	unsigned int fbo_rbo_id[2];
+	unsigned int fbo_id[3];					// extra for hdr framebuffer
+	unsigned int fbo_tex[3];
+	unsigned int fbo_rbo_id[3];
 
 	// for shadow map TODO: refactor
 	unsigned int shadow_map_id;
+
+	unsigned int colorBuffer;
 };
 
 // create vao for sky box
@@ -125,6 +128,7 @@ void Renderer::Init(Window* window)
 	sData.shadow_cubemap_shader = new Shader("res/shader/shadow_cubemap_shader.glsl");
 	sData.normalmap_shader = new Shader("res/shader/normalmap_shader.glsl");
 	sData.parallax_shader = new Shader("res/shader/parallax_shader.glsl");
+	sData.hdr_shader = new Shader("res/shader/hdr_shader.glsl");
 	
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
@@ -255,8 +259,41 @@ void Renderer::Init(Window* window)
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);		// standard framebuffer		
+	// === setup framebuffer for HDR rendering === 
+	// 
+	// code for framebuffer object 
+	glGenFramebuffers(1, &sData.fbo_id[2]);
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[2]);
 
+	// texture attachment
+	glGenTextures(1, &sData.colorBuffer);
+	glActiveTexture(GL_TEXTURE0 + 5);
+	glBindTexture(GL_TEXTURE_2D, sData.colorBuffer);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, sData.window->m_Width, sData.window->m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.colorBuffer, 0);
+
+	// renderbuffer attachment
+	glGenRenderbuffers(1, &sData.fbo_rbo_id[2]);
+	glBindRenderbuffer(GL_RENDERBUFFER, sData.fbo_rbo_id[2]);
+
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, sData.window->m_Width, sData.window->m_Height);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, sData.fbo_rbo_id[2]);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "FBO SUCCESSFUL" << std::endl;
+	else
+		std::cout << "FBO FAILED" << std::endl;
+
+	// ====
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);			// standard framebuffer		
 }
 
 void Renderer::Shutdown()
@@ -317,7 +354,141 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 	// RenderToDepthCubemap(scene_graph);
 	// RenderSceneWithDepthCubemap(scene_graph);
 
-	RenderNormalMapScene(scene_graph);
+	// RenderNormalMapScene(scene_graph);
+
+	RenderHDRScene(scene_graph);
+}
+
+void Renderer::RenderHDRScene(SceneGraph* scene_graph)
+{
+	// ===================================== start of frame setup ==================================
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[2]);
+	glViewport(0.0f, 0.0f, sData.window->m_Width, sData.window->m_Height);
+
+	// gamma correction in shader
+	float clearColorLinear = pow(0.1f, 2.2f);	// clear Color picked based on monitor output sRGB values: vec3(0.1f) -> should be darker for linear)
+	glClearColor(clearColorLinear, clearColorLinear, clearColorLinear, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	// glEnable(GL_FRAMEBUFFER_SRGB);				// gamma correction 
+
+	// enable Backface Culling
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	// Depth Test
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	// Blending 
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glClear(GL_STENCIL_BUFFER_BIT);
+
+	// enable stencil 
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);			// if stencil and depth pass
+	glStencilFunc(GL_ALWAYS, 1, 0xFF);
+	glStencilMask(0xFF);								// enable writing to stencil buffer
+
+	// ============================= actual rendering code ====================================
+
+	uboMatrix.SetMat4f(0, cameras[0]->ProjectionMatrix());
+	uboMatrix.SetMat4f(sizeof(glm::mat4), cameras[0]->LookAtMatrix());
+	uboCamera.SetVec3f(0, cameras[0]->Position());
+
+	// point lights uniform setup
+	sData.normalmap_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
+	sData.model_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
+	sData.parallax_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
+
+	// ==== render lighting scene to HDR framebuffer ==== 
+
+	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
+	{
+		sData.light_source_shader->SetUniform3f("u_LightColor", scene_graph->m_PointLights[i].m_Color);
+		scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.normalmap_shader, i);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.model_shader, i);
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.parallax_shader, i);
+	}
+
+	for (int i = 0; i < scene_graph->m_DirectionalLights.size(); i++)
+	{
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.normalmap_shader);
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.model_shader);
+		scene_graph->m_DirectionalLights[i].SetLightingUniforms(sData.parallax_shader);
+	}
+
+	for (int i = 0; i < scene_graph->m_SpotLights.size(); i++)
+	{
+		// as flash light
+		scene_graph->m_SpotLights[i].m_Direction = cameras[0]->LookDirection();
+		scene_graph->m_SpotLights[i].m_Instance.position = cameras[0]->Position();
+
+		scene_graph->m_SpotLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.normalmap_shader);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.model_shader);
+		scene_graph->m_SpotLights[i].SetLightingUniforms(sData.parallax_shader);
+	}
+
+	sData.normalmap_shader->SetUniform1i("u_Skybox", 10);
+
+	for (int i = 0; i < scene_graph->m_Cubes.size(); i++)
+	{
+		scene_graph->m_Cubes[i].Draw(sData.model_shader, &sData.cube);
+	}
+
+	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	{
+		scene_graph->m_Backpacks[i].Draw(sData.normalmap_shader, sData.backpack);
+		float time = glfwGetTime();
+		sData.geometry_shader->SetUniform1f("u_Time", time);
+		// scene_graph->m_Backpacks[i].Draw(sData.geometry_shader, sData.backpack);				// for displaying normal etc.
+	}
+
+	for (int i = 0; i < scene_graph->m_Points.size(); i++)
+	{
+		scene_graph->m_Points[i].Draw(sData.normalmap_shader, &sData.point);
+	}
+
+	for (int i = 0; i < scene_graph->m_Quads.size(); i++)
+	{
+		scene_graph->m_Quads[i].Draw(sData.parallax_shader, &sData.quad);
+	}
+
+	// draw sky box after drawing all models (as optimization)
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_CULL_FACE);
+	// cube_map.Draw(sData.primitive_cube, sData.cubemap_shader);
+
+	// enable depth buffer
+	glDepthFunc(GL_LESS);
+	glEnable(GL_CULL_FACE);
+
+	// draw grid (after sky box to benefit from blending with skybox colors)
+	glBindTexture(GL_TEXTURE_2D, cube_map.cubemapID);
+
+	for (int i = 0; i < scene_graph->m_Grids.size(); i++)
+	{
+		scene_graph->m_Grids[i].Draw(sData.grid_xz, sData.shader);
+	}
+
+	// === render to screened quad
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// gamma correction in shader
+
+	sData.hdr_shader->Bind();
+	glActiveTexture(GL_TEXTURE0 + 5);
+	glBindTexture(GL_TEXTURE_2D, sData.colorBuffer);
+	sData.hdr_shader->SetUniform1i("u_hdrBuffer", 5);
+	glBindVertexArray(sData.screen_quad.va);
+	glDisable(GL_DEPTH_TEST);
+
+	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
 }
 
 void Renderer::RenderNormalMapScene(SceneGraph* scene_graph)

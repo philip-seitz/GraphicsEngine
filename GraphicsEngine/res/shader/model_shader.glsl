@@ -128,7 +128,7 @@ uniform Light u_Light;
 uniform PointLight u_PointLight[5];		// 5 point lights max
 uniform DirectionalLight u_DirLight;
 uniform SpotLight u_SpotLight;
-bool is_Blinn = false;
+bool is_Blinn = true;
 
 uniform int u_NumberPointLights;		// number of point lights (uniform)
 

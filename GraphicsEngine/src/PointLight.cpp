@@ -8,13 +8,27 @@ PointLight::PointLight()
 	m_Constant = 1.0f;
 	m_Linear = 0.045;
 	m_Quadratic = 0.0075;
-	glm::vec3 color = { 1.0f, 1.0f, 1.0f };		// white 
-	m_Ambient = 0.2f*color;
-	m_Diffuse = 0.5f*color;
-	m_Specular = 0.5f*color;
+	m_Color = { 1.0f, 1.0f, 1.0f };		// white 
+	m_Ambient = 0.2f * m_Color;
+	m_Diffuse = 0.5f * m_Color;
+	m_Specular = 0.5f * m_Color;
 	m_Instance.scale = glm::vec3(0.25f);
 
 }
+
+PointLight::PointLight(glm::vec3 lightColor)
+{
+	// default point light settings
+	m_Constant = 1.0f;
+	m_Linear = 0.045;
+	m_Quadratic = 0.0075;
+	m_Color = lightColor;		// white 
+	m_Ambient = 0.2f * m_Color;
+	m_Diffuse = 0.5f * m_Color;
+	m_Specular = 0.5f * m_Color;
+	m_Instance.scale = glm::vec3(0.25f);
+}
+
 
 void PointLight::Draw(Shader* shader_source, Model* base_model)
 {
