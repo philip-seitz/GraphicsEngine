@@ -61,19 +61,18 @@ void main()
 		// diffuse 
 		vec3 lightDir = normalize(u_PointLight[i].position - FragPos);
 		vec3 diffuse = max(dot(Normal, lightDir), 0.0) * Albedo * u_PointLight[i].diffuse;
-		lighting += diffuse;
 
 		// // specular 
-		// vec3 halfwayDir = normalize(lightDir + viewDir);
-		// float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
-		// vec3 specular = u_PointLight[i].specular * spec * specular;
-		// 
+		vec3 halfwayDir = normalize(lightDir + viewDir);
+		float spec = pow(max(dot(Normal, halfwayDir), 0.0), 16.0);
+		vec3 specular = u_PointLight[i].specular * spec * specular;
+		
 		// // attenuation
-		// float distance = length(u_PointLight[i].position - FragPos);
-		// float attenuation = 1.0 / (1.0 + u_PointLight[i].linear * distance + u_PointLight[i].quadratic * distance * distance);
-		// diffuse *= attenuation;
-		// specular *= attenuation;
-		// lighting += diffuse + specular;
+		float distance = length(u_PointLight[i].position - FragPos);
+		float attenuation = 1.0 / (1.0 + u_PointLight[i].linear * distance + u_PointLight[i].quadratic * distance * distance);
+		diffuse *= attenuation;
+		specular *= attenuation;
+		lighting += diffuse + specular;
 	} 
 
 	o_Color = vec4(lighting, 1.0);
