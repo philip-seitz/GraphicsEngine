@@ -3,6 +3,17 @@ Graphics Engine using OpenGL and C++
 
 ### Current State Of The Project
 
+While I am still working through 'Learn OpenGL' I have not yet had the chance to improve the car rendering just yet. 
+But I want to display some of the cool scenes, that could be produced using the contents and tutorials of the aforementioned literature:
+
+<img src="https://github.com/user-attachments/assets/ff96734a-5d6f-4550-a77d-30b42b424bb9" width="540" height="360">
+
+
+Here you can see several backpack models (imported using assimp). These models are lit by differently colored point lights using the 
+Blinn-Phong lighting model with some attenuation on top of that. In this scene I used a deferred renderer (or actually deferred and forward rendering), which 
+is an optimization for rendering scenes with multiple light sources. 
+A nice addition would be to implement proper bloom (so the light cubes look like actual lights). 
+
 example:
 
 
