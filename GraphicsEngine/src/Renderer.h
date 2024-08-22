@@ -26,6 +26,7 @@ public:
 	static void RenderSceneWithDepthCubemap(SceneGraph* scene_graph);
 	static void RenderNormalMapScene(SceneGraph* scene_graph);
 	static void RenderHDRScene(SceneGraph* scene_graph);
+	static void RenderDeferredScene(SceneGraph* scene_graph);
 	static void Clear();
 
 private:

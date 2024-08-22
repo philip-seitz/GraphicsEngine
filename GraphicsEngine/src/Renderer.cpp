@@ -81,18 +81,23 @@ struct RendererData
 	Shader* normalmap_shader = nullptr;
 	Shader* parallax_shader = nullptr;
 	Shader* hdr_shader = nullptr;
+	Shader* g_buffer_shader = nullptr;
+	Shader* lighting_pass_shader = nullptr;
 
 	Window* window = nullptr;
 
 	// frame buffer oject
-	unsigned int fbo_id[3];					// extra for hdr framebuffer
-	unsigned int fbo_tex[3];
-	unsigned int fbo_rbo_id[3];
+	unsigned int fbo_id[4];					// extra for hdr framebuffer and now for deferred shading
+	unsigned int fbo_tex[4];
+	unsigned int fbo_rbo_id[4];
 
 	// for shadow map TODO: refactor
 	unsigned int shadow_map_id;
 
 	unsigned int colorBuffer;
+
+	// ids of deferred shading textures
+	unsigned int g_position, g_normal, g_colorspec;
 };
 
 // create vao for sky box
@@ -129,6 +134,8 @@ void Renderer::Init(Window* window)
 	sData.normalmap_shader = new Shader("res/shader/normalmap_shader.glsl");
 	sData.parallax_shader = new Shader("res/shader/parallax_shader.glsl");
 	sData.hdr_shader = new Shader("res/shader/hdr_shader.glsl");
+	sData.g_buffer_shader = new Shader("res/shader/g_buffer_shader.glsl");
+	sData.lighting_pass_shader = new Shader("res/shader/lighting_pass_shader.glsl");
 	
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
@@ -161,6 +168,8 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.shadow_cubemap_shader);
 	shader_list_matrices.push_back(sData.normalmap_shader);
 	shader_list_matrices.push_back(sData.parallax_shader);
+	shader_list_matrices.push_back(sData.g_buffer_shader);
+
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
 	// list of shaders that should be bound to binding point of u_CameraData Uniform Buffer
@@ -173,6 +182,7 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.shadow_cubemap_shader);
 	shader_list_camera.push_back(sData.normalmap_shader);
 	shader_list_camera.push_back(sData.parallax_shader);
+	shader_list_camera.push_back(sData.lighting_pass_shader);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 	
 	std::vector<Shader*> shader_list_light_space_matrix;
@@ -291,9 +301,64 @@ void Renderer::Init(Window* window)
 	else
 		std::cout << "FBO FAILED" << std::endl;
 
+
+
+	// === setup for deferred shading scene ===
+
+	// framebuffer for geometry pass
+	glGenFramebuffers(1, &sData.fbo_id[3]);
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[3]);
+	
+	// position 
+	glGenTextures(1, &sData.g_position);
+	glBindTexture(GL_TEXTURE_2D, sData.g_position);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, sData.window->m_Width, sData.window->m_Height, 0, GL_RGBA, GL_FLOAT, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.g_position, 0);
+
+
+	// normal
+	glGenTextures(1, &sData.g_normal);
+	glBindTexture(GL_TEXTURE_2D, sData.g_normal);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, sData.window->m_Width, sData.window->m_Height, 0, GL_RGBA, GL_FLOAT, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, sData.g_normal, 0);
+
+	// color spec
+	glGenTextures(1, &sData.g_colorspec);
+	glBindTexture(GL_TEXTURE_2D, sData.g_colorspec);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sData.window->m_Width, sData.window->m_Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, sData.g_colorspec, 0);
+
+	// which color attachments should be rendered
+	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	// doesn't draw anything
+	glDrawBuffers(3, attachments);
+
+	// renderbuffer for depth
+	glGenRenderbuffers(1, &sData.fbo_rbo_id[3]);
+	glBindRenderbuffer(GL_RENDERBUFFER, sData.fbo_rbo_id[3]);
+
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, sData.window->m_Width, sData.window->m_Height);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, sData.fbo_rbo_id[3]);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "FBO DEFERRED SUCCESSFUL" << std::endl;
+	else
+		std::cout << "FBO DEFERRED FAILED" << std::endl;
+
+
 	// ====
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);			// standard framebuffer		
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);			// standard framebuffer	
+	
 }
 
 void Renderer::Shutdown()
@@ -356,11 +421,96 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	// RenderNormalMapScene(scene_graph);
 
-	RenderHDRScene(scene_graph);
+	// RenderHDRScene(scene_graph);
+
+	RenderDeferredScene(scene_graph);
+}
+
+void Renderer::RenderDeferredScene(SceneGraph* scene_graph)
+{
+	// ===================================== start of frame setup ==================================
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Depth Test
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	// enable Backface Culling
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[3]);							// 3 -> g-buffer framebuffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// glViewport(0.0f, 0.0f, sData.window->m_Width, sData.window->m_Height);
+
+	uboMatrix.SetMat4f(0, cameras[0]->ProjectionMatrix());
+	uboMatrix.SetMat4f(sizeof(glm::mat4), cameras[0]->LookAtMatrix());
+	uboCamera.SetVec3f(0, cameras[0]->Position());
+
+	sData.g_buffer_shader->Bind();
+
+	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	{
+		scene_graph->m_Backpacks[i].Draw(sData.g_buffer_shader, sData.backpack);
+	}
+
+	// lighting pass 
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	sData.lighting_pass_shader->Bind();
+	
+	// bind position 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sData.g_position);
+	
+	// bind normal 
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, sData.g_normal);
+	
+	// bind color spec 
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, sData.g_colorspec);
+	
+	sData.lighting_pass_shader->SetUniform1i("g_Position", 0);
+	sData.lighting_pass_shader->SetUniform1i("g_Normal", 1);
+	sData.lighting_pass_shader->SetUniform1i("g_Colorspec", 2);
+	
+	sData.lighting_pass_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
+	
+	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
+	{
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.lighting_pass_shader, i);
+	}
+
+	// draw screened quad
+	glDepthMask(GL_FALSE);		// Don't change depth values with the quad
+	glBindVertexArray(sData.screen_quad.va);
+	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
+	glDepthMask(GL_TRUE);		// turn it back on
+
+	// copy depth information over from gBuffer to Back buffer
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, sData.fbo_id[3]);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glBlitFramebuffer(0, 0, sData.window->m_Width, sData.window->m_Height, 0, 0, sData.window->m_Width, sData.window->m_Height, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// draw lights on top
+	sData.light_source_shader->Bind();
+
+	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
+	{
+		sData.light_source_shader->SetUniform3f("u_LightColor", scene_graph->m_PointLights[i].m_Color);
+		scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+	}
 }
 
 void Renderer::RenderHDRScene(SceneGraph* scene_graph)
 {
+	// NOTE: gamma correction is applied in the hdr shader. 
+	// caluclations should all be in linear (diff texture should be in linear aswell)
+
 	// ===================================== start of frame setup ==================================
 	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[2]);
 	glViewport(0.0f, 0.0f, sData.window->m_Width, sData.window->m_Height);

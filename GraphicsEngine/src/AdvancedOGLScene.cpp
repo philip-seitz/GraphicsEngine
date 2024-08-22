@@ -39,17 +39,17 @@ void AdvancedOGLScene::Run()
 
     // create point light
    
-    PointLight testLight(glm::vec3(200.0f, 200.0f, 200.0f));
-    testLight.m_Instance.position = { 0.0f, 0.7f, -8.0f};
+    PointLight testLight(glm::vec3(1.0f, 1.0f, 1.0f));
+    testLight.m_Instance.position = { 0.0f, 0.7f, 1.0f};
     m_SceneGraph.m_PointLights.push_back(testLight);
 
 
-    PointLight redLight(glm::vec3(0.2f, 0.0f, 0.0f));
-    redLight.m_Instance.position = { -0.4f, 0.5f, 17.0f };
+    PointLight redLight(glm::vec3(0.7f, 0.0f, 0.0f));
+    redLight.m_Instance.position = { 6.0f, 0.5f, 1.0f };
     m_SceneGraph.m_PointLights.push_back(redLight);
 
-    PointLight blueLight(glm::vec3(0.01f, 0.0f, 0.4f));
-    blueLight.m_Instance.position = { 0.4f, 0.6f, 22.0f };
+    PointLight blueLight(glm::vec3(0.01f, 0.0f, 0.6f));
+    blueLight.m_Instance.position = { 9.0f, 0.6f, 0.0f };
     m_SceneGraph.m_PointLights.push_back(blueLight);
 
 
@@ -67,8 +67,6 @@ void AdvancedOGLScene::Run()
     big_box.m_Instance.scale = { 4.0f, 4.0f, 4.0f };
     m_SceneGraph.m_Cubes.push_back(big_box);
 
-
-  
     for (int i = 0; i < 0; i++)
     {
         Cube t_cube;
@@ -128,11 +126,11 @@ void AdvancedOGLScene::Run()
 
 
     // add a backback model
-    for (int i = 0; i < 0; i++)
+    for (int i = 0; i < 5; i++)
     {
         ModelSceneInstance backpack;
-        backpack.m_position = { 0.3f + 4 * i, 1.0f, 10.0f };
-        backpack.m_angles = { 0, -90.0f, 0.0f }; 
+        backpack.m_position = { 3 * i, 1.0f, -2.0f };
+        backpack.m_angles = { 0, -40.0f, 0.0f }; 
         m_SceneGraph.m_Backpacks.push_back(backpack);
     }
 

@@ -498,9 +498,11 @@
   <ItemGroup>
     <None Include="res\shader\asteroids_instanced.glsl" />
     <None Include="res\shader\cubemap_shader.glsl" />
+    <None Include="res\shader\g_buffer_shader.glsl" />
     <None Include="res\shader\depth_shader.glsl" />
     <None Include="res\shader\geometry.glsl" />
     <None Include="res\shader\hdr_shader.glsl" />
+    <None Include="res\shader\lighting_pass_shader.glsl" />
     <None Include="res\shader\model_shader.glsl" />
     <None Include="res\shader\light_source_shader.glsl" />
     <None Include="res\shader\lighting_shader.glsl" />
