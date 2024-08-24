@@ -211,3 +211,8 @@ void TextureFromFile(const std::string& path, unsigned int& id)
 	glBindTexture(GL_TEXTURE_2D, 0);		// unbind
 	stbi_image_free(buffer);
 }
+
+float lerp(float a, float b, float f)
+{
+	return a + (b - a) * f;
+}

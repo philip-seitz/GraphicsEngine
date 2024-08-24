@@ -20,7 +20,6 @@ void ModelSceneInstance::Draw(Shader* shader, ModelScene& base_model)
 void ModelSceneInstance::DrawInstanced(Shader* shader, ModelScene& base_model, glm::mat4* matrix, unsigned int& numberInst)
 {
 	// model matrix supplied by attribs
-	// shader->SetUniformMat4f("u_Model", *matrix);
 	shader->SetUniformMat3f("u_Normal_Matrix", NormalMatrix());
 	base_model.DrawInstanced(shader, numberInst);
 }
@@ -42,6 +41,11 @@ glm::mat4x4 ModelSceneInstance::ModelMatrix()
 }
 
 glm::mat3x3 ModelSceneInstance::NormalMatrix()
+{
+	return glm::inverse(ModelMatrix());
+}
+
+glm::mat3x3 ModelSceneInstance::NormalMatrixView()
 {
 	return glm::inverse(ModelMatrix());
 }

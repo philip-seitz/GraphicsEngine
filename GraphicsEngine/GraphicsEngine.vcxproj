@@ -511,6 +511,9 @@
     <None Include="res\shader\postprocessing.glsl" />
     <None Include="res\shader\shadow_cubemap_shader.glsl" />
     <None Include="res\shader\shadow_map_shader.glsl" />
+    <None Include="res\shader\ssao_geometry_shader.glsl" />
+    <None Include="res\shader\ssao_lighting_pass_shader.glsl" />
+    <None Include="res\shader\ssao_shader.glsl" />
     <None Include="res\shader\vert_frag.glsl" />
     <None Include="src\vendor\glm\detail\func_common.inl" />
     <None Include="src\vendor\glm\detail\func_common_simd.inl" />

@@ -1457,6 +1457,9 @@
     <None Include="res\shader\hdr_shader.glsl" />
     <None Include="res\shader\g_buffer_shader.glsl" />
     <None Include="res\shader\lighting_pass_shader.glsl" />
+    <None Include="res\shader\ssao_geometry_shader.glsl" />
+    <None Include="res\shader\ssao_shader.glsl" />
+    <None Include="res\shader\ssao_lighting_pass_shader.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="res\shader\texture_shader.glsl" />

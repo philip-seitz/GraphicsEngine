@@ -9,6 +9,7 @@
 #include "Cubemap.h"
 #include "UniformBufferObject.h"
 #include <iostream> 
+#include <random>
 #include <GL/glew.h>
 #include <map>
 
@@ -83,13 +84,16 @@ struct RendererData
 	Shader* hdr_shader = nullptr;
 	Shader* g_buffer_shader = nullptr;
 	Shader* lighting_pass_shader = nullptr;
+	Shader* ssao_geometry_shader = nullptr;
+	Shader* ssao_shader = nullptr;
+	Shader* ssao_lighting_pass_shader = nullptr;
 
 	Window* window = nullptr;
 
 	// frame buffer oject
-	unsigned int fbo_id[4];					// extra for hdr framebuffer and now for deferred shading
-	unsigned int fbo_tex[4];
-	unsigned int fbo_rbo_id[4];
+	unsigned int fbo_id[5];					// extra for hdr framebuffer and now for deferred shading
+	unsigned int fbo_tex[5];
+	unsigned int fbo_rbo_id[5];
 
 	// for shadow map TODO: refactor
 	unsigned int shadow_map_id;
@@ -98,6 +102,14 @@ struct RendererData
 
 	// ids of deferred shading textures
 	unsigned int g_position, g_normal, g_colorspec;
+
+	// ids for ssao 
+	unsigned int ssao_noise_texture, ssao_color_buffer;
+
+	// fields for ssao kernel
+	std::vector<glm::vec3> ssaoKernel;
+	std::vector<glm::vec3> ssaoNoise;
+
 };
 
 // create vao for sky box
@@ -136,6 +148,9 @@ void Renderer::Init(Window* window)
 	sData.hdr_shader = new Shader("res/shader/hdr_shader.glsl");
 	sData.g_buffer_shader = new Shader("res/shader/g_buffer_shader.glsl");
 	sData.lighting_pass_shader = new Shader("res/shader/lighting_pass_shader.glsl");
+	sData.ssao_geometry_shader = new Shader("res/shader/ssao_geometry_shader.glsl");
+	sData.ssao_shader = new Shader("res/shader/ssao_shader.glsl");
+	sData.ssao_lighting_pass_shader = new Shader("res/shader/ssao_lighting_pass_shader.glsl");
 	
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
@@ -169,6 +184,8 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.normalmap_shader);
 	shader_list_matrices.push_back(sData.parallax_shader);
 	shader_list_matrices.push_back(sData.g_buffer_shader);
+	shader_list_matrices.push_back(sData.ssao_geometry_shader);
+	shader_list_matrices.push_back(sData.ssao_shader);
 
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
@@ -183,6 +200,7 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.normalmap_shader);
 	shader_list_camera.push_back(sData.parallax_shader);
 	shader_list_camera.push_back(sData.lighting_pass_shader);
+	shader_list_camera.push_back(sData.ssao_shader);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 	
 	std::vector<Shader*> shader_list_light_space_matrix;
@@ -316,6 +334,8 @@ void Renderer::Init(Window* window)
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.g_position, 0);
 
 
@@ -353,6 +373,71 @@ void Renderer::Init(Window* window)
 		std::cout << "FBO DEFERRED SUCCESSFUL" << std::endl;
 	else
 		std::cout << "FBO DEFERRED FAILED" << std::endl;
+
+
+	// setups ssao scene
+	// we use the gbuffer here (recycled)
+
+	// normal oriented hemisphere
+	// distributed in a way that we get more samples closer to the origin (fragment)
+	std::uniform_real_distribution<float> randomFloats(0.0, 1.0);
+	std::default_random_engine generator;
+
+	// TODO: kernel size should be configurable (not hard coded)
+
+	for (int i = 0; i < 64; i++)
+	{
+		glm::vec3 sample(
+			randomFloats(generator) * 2.0 - 1.0,
+			randomFloats(generator) * 2.0 - 1.0,
+			randomFloats(generator)
+		);
+		sample = glm::normalize(sample);
+		float scale = (float)i / 64.0;
+		scale = lerp(0.1f, 1.0f, scale * scale);
+		sample *= scale;
+		sData.ssaoKernel.push_back(sample);
+	}
+
+	// random kernel rotations
+	for (unsigned int i = 0; i < 16; i++)
+	{
+		glm::vec3 noise(
+			randomFloats(generator) * 2.0 - 1.0,
+			randomFloats(generator) * 2.0 - 1.0,
+			0.0f);
+		sData.ssaoNoise.push_back(noise);
+	}
+
+	// create 4x4 noise texture
+	glGenTextures(1, &sData.ssao_noise_texture);
+	glBindTexture(GL_TEXTURE_2D, sData.ssao_noise_texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &sData.ssaoNoise[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+
+	// framebuffer for result of ssao
+	glGenFramebuffers(1, &sData.fbo_id[4]);
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[4]);
+
+	// position 
+	glGenTextures(1, &sData.ssao_color_buffer);
+	glBindTexture(GL_TEXTURE_2D, sData.ssao_color_buffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, sData.window->m_Width, sData.window->m_Height, 0, GL_RED, GL_FLOAT, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.ssao_color_buffer, 0);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "FBO SSAO SUCCESSFUL" << std::endl;
+	else
+		std::cout << "FBO SSAO FAILED" << std::endl;
 
 
 	// ====
@@ -423,8 +508,105 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	// RenderHDRScene(scene_graph);
 
-	RenderDeferredScene(scene_graph);
+	//RenderDeferredScene(scene_graph);
+
+	RenderAmbientOcclusionScene(scene_graph);
 }
+
+
+void Renderer::RenderAmbientOcclusionScene(SceneGraph* scene_graph)
+{
+	// === render into g-buffer ===
+	
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Depth Test
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	// enable Backface Culling
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[3]);							// 3 -> g-buffer framebuffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	uboMatrix.SetMat4f(0, cameras[0]->ProjectionMatrix());
+	uboMatrix.SetMat4f(sizeof(glm::mat4), cameras[0]->LookAtMatrix());
+	uboCamera.SetVec3f(0, cameras[0]->Position());
+
+	sData.g_buffer_shader->Bind();
+
+	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	{
+		// create normal matrix for view space
+		glm::mat4x4 normal_matrix_view = cameras[0]->LookAtMatrix() * scene_graph->m_Backpacks[i].ModelMatrix();
+		sData.ssao_geometry_shader->SetUniformMat3f("u_Normal_Matrix_View", glm::inverse(glm::transpose(normal_matrix_view)));
+		scene_graph->m_Backpacks[i].Draw(sData.ssao_geometry_shader, sData.backpack);
+	}
+
+	// === render into ssao texture using gBuffer ===
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[4]);							// 4 -> ssao-buffer framebuffer
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	// bind position 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sData.g_position);
+
+	// bind normal 
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, sData.g_normal);
+
+	// bind noise texture 
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, sData.ssao_noise_texture);
+
+	sData.ssao_shader->Bind();
+
+	sData.ssao_shader->SetUniform1i("g_Position", 0);
+	sData.ssao_shader->SetUniform1i("g_Normal", 1);
+	sData.ssao_shader->SetUniform1i("u_Noise_Texture", 2);
+
+	sData.ssao_shader->SetUniform1f("u_ScreenWidth", (float)sData.window->m_Width);
+	sData.ssao_shader->SetUniform1i("u_ScreenHeight", (float)sData.window->m_Height);
+
+	// send kernel samples 
+
+	for (int i = 0; i < sData.ssaoKernel.size(); i++)
+	{
+		sData.ssao_shader->SetUniform3f("u_Samples[" + std::to_string(i) + "]", sData.ssaoKernel[i]);
+	}
+	
+	// draw screened quad
+	glDepthMask(GL_FALSE);		// Don't change depth values with the quad
+	glBindVertexArray(sData.screen_quad.va);
+	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
+	glDepthMask(GL_TRUE);		// turn it back on
+
+
+	// === lighting pass ===
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);							// 4 -> ssao-buffer framebuffer
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sData.ssao_color_buffer);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, sData.g_colorspec);
+
+	sData.ssao_lighting_pass_shader->Bind();
+	sData.ssao_lighting_pass_shader->SetUniform1i("u_AmbienceSSAO", 0);
+	sData.ssao_lighting_pass_shader->SetUniform1i("g_ColorSpec", 1);
+
+	// draw screened quad
+	glDepthMask(GL_FALSE);		// Don't change depth values with the quad
+	glBindVertexArray(sData.screen_quad.va);
+	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
+	glDepthMask(GL_TRUE);		// turn it back on
+}
+
 
 void Renderer::RenderDeferredScene(SceneGraph* scene_graph)
 {
