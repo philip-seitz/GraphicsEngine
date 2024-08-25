@@ -39,20 +39,18 @@ void AdvancedOGLScene::Run()
 
     // create point light
    
+    PointLight blueLight(glm::vec3(0.01f, 0.0f, 0.6f));
+    blueLight.m_Instance.position = { 9.0f, 0.6f, 0.0f };
+    m_SceneGraph.m_PointLights.push_back(blueLight);
+
     PointLight testLight(glm::vec3(1.0f, 1.0f, 1.0f));
-    testLight.m_Instance.position = { 0.0f, 0.7f, 1.0f};
+    testLight.m_Instance.position = { 0.0f, 0.7f, 1.0f };
     m_SceneGraph.m_PointLights.push_back(testLight);
 
 
     PointLight redLight(glm::vec3(0.7f, 0.0f, 0.0f));
     redLight.m_Instance.position = { 6.0f, 0.5f, 1.0f };
     m_SceneGraph.m_PointLights.push_back(redLight);
-
-    PointLight blueLight(glm::vec3(0.01f, 0.0f, 0.6f));
-    blueLight.m_Instance.position = { 9.0f, 0.6f, 0.0f };
-    m_SceneGraph.m_PointLights.push_back(blueLight);
-
-
 
     DirectionalLight dirLight;
     dirLight.m_Direction = { -1.0f, -3.0f, 2.0f };

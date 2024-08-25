@@ -87,13 +87,14 @@ struct RendererData
 	Shader* ssao_geometry_shader = nullptr;
 	Shader* ssao_shader = nullptr;
 	Shader* ssao_lighting_pass_shader = nullptr;
+	Shader* ssao_blur_shader = nullptr;
 
 	Window* window = nullptr;
 
 	// frame buffer oject
-	unsigned int fbo_id[5];					// extra for hdr framebuffer and now for deferred shading
-	unsigned int fbo_tex[5];
-	unsigned int fbo_rbo_id[5];
+	unsigned int fbo_id[6];					// extra for hdr framebuffer, for deferred shading, ssao and ssao blur (this is rediculously stupid)
+	unsigned int fbo_tex[6];
+	unsigned int fbo_rbo_id[6];
 
 	// for shadow map TODO: refactor
 	unsigned int shadow_map_id;
@@ -106,10 +107,12 @@ struct RendererData
 	// ids for ssao 
 	unsigned int ssao_noise_texture, ssao_color_buffer;
 
+	// ids for ssao blur
+	unsigned int ssao_blur_color_buffer;
+
 	// fields for ssao kernel
 	std::vector<glm::vec3> ssaoKernel;
 	std::vector<glm::vec3> ssaoNoise;
-
 };
 
 // create vao for sky box
@@ -151,6 +154,7 @@ void Renderer::Init(Window* window)
 	sData.ssao_geometry_shader = new Shader("res/shader/ssao_geometry_shader.glsl");
 	sData.ssao_shader = new Shader("res/shader/ssao_shader.glsl");
 	sData.ssao_lighting_pass_shader = new Shader("res/shader/ssao_lighting_pass_shader.glsl");
+	sData.ssao_blur_shader = new Shader("res/shader/ssao_blur_shader.glsl");
 	
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
@@ -201,6 +205,7 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.parallax_shader);
 	shader_list_camera.push_back(sData.lighting_pass_shader);
 	shader_list_camera.push_back(sData.ssao_shader);
+	shader_list_camera.push_back(sData.ssao_lighting_pass_shader);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 	
 	std::vector<Shader*> shader_list_light_space_matrix;
@@ -375,7 +380,7 @@ void Renderer::Init(Window* window)
 		std::cout << "FBO DEFERRED FAILED" << std::endl;
 
 
-	// setups ssao scene
+	// === setups for ssao scene ===
 	// we use the gbuffer here (recycled)
 
 	// normal oriented hemisphere
@@ -439,6 +444,19 @@ void Renderer::Init(Window* window)
 	else
 		std::cout << "FBO SSAO FAILED" << std::endl;
 
+
+	// framebuffer for ssao blur 
+	glGenFramebuffers(1, &sData.fbo_id[5]);
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[5]);
+
+	glGenTextures(1, &sData.ssao_blur_color_buffer);
+	glBindTexture(GL_TEXTURE_2D, sData.ssao_blur_color_buffer);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, sData.window->m_Width, sData.window->m_Height, 0, GL_RED, GL_FLOAT, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.ssao_blur_color_buffer, 0);
 
 	// ====
 
@@ -586,19 +604,47 @@ void Renderer::RenderAmbientOcclusionScene(SceneGraph* scene_graph)
 	glDepthMask(GL_TRUE);		// turn it back on
 
 
+	// === blur pass ===
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[5]);							// 5 -> ssao-blur framebuffer
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sData.ssao_color_buffer);
+
+	sData.ssao_blur_shader->Bind();
+	sData.ssao_blur_shader->SetUniform1i("u_TextureSSAO", 0);
+
+	// draw screened quad
+	glDepthMask(GL_FALSE);		// Don't change depth values with the quad
+	glBindVertexArray(sData.screen_quad.va);
+	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
+	glDepthMask(GL_TRUE);		// turn it back on
+
 	// === lighting pass ===
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);							// 4 -> ssao-buffer framebuffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, sData.ssao_color_buffer);
+	glBindTexture(GL_TEXTURE_2D, sData.ssao_blur_color_buffer);
 
 	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, sData.g_position);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, sData.g_normal);
+
+	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, sData.g_colorspec);
 
 	sData.ssao_lighting_pass_shader->Bind();
 	sData.ssao_lighting_pass_shader->SetUniform1i("u_AmbienceSSAO", 0);
-	sData.ssao_lighting_pass_shader->SetUniform1i("g_ColorSpec", 1);
+
+	sData.ssao_lighting_pass_shader->SetUniform1i("g_Position", 1);
+	sData.ssao_lighting_pass_shader->SetUniform1i("g_Normal", 2);
+	sData.ssao_lighting_pass_shader->SetUniform1i("g_ColorSpec", 3);
+
+	scene_graph->m_PointLights[0].SetLightingUniforms(sData.ssao_lighting_pass_shader, 0);
 
 	// draw screened quad
 	glDepthMask(GL_FALSE);		// Don't change depth values with the quad
