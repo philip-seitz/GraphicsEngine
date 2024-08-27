@@ -405,7 +405,7 @@ void Renderer::Init(Window* window)
 	}
 
 	// random kernel rotations
-	for (unsigned int i = 0; i < 16; i++)
+	for (unsigned int i = 0; i < 9; i++)
 	{
 		glm::vec3 noise(
 			randomFloats(generator) * 2.0 - 1.0,
@@ -418,7 +418,7 @@ void Renderer::Init(Window* window)
 	glGenTextures(1, &sData.ssao_noise_texture);
 	glBindTexture(GL_TEXTURE_2D, sData.ssao_noise_texture);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &sData.ssaoNoise[0]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 3, 3, 0, GL_RGB, GL_FLOAT, &sData.ssaoNoise[0]);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -585,7 +585,7 @@ void Renderer::RenderAmbientOcclusionScene(SceneGraph* scene_graph)
 
 	sData.ssao_shader->SetUniform1i("g_Position", 0);
 	sData.ssao_shader->SetUniform1i("g_Normal", 1);
-	sData.ssao_shader->SetUniform1i("u_Noise_Texture", 2);
+	sData.ssao_shader->SetUniform1i("u_NoiseTexture", 2);
 
 	sData.ssao_shader->SetUniform1f("u_ScreenWidth", (float)sData.window->m_Width);
 	sData.ssao_shader->SetUniform1f("u_ScreenHeight", (float)sData.window->m_Height);

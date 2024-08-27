@@ -27,8 +27,6 @@ void main()
 {
 	gl_Position = u_Projection * u_View * u_Model * a_Position;
 	v_FragmentPosition = vec3(u_View * u_Model * a_Position);		// in view space
-	// TODO: make sure this normal matrix actually does what it should.
-	// else, I might aswell remove it entirely
 	v_Normal = u_Normal_Matrix_View * a_Normal;					
 	v_TexCoord = a_TexCoord;
 }

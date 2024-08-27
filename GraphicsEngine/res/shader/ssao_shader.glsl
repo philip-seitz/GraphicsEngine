@@ -39,13 +39,13 @@ int u_KernelSize = 64;					// TOOD: use uniform here, so kernel size could be co
 float u_Radius = 0.5;
 float bias = 0.025;
 
-vec2 noiseScale = vec2(u_ScreenWidth / 4.0, u_ScreenHeight / 4.0);
+vec2 noiseScale = vec2(u_ScreenWidth / 3.0, u_ScreenHeight / 3.0);
 
 void main()
 {
 	vec3 fragPos = texture(g_Position, v_TexCoord).xyz;
 	vec3 normal = texture(g_Normal, v_TexCoord).rgb;
-	vec3 randomVec = texture(u_NoiseTexture, v_TexCoord).xyz;
+	vec3 randomVec = texture(u_NoiseTexture, v_TexCoord * noiseScale).xyz;
 
 	vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
 	vec3 bitangent = cross(normal, tangent);
@@ -66,7 +66,7 @@ void main()
 
 		float rangeCheck = smoothstep(0.0, 1.0, u_Radius / abs(fragPos.z - sampleDepth));
 
-		// TODO: Why does this work???
+		// works because in view space (camera -> lookAt) the z axis points away from the target
 		occlusion += (sampleDepth >= kernel_sample.z + bias ? 1.0 : 0.0) * rangeCheck;
 	}
 
