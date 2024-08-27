@@ -526,7 +526,7 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	// RenderHDRScene(scene_graph);
 
-	//RenderDeferredScene(scene_graph);
+	// RenderDeferredScene(scene_graph);
 
 	RenderAmbientOcclusionScene(scene_graph);
 }
@@ -588,7 +588,7 @@ void Renderer::RenderAmbientOcclusionScene(SceneGraph* scene_graph)
 	sData.ssao_shader->SetUniform1i("u_Noise_Texture", 2);
 
 	sData.ssao_shader->SetUniform1f("u_ScreenWidth", (float)sData.window->m_Width);
-	sData.ssao_shader->SetUniform1i("u_ScreenHeight", (float)sData.window->m_Height);
+	sData.ssao_shader->SetUniform1f("u_ScreenHeight", (float)sData.window->m_Height);
 
 	// send kernel samples 
 
@@ -608,44 +608,44 @@ void Renderer::RenderAmbientOcclusionScene(SceneGraph* scene_graph)
 
 	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[5]);							// 5 -> ssao-blur framebuffer
 	glClear(GL_COLOR_BUFFER_BIT);
-
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, sData.ssao_color_buffer);
-
+	
 	sData.ssao_blur_shader->Bind();
 	sData.ssao_blur_shader->SetUniform1i("u_TextureSSAO", 0);
-
+	
 	// draw screened quad
 	glDepthMask(GL_FALSE);		// Don't change depth values with the quad
 	glBindVertexArray(sData.screen_quad.va);
 	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
 	glDepthMask(GL_TRUE);		// turn it back on
-
+	
 	// === lighting pass ===
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);							// 4 -> ssao-buffer framebuffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, sData.ssao_blur_color_buffer);
-
+	
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, sData.g_position);
-
+	
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, sData.g_normal);
-
+	
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, sData.g_colorspec);
-
+	
 	sData.ssao_lighting_pass_shader->Bind();
 	sData.ssao_lighting_pass_shader->SetUniform1i("u_AmbienceSSAO", 0);
-
+	
 	sData.ssao_lighting_pass_shader->SetUniform1i("g_Position", 1);
 	sData.ssao_lighting_pass_shader->SetUniform1i("g_Normal", 2);
 	sData.ssao_lighting_pass_shader->SetUniform1i("g_ColorSpec", 3);
-
+	
 	scene_graph->m_PointLights[0].SetLightingUniforms(sData.ssao_lighting_pass_shader, 0);
-
+	
 	// draw screened quad
 	glDepthMask(GL_FALSE);		// Don't change depth values with the quad
 	glBindVertexArray(sData.screen_quad.va);

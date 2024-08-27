@@ -39,7 +39,7 @@ int u_KernelSize = 64;					// TOOD: use uniform here, so kernel size could be co
 float u_Radius = 0.5;
 float bias = 0.025;
 
-const vec2 noiseScale = vec2(u_ScreenWidth / 4.0, u_ScreenHeight / 4.0);
+vec2 noiseScale = vec2(u_ScreenWidth / 4.0, u_ScreenHeight / 4.0);
 
 void main()
 {
