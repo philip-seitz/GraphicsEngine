@@ -6,22 +6,20 @@ Graphics Engine using OpenGL and C++
 While I am still working through 'Learn OpenGL' I have not yet had the chance to improve the car rendering just yet. 
 But I want to display some of the cool scenes, that could be produced using the contents and tutorials of the aforementioned literature:
 
-***SSAO Scene With Blur and Proper Lighting***
-
-<img src="https://github.com/user-attachments/assets/01cec3c8-b792-4605-83c4-ed03f6cf1a2c" width="540" height="360">
-
-
-
 ***SSAO Scene***
 
-<img src="https://github.com/user-attachments/assets/174012f5-7eff-41a3-b776-678a50ce8054" width="540" height="360">
+*With Blur*
 
+<img src="https://github.com/user-attachments/assets/39dd5215-065f-4671-9489-c8f61ee2acec" width="540" height="360">
 
+*Without Blur (noisy)*
+
+<img src="https://github.com/user-attachments/assets/af2a6c42-1e69-42c6-a71d-c18f4478cc4f" width="540" height="360">
 
 In this scene I've implementen screen-spaced ambient occlusion. Essentially, we can model soft shadows by taking into account how the geometry around a certain fragment looks.
 If the fragment is in a corner for example and therefore more occluded by geometry from receiving light scatters, this fragment will appear darker, have a lower ambient factor. 
-We can improve the looks by intoducing a blur. 
-And using just one point light and complete Blinn-Phong lighting (as apposed to just the ambient part) we get some really cool results.
+The image might seem a bit blurry. That's because ao is caluclated using a 3x3 noise texture (in my case). Applying a blur (3x3 box blur) smoothes this noise patter out. 
+In combination with Blinn-Phong lighting we get some really nice results.
 
 ---
 
