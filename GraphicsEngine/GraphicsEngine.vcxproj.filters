@@ -1461,6 +1461,7 @@
     <None Include="res\shader\ssao_shader.glsl" />
     <None Include="res\shader\ssao_lighting_pass_shader.glsl" />
     <None Include="res\shader\ssao_blur_shader.glsl" />
+    <None Include="res\shader\pbr_shader.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="res\shader\texture_shader.glsl" />

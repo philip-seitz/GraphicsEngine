@@ -28,6 +28,7 @@ public:
 	static void RenderHDRScene(SceneGraph* scene_graph);
 	static void RenderDeferredScene(SceneGraph* scene_graph);
 	static void RenderAmbientOcclusionScene(SceneGraph* scene_graph);
+	static void RenderPBRScene(SceneGraph* scene_graph);
 	static void Clear();
 
 private:

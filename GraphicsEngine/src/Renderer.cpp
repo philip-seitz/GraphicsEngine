@@ -88,6 +88,7 @@ struct RendererData
 	Shader* ssao_shader = nullptr;
 	Shader* ssao_lighting_pass_shader = nullptr;
 	Shader* ssao_blur_shader = nullptr;
+	Shader* pbr_shader = nullptr;
 
 	Window* window = nullptr;
 
@@ -155,6 +156,7 @@ void Renderer::Init(Window* window)
 	sData.ssao_shader = new Shader("res/shader/ssao_shader.glsl");
 	sData.ssao_lighting_pass_shader = new Shader("res/shader/ssao_lighting_pass_shader.glsl");
 	sData.ssao_blur_shader = new Shader("res/shader/ssao_blur_shader.glsl");
+	sData.pbr_shader = new Shader("res/shader/pbr_shader.glsl");
 	
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
@@ -190,6 +192,7 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.g_buffer_shader);
 	shader_list_matrices.push_back(sData.ssao_geometry_shader);
 	shader_list_matrices.push_back(sData.ssao_shader);
+	shader_list_matrices.push_back(sData.pbr_shader);
 
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
@@ -206,6 +209,7 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.lighting_pass_shader);
 	shader_list_camera.push_back(sData.ssao_shader);
 	shader_list_camera.push_back(sData.ssao_lighting_pass_shader);
+	shader_list_camera.push_back(sData.pbr_shader);
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 	
 	std::vector<Shader*> shader_list_light_space_matrix;
@@ -528,7 +532,55 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	// RenderDeferredScene(scene_graph);
 
-	RenderAmbientOcclusionScene(scene_graph);
+	// RenderAmbientOcclusionScene(scene_graph);
+
+	RenderPBRScene(scene_graph);
+}
+
+void Renderer::RenderPBRScene(SceneGraph* scene_graph)
+{
+	// ===== start of frame init =====
+
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	// Depth Test
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+
+	// enable Backface Culling
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	// ===== set shader uniforms =====
+
+	uboMatrix.SetMat4f(0, cameras[0]->ProjectionMatrix());
+	uboMatrix.SetMat4f(sizeof(glm::mat4), cameras[0]->LookAtMatrix());
+	uboCamera.SetVec3f(0, cameras[0]->Position());
+
+	sData.pbr_shader->Bind();
+	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
+	{
+		scene_graph->m_PointLights[i].SetLightingUniforms(sData.pbr_shader, i);
+	}
+	// so we know how many lights we have in our fragment shader
+	sData.pbr_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
+	sData.pbr_shader->SetUniform1f("u_AO", 1.0f);
+	sData.pbr_shader->SetUniform3f("u_Albedo", glm::vec3(0.5f, 0.0f, 0.0f));
+
+	// ===== render spheres or other objects =====
+
+	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	{
+		// NOTE: set pbr uniforms per object (this should ideally be inside a Draw()-function, so i can set all of this in the scene graph)
+
+		// metallicness and roughness from 0.0 to 1.0 across all objects
+		sData.pbr_shader->SetUniform1f("u_Metallic", i / (float)(scene_graph->m_Backpacks.size() - 1));
+		sData.pbr_shader->SetUniform1f("u_Roughness", i / (float)(scene_graph->m_Backpacks.size() - 1));
+		
+
+		scene_graph->m_Backpacks[i].Draw(sData.pbr_shader, sData.backpack);
+	}
 }
 
 
