@@ -23,12 +23,18 @@ public:
 	void InitPoint();
 	void LoadPoint();
 
+	void InitSphere();
+
+
 	unsigned int TriCount;
 	Triangle* TriBuffer;
 	Triangle* TriBufferPointer;
 	TriangleIndices* TriIndices;
 	TriangleIndices* TriIndicesPointer;
 	Vertex* VertexBuffer;
+
+	std::string Type;
+	unsigned int indexCount;
 
 	unsigned int va;
 	unsigned int vb;

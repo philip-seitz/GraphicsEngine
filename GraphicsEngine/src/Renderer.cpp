@@ -42,6 +42,7 @@ struct RendererData
 	Model point;
 	Model screen_quad;
 	Model rearview_quad;
+	Model sphere;
 
 	// for instancing quad
 
@@ -168,11 +169,14 @@ void Renderer::Init(Window* window)
 	sData.point.InitPoint();
 	sData.screen_quad.InitQuad(2.0f, {0.0f, 0.0f, -0.7f});
 	sData.rearview_quad.InitQuad(0.5f, { 0.75f, 0.5f, -0.5f });
+	sData.sphere.InitSphere();
+
 
 	sData.grid_xz.InitGridxz();
 	sData.backpack = ModelScene("res/models/backpack/backpack.obj");
 	sData.rock = ModelScene("res/models/rocky/rocky.obj");
 	sData.planet = ModelScene("res/models/planet/planet.obj");
+	
 	cube_map.Init();
 
 	// list of shaders that should be bound to binding point of u_Matrices Uniform Buffer
@@ -558,28 +562,35 @@ void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 	uboMatrix.SetMat4f(sizeof(glm::mat4), cameras[0]->LookAtMatrix());
 	uboCamera.SetVec3f(0, cameras[0]->Position());
 
-	sData.pbr_shader->Bind();
+	// render light cubes
+	sData.light_source_shader->Bind();
 	for (int i = 0; i < scene_graph->m_PointLights.size(); i++)
 	{
+		scene_graph->m_PointLights[i].m_Instance.position += glm::vec3(sin(glfwGetTime() * 1.0f) * 0.08, 0.0, 0.0);
+		sData.light_source_shader->SetUniform3f("u_LightColor", scene_graph->m_PointLights[i].m_Color);
+		scene_graph->m_PointLights[i].Draw(sData.light_source_shader, &sData.primitive_cube);
+
 		scene_graph->m_PointLights[i].SetLightingUniforms(sData.pbr_shader, i);
 	}
+
+	
+	sData.pbr_shader->Bind();
 	// so we know how many lights we have in our fragment shader
+	
 	sData.pbr_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
 	sData.pbr_shader->SetUniform1f("u_AO", 1.0f);
 	sData.pbr_shader->SetUniform3f("u_Albedo", glm::vec3(0.5f, 0.0f, 0.0f));
-
 	// ===== render spheres or other objects =====
 
-	for (int i = 0; i < scene_graph->m_Backpacks.size(); i++)
+	for (int i = 0; i < scene_graph->m_Spheres.size(); i++)
 	{
 		// NOTE: set pbr uniforms per object (this should ideally be inside a Draw()-function, so i can set all of this in the scene graph)
 
 		// metallicness and roughness from 0.0 to 1.0 across all objects
-		sData.pbr_shader->SetUniform1f("u_Metallic", i / (float)(scene_graph->m_Backpacks.size() - 1));
-		sData.pbr_shader->SetUniform1f("u_Roughness", i / (float)(scene_graph->m_Backpacks.size() - 1));
-		
-
-		scene_graph->m_Backpacks[i].Draw(sData.pbr_shader, sData.backpack);
+		sData.pbr_shader->SetUniform1f("u_Metallic", i / (float)(scene_graph->m_Spheres.size() - 1));
+		sData.pbr_shader->SetUniform1f("u_Roughness", 0.05);
+	
+		scene_graph->m_Spheres[i].Draw(sData.pbr_shader, &sData.sphere);
 	}
 }
 

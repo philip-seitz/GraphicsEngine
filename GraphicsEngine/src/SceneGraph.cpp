@@ -10,6 +10,7 @@ SceneGraph::SceneGraph() :
 	m_Points(),
 	m_Planets(),
 	m_Rocks(),
+	m_Spheres(),
 	m_Blinn(true)
 {
 }

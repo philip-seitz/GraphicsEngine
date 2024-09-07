@@ -7,6 +7,7 @@
 #include "ModelSceneInstance.h"
 #include "Cube.h"
 #include "Quad.h"
+#include "Sphere.h"
 #include "Camera.h"
 #include "GridInstance.h"
 #include "Point.h"
@@ -21,11 +22,13 @@ public:
 	std::vector<SpotLight> m_SpotLights;
 	std::vector<Cube> m_Cubes;
 	std::vector<Quad> m_Quads;
+	std::vector<Sphere> m_Spheres;
 	std::vector<ModelSceneInstance> m_Backpacks;
 	std::vector<GridInstance> m_Grids;	
 	std::vector<Point> m_Points;
 	std::vector<ModelSceneInstance> m_Planets;
 	std::vector<ModelSceneInstance> m_Rocks;
+	
 	bool m_Blinn;
 
 	// shader settings for different features

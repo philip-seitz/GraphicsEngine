@@ -42,9 +42,16 @@ void ModelInstance::Draw(const Model& base_model, Shader* shader)
 	// shader->SetUniform1i("u_Use_Texture", 1);
 	shader->SetUniformMat4f("u_Model", ModelMatrix());
 
-	// draw all vertices 
-	glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
+	if (base_model.Type == "Sphere")
+	{
+		glDrawElements(GL_TRIANGLE_STRIP, base_model.indexCount, GL_UNSIGNED_INT, 0);
+	}
+	else
+	{
+		// draw all vertices 
+		glDrawElements(GL_TRIANGLES, 3 * base_model.TriCount, GL_UNSIGNED_INT, nullptr);
 
+	}
 	// === Draw the points === 
 	// glDrawArrays(GL_POINTS, 0, 3 * sData.TriToRenderCount);
 }

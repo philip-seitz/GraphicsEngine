@@ -177,6 +177,7 @@
     <ClCompile Include="src\LightingScene.cpp" />
     <ClCompile Include="src\SceneGraph.cpp" />
     <ClCompile Include="src\Shader.cpp" />
+    <ClCompile Include="src\Sphere.cpp" />
     <ClCompile Include="src\SpotLight.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\UniformBufferObject.cpp" />
@@ -206,6 +207,7 @@
     <ClInclude Include="src\LightingScene.h" />
     <ClInclude Include="src\SceneGraph.h" />
     <ClInclude Include="src\Shader.h" />
+    <ClInclude Include="src\Sphere.h" />
     <ClInclude Include="src\SpotLight.h" />
     <ClInclude Include="src\Texture.h" />
     <ClInclude Include="src\UniformBufferObject.h" />
