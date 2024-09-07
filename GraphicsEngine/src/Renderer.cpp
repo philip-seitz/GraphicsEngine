@@ -582,15 +582,21 @@ void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 	sData.pbr_shader->SetUniform3f("u_Albedo", glm::vec3(0.5f, 0.0f, 0.0f));
 	// ===== render spheres or other objects =====
 
-	for (int i = 0; i < scene_graph->m_Spheres.size(); i++)
-	{
-		// NOTE: set pbr uniforms per object (this should ideally be inside a Draw()-function, so i can set all of this in the scene graph)
 
-		// metallicness and roughness from 0.0 to 1.0 across all objects
-		sData.pbr_shader->SetUniform1f("u_Metallic", i / (float)(scene_graph->m_Spheres.size() - 1));
-		sData.pbr_shader->SetUniform1f("u_Roughness", 0.05);
-	
-		scene_graph->m_Spheres[i].Draw(sData.pbr_shader, &sData.sphere);
+	int x_size = glm::sqrt(scene_graph->m_Spheres.size());
+	int y_size = x_size;
+	for (int y = 0; y < y_size; y++)
+	{
+		for (int x = 0; x < x_size; x++)
+		{
+			// NOTE: set pbr uniforms per object (this should ideally be inside a Draw()-function, so i can set all of this in the scene graph)
+
+			// metallicness and roughness from 0.0 to 1.0 across all objects
+			sData.pbr_shader->SetUniform1f("u_Metallic", y / (float)(y_size - 1));
+			sData.pbr_shader->SetUniform1f("u_Roughness", glm::clamp(x / (float)(x_size - 1), 0.05f, 1.0f));
+
+			scene_graph->m_Spheres[x + x_size * y].Draw(sData.pbr_shader, &sData.sphere);
+		}
 	}
 }
 

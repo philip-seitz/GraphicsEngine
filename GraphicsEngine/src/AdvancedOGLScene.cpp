@@ -38,27 +38,17 @@ void AdvancedOGLScene::Run()
     }
 
     // create point light
+
+    for (int i = 0; i < 2; i++)
+    {
+        for (int j = 0; j < 2; j++)
+        {
+            PointLight pl(glm::vec3(300.0f, 300.0f, 300.0f));
+            pl.m_Instance.position = { (float)j * 4.0f, (float)i * 4.0f + 7.5f, 10.0f };
+            m_SceneGraph.m_PointLights.push_back(pl);
+        }
+    }
    
-    PointLight testLight(glm::vec3(300.0f, 300.0f, 300.0f));
-    testLight.m_Instance.position = { 0.0f, 0.0f, 10.0f };
-    m_SceneGraph.m_PointLights.push_back(testLight);
-
-
-    PointLight redLight(glm::vec3(300.0f, 300.0f, 300.0f));
-    redLight.m_Instance.position = { 3.0f, 0.0f, 10.0f };
-    m_SceneGraph.m_PointLights.push_back(redLight);
-
-    PointLight greenLight(glm::vec3(300.0f, 300.0f, 300.0f));
-    greenLight.m_Instance.position = { 6.0f, 0.0f, 10.0f };
-    m_SceneGraph.m_PointLights.push_back(greenLight);
-
-    PointLight blueLight(glm::vec3(300.0f, 300.0f, 300.0f));
-    blueLight.m_Instance.position = { 9.0f, 0.0f, 10.0f };
-    m_SceneGraph.m_PointLights.push_back(blueLight);
-
-    PointLight purpleLight(glm::vec3(300.0f, 300.0f, 300.0f));
-    purpleLight.m_Instance.position = { 12.0f, 0.0f, 10.0f };
-    m_SceneGraph.m_PointLights.push_back(purpleLight);
 
     DirectionalLight dirLight;
     dirLight.m_Direction = { -1.0f, -3.0f, 2.0f };
@@ -73,11 +63,16 @@ void AdvancedOGLScene::Run()
     big_box.m_Instance.scale = { 4.0f, 4.0f, 4.0f };
     // m_SceneGraph.m_Cubes.push_back(big_box);
 
-    for (int i = 0; i < 5; i++)
+    unsigned int grid_size = 7;
+
+    for (int y = 0; y < grid_size; y++)
     {
-        Sphere t_sphere;
-        t_sphere.m_Instance.position = { 3.0f * i, 0.0f, 0.0f };
-        m_SceneGraph.m_Spheres.push_back(t_sphere);
+        for (int x = 0; x < grid_size; x++)
+        {
+            Sphere t_sphere;
+            t_sphere.m_Instance.position = { (float)x * 3.0f, (float)y * 3.0f, 0.0f };
+            m_SceneGraph.m_Spheres.push_back(t_sphere);
+        }
     }
 
     for (int i = 0; i < 0; i++)
