@@ -49,6 +49,28 @@ struct PointLight
 	float quadratic;
 };
 
+struct Material
+{
+	sampler2D texture_diffuse1;		// also used as ambient
+	sampler2D texture_diffuse2;
+	sampler2D texture_diffuse3;
+
+	sampler2D texture_specular1;
+	sampler2D texture_specular2;
+	sampler2D texture_specular3;
+	
+	sampler2D texture_metallicness1;
+
+	sampler2D texture_roughness1;
+
+	sampler2D texture_albedo1;
+
+	sampler2D texture_normal1;
+
+	sampler2D texture_ao1;
+};
+
+
 layout(std140) uniform u_CameraData
 {
 	vec3 u_CameraPosition;
@@ -58,10 +80,7 @@ const int NR_LIGHTS = 32;
 uniform PointLight u_PointLight[NR_LIGHTS];		// lights max
 uniform int u_NumberPointLights;
 
-uniform vec3 u_Albedo;
-uniform float u_Metallic;
-uniform float u_Roughness;
-uniform float u_AO;
+uniform Material u_Material;
 
 const float PI = 3.14159265359;
 
@@ -70,14 +89,23 @@ float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 FresnelSchlick(float cosTheta, vec3 F0);
+vec3 GetNormalFromMap();
 
 void main()
 {
-	vec3 N = normalize(v_Normal);
+	// sample material textures
+	float metallicness = texture(u_Material.texture_metallicness1, v_TexCoord).r;
+	float roughness = texture(u_Material.texture_roughness1, v_TexCoord).r;
+	vec3 albedo = pow(texture(u_Material.texture_albedo1, v_TexCoord).rgb, vec3(2.2));		// sRGB to linear color space
+	vec3 normal = GetNormalFromMap();
+	float ao = texture(u_Material.texture_ao1, v_TexCoord).r;
+
+	vec3 N = normalize(normal);
 	vec3 V = normalize(u_CameraPosition - v_FragmentPosition);
 
 	vec3 F0 = vec3(0.04);
-	F0 = mix(F0, u_Albedo, u_Metallic);
+
+	F0 = mix(F0, albedo, metallicness);
 
 	vec3 Lo = vec3(0.0);
 	for (int i = 0; i < u_NumberPointLights; i++)
@@ -90,23 +118,23 @@ void main()
 		vec3 radiance = 2.0 * u_PointLight[i].diffuse * attenuation;				// (2.0 bc of specular) specular is our light color for this (diffuse doesnt work somehow)
 
 		// cook-torrance BRDF
-		float NDF = DistributionGGX(N, H, u_Roughness);
-		float G = GeometrySmith(N, V, L, u_Roughness);
+		float NDF = DistributionGGX(N, H, roughness);
+		float G = GeometrySmith(N, V, L, roughness);
 		vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
 
 		vec3 kS = F;
 		vec3 kD = vec3(1.0) - kS;
-		kD *= 1.0 - u_Metallic;
+		kD *= 1.0 - metallicness;
 
 		vec3 numerator = NDF * G * F;
 		float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
 		vec3 specular = numerator / max(denominator, 0.001);
 
 		float NdotL = max(dot(N, L), 0.0);
-		Lo += (kD * u_Albedo / PI + specular) * radiance * NdotL;
+		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
-	vec3 ambient = vec3(0.03) * u_Albedo * u_AO;
+	vec3 ambient = vec3(0.03) * albedo * ao;
 	vec3 color = ambient + Lo;
 
 	color = color / (color + vec3(1.0));
@@ -153,4 +181,21 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 vec3 FresnelSchlick(float cosTheta, vec3 F0)
 {
 	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+vec3 GetNormalFromMap()
+{
+	vec3 tangentNormal = texture(u_Material.texture_normal1, v_TexCoord).xyz * 2.0 - 1.0;
+
+	vec3 Q1 = dFdx(v_FragmentPosition);
+	vec3 Q2 = dFdy(v_FragmentPosition);
+	vec2 st1 = dFdx(v_TexCoord);
+	vec2 st2 = dFdy(v_TexCoord);
+
+	vec3 N = normalize(v_Normal);
+	vec3 T = normalize(Q1 * st2.t - Q2 * st1.t);
+	vec3 B = -normalize(cross(N, T));
+	mat3 TBN = mat3(T, B, N);
+
+	return normalize(TBN * tangentNormal);
 }

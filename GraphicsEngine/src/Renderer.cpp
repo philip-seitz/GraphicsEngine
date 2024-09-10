@@ -579,7 +579,7 @@ void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 	
 	sData.pbr_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
 	sData.pbr_shader->SetUniform1f("u_AO", 1.0f);
-	sData.pbr_shader->SetUniform3f("u_Albedo", glm::vec3(0.5f, 0.0f, 0.0f));
+
 	// ===== render spheres or other objects =====
 
 
