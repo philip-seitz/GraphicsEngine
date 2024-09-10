@@ -6,6 +6,13 @@ Graphics Engine using OpenGL and C++
 While I am still working through 'Learn OpenGL' I have not yet had the chance to improve the car rendering just yet. 
 But I want to display some of the cool scenes, that could be produced using the contents and tutorials of the aforementioned literature:
 
+
+***PBR Scene***
+
+
+<img src="https://github.com/user-attachments/assets/a0a1c932-5137-4d62-9f31-1e42dba055de" width="540" height="360">
+
+
 ***SSAO Scene***
 
 *With Blur*
