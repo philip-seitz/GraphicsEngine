@@ -64,12 +64,12 @@ void AdvancedOGLScene::Run()
     // m_SceneGraph.m_Cubes.push_back(big_box);
 
     unsigned int grid_size = 7;
+    Sphere t_sphere;
 
     for (int y = 0; y < grid_size; y++)
     {
         for (int x = 0; x < grid_size; x++)
         {
-            Sphere t_sphere;
             t_sphere.m_Instance.position = { (float)x * 3.0f, (float)y * 3.0f, 0.0f };
             m_SceneGraph.m_Spheres.push_back(t_sphere);
         }

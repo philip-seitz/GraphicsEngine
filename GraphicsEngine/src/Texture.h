@@ -6,6 +6,8 @@
 class Texture
 {
 public:
+	Texture();
+	Texture(const std::string& path, const int& id);
 	Texture(const std::string& path, std::string& type, const int& id);
 	Texture(const std::string& path, const unsigned short& slot, const unsigned short& wrap_mode);
 	~Texture();
@@ -16,6 +18,7 @@ public:
 	std::string GetType();
 	std::string GetPath();
 	void Init();			// TODO: when mesh loading is implemented
+	void InitEquiRectMap(const std::string& path);
 	unsigned int GetID();
 
 	int GetWidth();

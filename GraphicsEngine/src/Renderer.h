@@ -29,6 +29,7 @@ public:
 	static void RenderDeferredScene(SceneGraph* scene_graph);
 	static void RenderAmbientOcclusionScene(SceneGraph* scene_graph);
 	static void RenderPBRScene(SceneGraph* scene_graph);
+	static void PBRScenePrecalculations();
 	static void Clear();
 
 private:

@@ -500,6 +500,7 @@
   <ItemGroup>
     <None Include="res\shader\asteroids_instanced.glsl" />
     <None Include="res\shader\cubemap_shader.glsl" />
+    <None Include="res\shader\equi_to_cubemap_shader.glsl" />
     <None Include="res\shader\g_buffer_shader.glsl" />
     <None Include="res\shader\depth_shader.glsl" />
     <None Include="res\shader\geometry.glsl" />
@@ -510,6 +511,8 @@
     <None Include="res\shader\lighting_shader.glsl" />
     <None Include="res\shader\normalmap_shader.glsl" />
     <None Include="res\shader\parallax_shader.glsl" />
+    <None Include="res\shader\pbr_cubemap_shader.glsl" />
+    <None Include="res\shader\pbr_irr_convolution_shader.glsl" />
     <None Include="res\shader\pbr_shader.glsl" />
     <None Include="res\shader\postprocessing.glsl" />
     <None Include="res\shader\shadow_cubemap_shader.glsl" />

@@ -1,6 +1,31 @@
 #include "Texture.h"
 #include "stb_image/stb_image.h"
 
+Texture::Texture() : 
+	m_RendererID(0),
+	m_FilePath(""),
+	m_Type(""),
+	m_LocalBuffer(nullptr),
+	m_Slot(0),
+	m_Width(0),
+	m_Height(0),
+	m_BPP(0)
+{
+}
+
+Texture::Texture(const std::string& path, const int& id) :
+	m_RendererID(id),
+	m_FilePath(path),
+	m_Type(""),
+	m_LocalBuffer(nullptr),
+	m_Slot(0),
+	m_Width(0),
+	m_Height(0),
+	m_BPP(0)
+{
+
+}
+
 Texture::Texture(const std::string& path, std::string& type, const int& id) :
 	m_RendererID(id),
 	m_FilePath(path),
@@ -117,6 +142,37 @@ void Texture::Init()
 	{
 		stbi_image_free(m_LocalBuffer);
 	}
+}
+
+// load equirectangular map
+void Texture::InitEquiRectMap(const std::string& path)
+{
+	m_FilePath = path;
+	stbi_set_flip_vertically_on_load(1);
+	float* data = stbi_loadf(m_FilePath.c_str(), &m_Width, &m_Height, &m_BPP, 0);
+
+	if (data)
+	{
+		glGenTextures(1, &m_RendererID);
+		glBindTexture(GL_TEXTURE_2D, m_RendererID);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, m_Width, m_Height, 0, GL_RGB, GL_FLOAT, data);
+
+		// texture filtering 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);		
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		// texture wrapping
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		// Unbind and free
+		glBindTexture(GL_TEXTURE_2D, 0);
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Failed to load HDR image." << std::endl;
+	}
+
 }
 
 std::string Texture::GetType()

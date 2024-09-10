@@ -90,6 +90,9 @@ struct RendererData
 	Shader* ssao_lighting_pass_shader = nullptr;
 	Shader* ssao_blur_shader = nullptr;
 	Shader* pbr_shader = nullptr;
+	Shader* equi_to_cubemap_shader = nullptr;
+	Shader* pbr_cubemap_shader = nullptr;
+	Shader* pbr_irr_convolution_shader = nullptr;
 
 	Window* window = nullptr;
 
@@ -115,6 +118,12 @@ struct RendererData
 	// fields for ssao kernel
 	std::vector<glm::vec3> ssaoKernel;
 	std::vector<glm::vec3> ssaoNoise;
+
+	// fields for pbr 
+	unsigned int capture_fbo_id, capture_rbo_id;
+	Cubemap env_cubemap;
+	Cubemap irr_cubemap;
+	Texture equi_rect_map;
 };
 
 // create vao for sky box
@@ -158,6 +167,9 @@ void Renderer::Init(Window* window)
 	sData.ssao_lighting_pass_shader = new Shader("res/shader/ssao_lighting_pass_shader.glsl");
 	sData.ssao_blur_shader = new Shader("res/shader/ssao_blur_shader.glsl");
 	sData.pbr_shader = new Shader("res/shader/pbr_shader.glsl");
+	sData.equi_to_cubemap_shader = new Shader("res/shader/equi_to_cubemap_shader.glsl");
+	sData.pbr_cubemap_shader = new Shader("res/shader/pbr_cubemap_shader.glsl");
+	sData.pbr_irr_convolution_shader = new Shader("res/shader/pbr_irr_convolution_shader.glsl");
 	
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
@@ -197,6 +209,7 @@ void Renderer::Init(Window* window)
 	shader_list_matrices.push_back(sData.ssao_geometry_shader);
 	shader_list_matrices.push_back(sData.ssao_shader);
 	shader_list_matrices.push_back(sData.pbr_shader);
+	shader_list_matrices.push_back(sData.pbr_cubemap_shader);
 
 	uboMatrix.InitBuffer(2 * sizeof(glm::mat4), "u_Matrices", 0, shader_list_matrices);
 
@@ -214,6 +227,7 @@ void Renderer::Init(Window* window)
 	shader_list_camera.push_back(sData.ssao_shader);
 	shader_list_camera.push_back(sData.ssao_lighting_pass_shader);
 	shader_list_camera.push_back(sData.pbr_shader);
+	
 	uboCamera.InitBuffer(sizeof(glm::vec3), "u_CameraData", 1, shader_list_camera);
 	
 	std::vector<Shader*> shader_list_light_space_matrix;
@@ -466,10 +480,11 @@ void Renderer::Init(Window* window)
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.ssao_blur_color_buffer, 0);
 
+	
+
 	// ====
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);			// standard framebuffer	
-	
 }
 
 void Renderer::Shutdown()
@@ -519,6 +534,8 @@ int Renderer::ModelGridLayout(ModelInstance** inst, const int& number, const glm
 	return num;
 }
 
+bool initialized = false;
+
 void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 {
 	cameras[0] = &scene_graph->m_Cameras[0];
@@ -538,12 +555,107 @@ void Renderer::RenderSceneGraph(SceneGraph* scene_graph)
 
 	// RenderAmbientOcclusionScene(scene_graph);
 
+	if (!initialized)
+	{
+		PBRScenePrecalculations();
+		initialized = true;
+	}
+	
 	RenderPBRScene(scene_graph);
+}
+
+void Renderer::PBRScenePrecalculations()
+{
+	// ==== setup for PBR scene ====
+
+	// equirectangular environment map
+
+	sData.equi_rect_map.InitEquiRectMap("res/equrec_maps/newport_loft.hdr");
+
+	// environment cubemap
+	sData.env_cubemap.InitEnvCubemap();
+	
+	// create frame and renderbuffer objects to capture cube faces
+
+	glGenFramebuffers(1, &sData.capture_fbo_id);
+	glGenRenderbuffers(1, &sData.capture_rbo_id);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.capture_fbo_id);
+	glBindRenderbuffer(GL_RENDERBUFFER, sData.capture_rbo_id);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, sData.capture_rbo_id);
+
+	// capture cube faces 
+	glDisable(GL_CULL_FACE);		// needs to be off, else back faces won't be visible
+
+	glm::mat4 caputureProjection = glm::perspectiveRH(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+
+	glm::mat4 captureViews[] =
+	{
+		glm::lookAtRH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f),
+					glm::vec3(0.0f, -1.0f, 0.0f)),
+		glm::lookAtRH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f),
+					glm::vec3(0.0f, -1.0f, 0.0f)),
+		glm::lookAtRH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f),
+					glm::vec3(0.0f, 0.0f, 1.0f)),
+		glm::lookAtRH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f),
+					glm::vec3(0.0f, 0.0f, -1.0f)),
+		glm::lookAtRH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f),
+					glm::vec3(0.0f, -1.0f, 0.0f)),
+		glm::lookAtRH(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f),
+					glm::vec3(0.0f, -1.0f, 0.0f))
+	};
+
+	sData.equi_to_cubemap_shader->Bind();
+	sData.equi_to_cubemap_shader->SetUniform1i("u_EquirectangularMap", 0);
+	sData.equi_to_cubemap_shader->SetUniformMat4f("u_Projection", caputureProjection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, sData.equi_rect_map.GetID());
+
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.capture_fbo_id);
+	glViewport(0, 0, sData.env_cubemap.width, sData.env_cubemap.height);
+
+	for (int i = 0; i < 6; i++)
+	{
+		sData.equi_to_cubemap_shader->SetUniformMat4f("u_View", captureViews[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, sData.env_cubemap.cubemapID, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glBindVertexArray(sData.primitive_cube.va);
+		glDrawElements(GL_TRIANGLES, 3 * sData.primitive_cube.TriCount, GL_UNSIGNED_INT, nullptr);
+	}
+
+	sData.irr_cubemap.InitIrrCubemap();
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.capture_fbo_id);
+	glBindRenderbuffer(GL_RENDERBUFFER, sData.capture_rbo_id);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.env_cubemap.cubemapID);
+	sData.pbr_irr_convolution_shader->SetUniform1i("u_EnvironmentMap", 0);
+	sData.pbr_irr_convolution_shader->SetUniformMat4f("u_Projection", caputureProjection);
+
+	glViewport(0, 0, sData.irr_cubemap.width, sData.irr_cubemap.height);
+
+	for (int i = 0; i < 6; i++)
+	{
+		sData.pbr_irr_convolution_shader->SetUniformMat4f("u_View", captureViews[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, sData.irr_cubemap.cubemapID, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glBindVertexArray(sData.primitive_cube.va);
+		glDrawElements(GL_TRIANGLES, 3 * sData.primitive_cube.TriCount, GL_UNSIGNED_INT, nullptr);
+	}
 }
 
 void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 {
 	// ===== start of frame init =====
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, sData.window->m_Width, sData.window->m_Height);
 
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -573,12 +685,10 @@ void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 		scene_graph->m_PointLights[i].SetLightingUniforms(sData.pbr_shader, i);
 	}
 
-	
 	sData.pbr_shader->Bind();
 	// so we know how many lights we have in our fragment shader
 	
 	sData.pbr_shader->SetUniform1i("u_NumberPointLights", scene_graph->m_PointLights.size());
-	sData.pbr_shader->SetUniform1f("u_AO", 1.0f);
 
 	// ===== render spheres or other objects =====
 
@@ -598,6 +708,15 @@ void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 			scene_graph->m_Spheres[x + x_size * y].Draw(sData.pbr_shader, &sData.sphere);
 		}
 	}
+
+	// render skybox 
+	glDepthFunc(GL_LEQUAL);
+	glDisable(GL_CULL_FACE);		// needs to be off, else back faces won't be visible
+	sData.pbr_cubemap_shader->SetUniform1i("u_EnvironmentMap", 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.irr_cubemap.cubemapID);		// TODO: revert to env_cubemap (this was for debugging purposes)
+	glBindVertexArray(sData.primitive_cube.va);
+	glDrawElements(GL_TRIANGLES, 3 * sData.primitive_cube.TriCount, GL_UNSIGNED_INT, nullptr);
 }
 
 

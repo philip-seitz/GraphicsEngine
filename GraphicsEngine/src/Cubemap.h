@@ -9,6 +9,8 @@ class Cubemap
 public:
 	Cubemap();
 	void Init();
+	void InitEnvCubemap();
+	void InitIrrCubemap();
 	void InitDepthCubemap();
 	void Draw(const Model& base_model, Shader* shader);
 	glm::mat4x4 ModelMatrix();
