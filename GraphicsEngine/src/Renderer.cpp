@@ -692,6 +692,11 @@ void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 
 	// ===== render spheres or other objects =====
 
+	// irradiance map
+	sData.pbr_cubemap_shader->SetUniform1i("u_IrradianceMap", 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.irr_cubemap.cubemapID);
+
 
 	int x_size = glm::sqrt(scene_graph->m_Spheres.size());
 	int y_size = x_size;
@@ -714,7 +719,7 @@ void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 	glDisable(GL_CULL_FACE);		// needs to be off, else back faces won't be visible
 	sData.pbr_cubemap_shader->SetUniform1i("u_EnvironmentMap", 0);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.irr_cubemap.cubemapID);		// TODO: revert to env_cubemap (this was for debugging purposes)
+	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.env_cubemap.cubemapID);		
 	glBindVertexArray(sData.primitive_cube.va);
 	glDrawElements(GL_TRIANGLES, 3 * sData.primitive_cube.TriCount, GL_UNSIGNED_INT, nullptr);
 }
@@ -1553,9 +1558,15 @@ void Renderer::Clear()
 // mouse input callback
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	const static float sens = 0.2f;
-	static float lastx = 400;
-	static float lasty = 300;
+	// PROBLEM:
+	// for small mouse movements this will not actually move the camera as the mouse position might not actually change 
+	// between two consecutive frames. not entirely sure if this is the reason.
+	// SOULUTION:
+	// possibly, should look how others implement this (Cherno, GameEngines etc.)
+
+	const static float sens = 0.8f;
+	static float lastx = 400.0f;
+	static float lasty = 300.0f;
 	static bool init = false;
 
 	if (!init)

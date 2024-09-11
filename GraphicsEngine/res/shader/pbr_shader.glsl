@@ -80,7 +80,13 @@ const int NR_LIGHTS = 32;
 uniform PointLight u_PointLight[NR_LIGHTS];		// lights max
 uniform int u_NumberPointLights;
 
+uniform samplerCube u_IrradianceMap;
+
 uniform Material u_Material;
+
+// configurable material settings 
+uniform float u_Metallic;
+uniform float u_Roughness;
 
 const float PI = 3.14159265359;
 
@@ -89,14 +95,18 @@ float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 FresnelSchlick(float cosTheta, vec3 F0);
+vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness);
 vec3 GetNormalFromMap();
 
 void main()
 {
 	// sample material textures
-	float metallicness = texture(u_Material.texture_metallicness1, v_TexCoord).r;
-	float roughness = texture(u_Material.texture_roughness1, v_TexCoord).r;
-	vec3 albedo = pow(texture(u_Material.texture_albedo1, v_TexCoord).rgb, vec3(2.2));		// sRGB to linear color space
+	//float metallicness = texture(u_Material.texture_metallicness1, v_TexCoord).r;
+	float metallicness = u_Metallic;
+	// float roughness = texture(u_Material.texture_roughness1, v_TexCoord).r;
+	float roughness = u_Roughness;
+	// vec3 albedo = pow(texture(u_Material.texture_albedo1, v_TexCoord).rgb, vec3(2.2));		// sRGB to linear color space
+	vec3 albedo = vec3(0.6, 0.0, 0.0);
 	vec3 normal = GetNormalFromMap();
 	float ao = texture(u_Material.texture_ao1, v_TexCoord).r;
 
@@ -134,7 +144,11 @@ void main()
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
-	vec3 ambient = vec3(0.03) * albedo * ao;
+	vec3 kS = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+	vec3 kD = 1.0 - kS;
+	vec3 irradiance = texture(u_IrradianceMap, N).rgb;
+	vec3 diffuse = irradiance * albedo;
+	vec3 ambient = (kD * diffuse) * ao;
 	vec3 color = ambient + Lo;
 
 	color = color / (color + vec3(1.0));
@@ -198,4 +212,12 @@ vec3 GetNormalFromMap()
 	mat3 TBN = mat3(T, B, N);
 
 	return normalize(TBN * tangentNormal);
+}
+
+vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+
+	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+
+
 }
