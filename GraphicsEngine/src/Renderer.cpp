@@ -93,6 +93,8 @@ struct RendererData
 	Shader* equi_to_cubemap_shader = nullptr;
 	Shader* pbr_cubemap_shader = nullptr;
 	Shader* pbr_irr_convolution_shader = nullptr;
+	Shader* pbr_prefilter_shader = nullptr;
+	Shader* brdf_conv_shader = nullptr;
 
 	Window* window = nullptr;
 
@@ -123,7 +125,9 @@ struct RendererData
 	unsigned int capture_fbo_id, capture_rbo_id;
 	Cubemap env_cubemap;
 	Cubemap irr_cubemap;
+	Cubemap prefilter_cubemap;
 	Texture equi_rect_map;
+	Texture brdf_conv_texture;
 };
 
 // create vao for sky box
@@ -170,7 +174,9 @@ void Renderer::Init(Window* window)
 	sData.equi_to_cubemap_shader = new Shader("res/shader/equi_to_cubemap_shader.glsl");
 	sData.pbr_cubemap_shader = new Shader("res/shader/pbr_cubemap_shader.glsl");
 	sData.pbr_irr_convolution_shader = new Shader("res/shader/pbr_irr_convolution_shader.glsl");
-	
+	sData.pbr_prefilter_shader = new Shader("res/shader/pbr_prefilter_shader.glsl");
+	sData.brdf_conv_shader = new Shader("res/shader/brdf_conv_shader.glsl");
+
 	// sData.lighting_shader = new Shader("res/shader/lighting_shader.glsl");
 	
 	// initialize models (send data to GPU)
@@ -466,7 +472,6 @@ void Renderer::Init(Window* window)
 	else
 		std::cout << "FBO SSAO FAILED" << std::endl;
 
-
 	// framebuffer for ssao blur 
 	glGenFramebuffers(1, &sData.fbo_id[5]);
 	glBindFramebuffer(GL_FRAMEBUFFER, sData.fbo_id[5]);
@@ -479,8 +484,6 @@ void Renderer::Init(Window* window)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.ssao_blur_color_buffer, 0);
-
-	
 
 	// ====
 
@@ -568,6 +571,9 @@ void Renderer::PBRScenePrecalculations()
 {
 	// ==== setup for PBR scene ====
 
+	// filter across cube faces -> avoid visible edges
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
 	// equirectangular environment map
 
 	sData.equi_rect_map.InitEquiRectMap("res/equrec_maps/newport_loft.hdr");
@@ -627,6 +633,13 @@ void Renderer::PBRScenePrecalculations()
 		glDrawElements(GL_TRIANGLES, 3 * sData.primitive_cube.TriCount, GL_UNSIGNED_INT, nullptr);
 	}
 
+	// generate mip maps for environment cubemap
+	// sampling a mipmap env-cubemap for prefiltering prevents dotted patterns
+	// Chetan Jags talks about how to solve the Anti-Aliasing pattern in this article
+	// https://chetanjags.wordpress.com/2015/08/26/image-based-lighting/ 
+	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.env_cubemap.cubemapID);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
 	sData.irr_cubemap.InitIrrCubemap();
 	glBindFramebuffer(GL_FRAMEBUFFER, sData.capture_fbo_id);
 	glBindRenderbuffer(GL_RENDERBUFFER, sData.capture_rbo_id);
@@ -649,6 +662,65 @@ void Renderer::PBRScenePrecalculations()
 		glBindVertexArray(sData.primitive_cube.va);
 		glDrawElements(GL_TRIANGLES, 3 * sData.primitive_cube.TriCount, GL_UNSIGNED_INT, nullptr);
 	}
+
+	// prefilter setup 
+	sData.prefilter_cubemap.InitPrefilterCubemap();
+
+	sData.pbr_prefilter_shader->Bind();
+	sData.pbr_prefilter_shader->SetUniform1i("u_EnvironmentMap", 0);
+	sData.pbr_prefilter_shader->SetUniformMat4f("u_Projection", caputureProjection);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.env_cubemap.cubemapID);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.capture_fbo_id);
+	unsigned int maxMipLevels = 5;
+
+	for (unsigned int mip = 0; mip < maxMipLevels; mip++)
+	{
+		// resize framebuffer, size is halved for every new mip map level
+		unsigned int mipWidth = 128 * std::pow(0.5, mip);
+		unsigned int mipHeight = 128 * std::pow(0.5, mip);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, sData.capture_fbo_id);
+		glBindRenderbuffer(GL_RENDERBUFFER, sData.capture_rbo_id);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
+		glViewport(0, 0, mipWidth, mipHeight);
+
+		float roughness = (float)mip / (float)(maxMipLevels - 1);
+		sData.pbr_prefilter_shader->SetUniform1f("u_Roughness", roughness);
+		sData.pbr_prefilter_shader->SetUniform1f("u_Resolution", (float)sData.env_cubemap.width);
+
+		for (int i = 0; i < 6; i++)
+		{
+			sData.pbr_prefilter_shader->SetUniformMat4f("u_View", captureViews[i]);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, sData.prefilter_cubemap.cubemapID, mip);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glBindVertexArray(sData.primitive_cube.va);
+			glDrawElements(GL_TRIANGLES, 3 * sData.primitive_cube.TriCount, GL_UNSIGNED_INT, nullptr);
+		}
+	}
+
+	// BRDF LUT setup
+	sData.brdf_conv_texture.InitLUT();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, sData.capture_fbo_id);
+	glBindRenderbuffer(GL_RENDERBUFFER, sData.capture_rbo_id);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24,
+		sData.brdf_conv_texture.GetWidth(), sData.brdf_conv_texture.GetHeight());
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sData.brdf_conv_texture.GetID(), 0);
+	glViewport(0, 0, sData.brdf_conv_texture.GetWidth(), sData.brdf_conv_texture.GetHeight());
+	
+	sData.brdf_conv_shader->Bind();
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glDepthMask(GL_FALSE);		// Don't change depth values with the quad
+	glBindVertexArray(sData.screen_quad.va);
+	glDrawElements(GL_TRIANGLES, 3 * sData.screen_quad.TriCount, GL_UNSIGNED_INT, nullptr);
+	glDepthMask(GL_TRUE);		// turn it back on
 }
 
 void Renderer::RenderPBRScene(SceneGraph* scene_graph)
@@ -693,10 +765,19 @@ void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 	// ===== render spheres or other objects =====
 
 	// irradiance map
-	sData.pbr_cubemap_shader->SetUniform1i("u_IrradianceMap", 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.irr_cubemap.cubemapID);
+	sData.pbr_shader->SetUniform1i("u_IrradianceMap", 0);
 
+	// prefilter map
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, sData.prefilter_cubemap.cubemapID);
+	sData.pbr_shader->SetUniform1i("u_PrefilterMap", 1);
+
+	// BRDF lookup texture
+	glActiveTexture(GL_TEXTURE15);
+	glBindTexture(GL_TEXTURE_2D, sData.brdf_conv_texture.GetID());
+	sData.pbr_shader->SetUniform1i("u_TextureBRDF", 15);
 
 	int x_size = glm::sqrt(scene_graph->m_Spheres.size());
 	int y_size = x_size;

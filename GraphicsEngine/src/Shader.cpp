@@ -52,7 +52,6 @@ unsigned int Shader::CreateShader(const std::string& vertexShader, const std::st
         std::cout << "Program Linking Error: " << infoLog << std::endl;
     }
 
-
     GLCall(glDeleteShader(vs));                 // Shaderspeicherplatz freimachen, der durch CreateShader 
     GLCall(glDeleteShader(fs));                 // angelegt wurde. Wenn attached wird erst freigegeben, wenn detach gecalled
 

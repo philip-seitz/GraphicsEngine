@@ -1471,6 +1471,8 @@
     <None Include="res\shader\equi_to_cubemap_shader.glsl" />
     <None Include="res\shader\pbr_cubemap_shader.glsl" />
     <None Include="res\shader\pbr_irr_convolution_shader.glsl" />
+    <None Include="res\shader\pbr_prefilter_shader.glsl" />
+    <None Include="res\shader\brdf_conv_shader.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="res\shader\texture_shader.glsl" />

@@ -9,8 +9,8 @@ uniform mat4 u_View;
 
 void main()
 {
-	v_FragmentPosition = a_Position.xyz;
-	gl_Position = u_Projection * u_View * a_Position;
+	v_FragmentPosition = a_Position.xyz;					// fragment position as sample direction
+	gl_Position = u_Projection * u_View * a_Position;		// to capture each cube face from the inside
 }
 
 #shader fragment

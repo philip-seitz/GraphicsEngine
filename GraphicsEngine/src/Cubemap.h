@@ -11,6 +11,7 @@ public:
 	void Init();
 	void InitEnvCubemap();
 	void InitIrrCubemap();
+	void InitPrefilterCubemap();
 	void InitDepthCubemap();
 	void Draw(const Model& base_model, Shader* shader);
 	glm::mat4x4 ModelMatrix();

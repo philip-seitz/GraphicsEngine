@@ -19,6 +19,7 @@ public:
 	std::string GetPath();
 	void Init();			// TODO: when mesh loading is implemented
 	void InitEquiRectMap(const std::string& path);
+	void InitLUT();
 	unsigned int GetID();
 
 	int GetWidth();

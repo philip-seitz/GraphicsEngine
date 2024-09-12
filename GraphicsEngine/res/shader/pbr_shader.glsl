@@ -81,6 +81,8 @@ uniform PointLight u_PointLight[NR_LIGHTS];		// lights max
 uniform int u_NumberPointLights;
 
 uniform samplerCube u_IrradianceMap;
+uniform samplerCube u_PrefilterMap;
+uniform sampler2D u_TextureBRDF;
 
 uniform Material u_Material;
 
@@ -144,11 +146,21 @@ void main()
 		Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
-	vec3 kS = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+
+	vec3 R = reflect(-V, N);
+
+	const float MAX_REFLECTION_LOD = 4.0;
+	vec3 prefilteredColor = textureLod(u_PrefilterMap, R, 
+									   roughness * MAX_REFLECTION_LOD).rgb;
+
+	vec3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+	vec2 envBRDF = texture(u_TextureBRDF, vec2(max(dot(N, V), 0.0), roughness)).rg;
+	vec3 specular = prefilteredColor * (F * envBRDF.x + envBRDF.y);
+	vec3 kS = F;
 	vec3 kD = 1.0 - kS;
 	vec3 irradiance = texture(u_IrradianceMap, N).rgb;
 	vec3 diffuse = irradiance * albedo;
-	vec3 ambient = (kD * diffuse) * ao;
+	vec3 ambient = (kD * diffuse + specular) * ao;
 	vec3 color = ambient + Lo;
 
 	color = color / (color + vec3(1.0));
@@ -216,8 +228,5 @@ vec3 GetNormalFromMap()
 
 vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
 {
-
 	return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
-
-
 }
