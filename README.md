@@ -1,25 +1,42 @@
 # GraphicsEngine
 Graphics Engine using OpenGL and C++
 
-### Current State Of The Project
+# Current State Of The Project
 
 While I am still working through 'Learn OpenGL' I have not yet had the chance to improve the car rendering just yet. 
 But I want to display some of the cool scenes, that could be produced using the contents and tutorials of the aforementioned literature:
 
 
-***PBR Scene***
+### PBR Scene
 
+***Final PBR Version***
+
+<img src="https://github.com/user-attachments/assets/2bfb5824-30c2-4bb3-a22d-32d522742893" width="540" height="360">
+
+
+
+<img src="https://github.com/user-attachments/assets/a3daec21-ef26-45ce-a061-9f61061f3d25" width="540" height="360">
+
+These two are some examples of full PBR lighting, including Image based reflection and diffuse light (for ambient component).
+I must say, the material ball looks kinda sick.
+
+---
+
+***Early PBR version***
 
 <img src="https://github.com/user-attachments/assets/a0a1c932-5137-4d62-9f31-1e42dba055de" width="540" height="360">
 
+This image shows some physically based rendered spheres, where we only account for the point lights.
 
-***SSAO Scene***
+---
 
-*With Blur*
+### SSAO Scene
+
+***With Blur***
 
 <img src="https://github.com/user-attachments/assets/39dd5215-065f-4671-9489-c8f61ee2acec" width="540" height="360">
 
-*Without Blur (noisy)*
+***Without Blur (noisy)***
 
 <img src="https://github.com/user-attachments/assets/af2a6c42-1e69-42c6-a71d-c18f4478cc4f" width="540" height="360">
 
@@ -30,7 +47,7 @@ In combination with Blinn-Phong lighting we get some really nice results.
 
 ---
 
-***Deferred Shading Scene***
+### Deferred Shading Scene
 
 <img src="https://github.com/user-attachments/assets/ff96734a-5d6f-4550-a77d-30b42b424bb9" width="540" height="360">
 
@@ -43,7 +60,7 @@ A nice addition would be to implement proper bloom (so the light cubes look like
 
 ---
 
-***Car Scene***
+### Car Scene
 
 
 <img src="https://github.com/philip-seitz/GraphicsEngine/assets/93658810/031b790b-2d82-44b4-ab9a-9e6b477b682c" width="540" height="360">
@@ -60,8 +77,8 @@ currently implemented features like:
 - different types of fog (exponential squared in this example)
 - Mult Sample Anti Aliasing (MSAA 4x) for models and grid lines
 
-## Time Lapse
+### Time Lapse
 
-older versions:
+***Older Versions***
 
 <img src="https://github.com/philip-seitz/GraphicsEngine/assets/93658810/10c45a73-42b7-4f07-a6ae-02af7363c2e9" width="540" height="360">
