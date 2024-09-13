@@ -52,6 +52,7 @@ struct RendererData
 	ModelScene backpack;
 	ModelScene rock;
 	ModelScene planet;
+	ModelScene material_ball;
 
 	// Grid
 	Grid grid_xz;
@@ -194,6 +195,7 @@ void Renderer::Init(Window* window)
 	sData.backpack = ModelScene("res/models/backpack/backpack.obj");
 	sData.rock = ModelScene("res/models/rocky/rocky.obj");
 	sData.planet = ModelScene("res/models/planet/planet.obj");
+	sData.material_ball = ModelScene("res/models/material-ball/export3dcoat.obj");
 	
 	cube_map.Init();
 
@@ -576,7 +578,7 @@ void Renderer::PBRScenePrecalculations()
 
 	// equirectangular environment map
 
-	sData.equi_rect_map.InitEquiRectMap("res/equrec_maps/newport_loft.hdr");
+	sData.equi_rect_map.InitEquiRectMap("res/equrec_maps/industrial_sunset.hdr");
 
 	// environment cubemap
 	sData.env_cubemap.InitEnvCubemap();
@@ -779,21 +781,26 @@ void Renderer::RenderPBRScene(SceneGraph* scene_graph)
 	glBindTexture(GL_TEXTURE_2D, sData.brdf_conv_texture.GetID());
 	sData.pbr_shader->SetUniform1i("u_TextureBRDF", 15);
 
-	int x_size = glm::sqrt(scene_graph->m_Spheres.size());
-	int y_size = x_size;
-	for (int y = 0; y < y_size; y++)
+	for (int i = 0; i < scene_graph->m_MaterialBalls.size(); i++)
 	{
-		for (int x = 0; x < x_size; x++)
-		{
-			// NOTE: set pbr uniforms per object (this should ideally be inside a Draw()-function, so i can set all of this in the scene graph)
-
-			// metallicness and roughness from 0.0 to 1.0 across all objects
-			sData.pbr_shader->SetUniform1f("u_Metallic", y / (float)(y_size - 1));
-			sData.pbr_shader->SetUniform1f("u_Roughness", glm::clamp(x / (float)(x_size - 1), 0.05f, 1.0f));
-
-			scene_graph->m_Spheres[x + x_size * y].Draw(sData.pbr_shader, &sData.sphere);
-		}
+		scene_graph->m_MaterialBalls[i].Draw(sData.pbr_shader, sData.material_ball);
 	}
+
+	// int x_size = glm::sqrt(scene_graph->m_Spheres.size());
+	// int y_size = x_size;
+	// for (int y = 0; y < y_size; y++)
+	// {
+	// 	for (int x = 0; x < x_size; x++)
+	// 	{
+	// 		// NOTE: set pbr uniforms per object (this should ideally be inside a Draw()-function, so i can set all of this in the scene graph)
+	// 
+	// 		// metallicness and roughness from 0.0 to 1.0 across all objects
+	// 		sData.pbr_shader->SetUniform1f("u_Metallic", y / (float)(y_size - 1));
+	// 		sData.pbr_shader->SetUniform1f("u_Roughness", glm::clamp(x / (float)(x_size - 1), 0.05f, 1.0f));
+	// 
+	// 		scene_graph->m_Spheres[x + x_size * y].Draw(sData.pbr_shader, &sData.sphere);
+	// 	}
+	// }
 
 	// render skybox 
 	glDepthFunc(GL_LEQUAL);

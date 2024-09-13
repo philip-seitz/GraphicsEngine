@@ -68,7 +68,7 @@ void ModelScene::LoadModel(std::string path)
 	Assimp::Importer import;
 	const aiScene* scene = import.ReadFile(	path, 
 											aiProcess_Triangulate |	
-											aiProcess_FlipUVs |				// triangulate mesh and flip textures on load
+											// aiProcess_FlipUVs |			// triangulate mesh and flip textures on load
 											aiProcess_CalcTangentSpace);	// calculate smooth/averaged tangent and bitangent vecotors per vertex
 
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
@@ -166,6 +166,9 @@ Mesh ModelScene::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 	{
 		unsigned int matID = mesh->mMaterialIndex;
 		aiMaterial* mat = scene->mMaterials[matID];
+
+		// ==== legacy maps ====
+
 		std::vector<Texture> diffuseMaps = loadMaterialTextures(mat, aiTextureType_DIFFUSE, "texture_diffuse");
 		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());		// insert at the end 
 
@@ -174,6 +177,26 @@ Mesh ModelScene::ProcessMesh(aiMesh* mesh, const aiScene* scene)
 
 		std::vector<Texture> normalMaps = loadMaterialTextures(mat, aiTextureType_HEIGHT, "texture_normal");
 		textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+
+
+		// ==== PBR materials ====
+
+		// roughness texture 
+		// careful this might have to me reversed as shininess != roughness
+		std::vector<Texture> roughnessMaps = loadMaterialTextures(mat, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
+		textures.insert(textures.end(), roughnessMaps.begin(), roughnessMaps.end());
+
+		// metallicness texture
+		std::vector<Texture> metalMaps = loadMaterialTextures(mat, aiTextureType_METALNESS, "texture_metallicness");
+		textures.insert(textures.end(), metalMaps.begin(), metalMaps.end());
+
+		// ao texture 
+		std::vector<Texture> aoMaps = loadMaterialTextures(mat, aiTextureType_AMBIENT, "texture_ao");
+		textures.insert(textures.end(), aoMaps.begin(), aoMaps.end());
+
+		// albedo texture 
+		std::vector<Texture> albedoMaps = loadMaterialTextures(mat, aiTextureType_DIFFUSE, "texture_albedo");
+		textures.insert(textures.end(), albedoMaps.begin(), albedoMaps.end());
 	}
 
 	return Mesh(vertices, indices, textures);
@@ -186,7 +209,12 @@ std::vector<Texture> ModelScene::loadMaterialTextures(aiMaterial* material, aiTe
 	{
 		bool textureLoaded = false;
 		aiString str;		// path to Texture relative to model directory (m_Directory)
-		material->GetTexture(type, i, &str);
+		if (material->GetTexture(type, i, &str) == AI_SUCCESS)
+		{
+			std::cout << typeName << std::endl;
+			std::cout << "map path: " << str.C_Str() << std::endl;
+		}
+
 		std::string texPath = (m_Directory+ str.C_Str()).c_str();		// path to texture 
 
 		// check if Texture is already loaded

@@ -11,6 +11,7 @@ SceneGraph::SceneGraph() :
 	m_Planets(),
 	m_Rocks(),
 	m_Spheres(),
+	m_MaterialBalls(),
 	m_Blinn(true)
 {
 }

@@ -42,7 +42,7 @@ glm::mat4x4 ModelSceneInstance::ModelMatrix()
 
 glm::mat3x3 ModelSceneInstance::NormalMatrix()
 {
-	return glm::inverse(ModelMatrix());
+	return glm::transpose(glm::inverse(ModelMatrix()));
 }
 
 glm::mat3x3 ModelSceneInstance::NormalMatrixView()

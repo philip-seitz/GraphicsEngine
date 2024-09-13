@@ -103,14 +103,19 @@ vec3 GetNormalFromMap();
 void main()
 {
 	// sample material textures
-	//float metallicness = texture(u_Material.texture_metallicness1, v_TexCoord).r;
-	float metallicness = u_Metallic;
-	// float roughness = texture(u_Material.texture_roughness1, v_TexCoord).r;
-	float roughness = u_Roughness;
-	// vec3 albedo = pow(texture(u_Material.texture_albedo1, v_TexCoord).rgb, vec3(2.2));		// sRGB to linear color space
-	vec3 albedo = vec3(0.6, 0.0, 0.0);
+	float metallicness = texture(u_Material.texture_metallicness1, v_TexCoord).r;
+	// float metallicness = u_Metallic;
+	float roughness = texture(u_Material.texture_roughness1, v_TexCoord).r;
+	roughness = 1.0 - roughness;			// since the model i loaded came as gloss
+	// float roughness = u_Roughness;
+
+	// WARNING: 
+	// hack to make it work with pbr materials
+	// should be texture_albedo1 but i could only get it to work with diffuse for albedo (base color)
+	vec3 albedo = pow(texture(u_Material.texture_diffuse1, v_TexCoord).rgb, vec3(2.2));		// sRGB to linear color space
+	// vec3 albedo = vec3(0.6, 0.0, 0.0);
 	vec3 normal = GetNormalFromMap();
-	float ao = texture(u_Material.texture_ao1, v_TexCoord).r;
+	float ao = pow(texture(u_Material.texture_ao1, v_TexCoord).r, 2.2);
 
 	vec3 N = normalize(normal);
 	vec3 V = normalize(u_CameraPosition - v_FragmentPosition);

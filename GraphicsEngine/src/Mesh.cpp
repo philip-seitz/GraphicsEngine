@@ -17,9 +17,14 @@ void Mesh::Draw(Shader* shader)
 	unsigned int specularNumber = 1;
 	unsigned int normalNumber = 1;
 
+	unsigned int metallicnessNumber = 1;
+	unsigned int roughnessNumber = 1;
+	unsigned int albedoNumber = 1;
+	unsigned int aoNumber = 1;
+
 	for (int i = 0; i < m_Textures.size(); i++)
 	{
-		glActiveTexture(GL_TEXTURE0 + i);
+		glActiveTexture(GL_TEXTURE20 + i);
 		glBindTexture(GL_TEXTURE_2D, m_Textures[i].GetID());
 		std::string name = m_Textures[i].GetType();
 		std::string number;
@@ -38,8 +43,32 @@ void Mesh::Draw(Shader* shader)
 			number = std::to_string(normalNumber);
 			normalNumber++;
 		}
+
+		// PBR materials
+		else if (name == "texture_metallicness")
+		{
+			number = std::to_string(metallicnessNumber);
+			metallicnessNumber++;
+		}
+
+		else if (name == "texture_roughness")
+		{
+			number = std::to_string(roughnessNumber);
+			roughnessNumber++;
+		}
+		else if (name == "texture_albedo")
+		{
+			number = std::to_string(albedoNumber);
+			albedoNumber++;
+		}
+		else if (name == "texture_ao")
+		{
+			number = std::to_string(aoNumber);
+			aoNumber++;
+		}
+
 		// sampler for texture corresponding to diff or spec slot
-		shader->SetUniform1i(("u_Material." + name + number).c_str(), i);
+		shader->SetUniform1i(("u_Material." + name + number).c_str(), i + 20);
 	}
 
 	// glActiveTexture(GL_TEXTURE0);
@@ -52,6 +81,11 @@ void Mesh::DrawInstanced(Shader* shader, unsigned int& numberInstances)
 {
 	unsigned int diffuseNumber = 1;
 	unsigned int specularNumber = 1;
+	unsigned int metallicnessNumber = 1;
+	unsigned int roughnessNumber = 1;
+	unsigned int albedoNumber = 1;
+	unsigned int normalNumber = 1;
+	unsigned int aoNumber = 1;
 
 	for (int i = 0; i < m_Textures.size(); i++)
 	{
@@ -69,6 +103,35 @@ void Mesh::DrawInstanced(Shader* shader, unsigned int& numberInstances)
 			number = std::to_string(specularNumber);
 			specularNumber++;
 		}
+
+		// PBR materials
+		else if (name == "texture_metallicness")
+		{
+			number = std::to_string(metallicnessNumber);
+			metallicnessNumber++;
+		}
+
+		else if (name == "texture_roughness")
+		{
+			number = std::to_string(roughnessNumber);
+			roughnessNumber++;
+		}
+		else if (name == "texture_albedo")
+		{
+			number = std::to_string(albedoNumber);
+			albedoNumber++;
+		}
+		else if (name == "texture_normal")
+		{
+			number = std::to_string(normalNumber);
+			normalNumber++;
+		}
+		else if (name == "texture_ao")
+		{
+			number = std::to_string(aoNumber);
+			aoNumber++;
+		}
+		
 		// sampler for texture corresponding to diff or spec slot
 		shader->SetUniform1i(("u_Material." + name + number).c_str(), i);
 	}

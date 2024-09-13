@@ -28,7 +28,8 @@ public:
 	std::vector<Point> m_Points;
 	std::vector<ModelSceneInstance> m_Planets;
 	std::vector<ModelSceneInstance> m_Rocks;
-	
+	std::vector<ModelSceneInstance> m_MaterialBalls;
+
 	bool m_Blinn;
 
 	// shader settings for different features

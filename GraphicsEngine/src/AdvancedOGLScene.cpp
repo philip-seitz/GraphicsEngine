@@ -134,12 +134,21 @@ void AdvancedOGLScene::Run()
 
 
     // add a backback model
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 0; i++)
     {
         ModelSceneInstance backpack;
         backpack.m_position = { 3 * i, 0.0f, -3.0f };
         backpack.m_angles = { 0, -40.0f, 0.0f }; 
         m_SceneGraph.m_Backpacks.push_back(backpack);
+    }
+
+    // add material ball model
+    for (int i = 0; i < 1; i++)
+    {
+        ModelSceneInstance material_ball;
+        material_ball.m_position = { 3 * i, 0.0f, -3.0f };
+        material_ball.m_angles = { 0, -40.0f, 0.0f };
+        m_SceneGraph.m_MaterialBalls.push_back(material_ball);
     }
 
     for (int i = 0; i < 0; i++)
